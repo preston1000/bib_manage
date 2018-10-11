@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<!-- saved from url=(0052)http://visjs.org/examples/network/data/datasets.html -->
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Network | Dynamic Data</title>
+    {% load static%}
+    <script type="text/javascript" src="{% static 'vis/vis.min.js'%}"></script>
+    <script type="text/javascript" src="{% static 'vis/vis.js'%}"></script>
+    <link href="{% static 'vis/vis-network.min.css'%}" rel="stylesheet" type="text/css">
+    <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+    <style type="text/css">
+        #mynetwork {
+            width: 600px;
+            height: 400px;
+            border: 1px solid lightgray;
+        }
+
+        p {
+            max-width:600px;
+        }
+
+        h4 {
+            margin-bottom:3px;
+        }
+    </style>
+</head>
+
+<body>
+<button type="button" id="myButton">
+    点我
+</button>
+<p>
+    You can change any settings you want while the network is initialized using the vis Dataset, setOptions and setData. Finally you can destroy the network and completely reinitialize it.
+</p>
+
+<h4>DataSet (change the data while it's loaded and initialzed):</h4>
+<input type="button" onclick="addNode()" value="add node dynamically"> <br>
+<input type="button" onclick="changeNode1()" value="change node 1&#39;s color dynamically"> <br>
+<input type="button" onclick="removeRandomNode()" value="remove a random Node"> <br>
+<input type="button" onclick="resetAllNodes()" value="reload all nodes"> <br>
+<input type="button" onclick="resetAllNodesStabilize()" value="reload all nodes and stabilize"> <br>
+
+<h4>setOptions (change the global options):</h4>
+<input type="button" onclick="changeOptions()" value="change the global options"><br>
+
+<h4>setData (reinitialize the data): </h4>
+<input type="button" onclick="setTheData()" value="setData. This stabilizes again if stabilization is true."><br>
+
+<h4>Cleanly destroy the network and restart it:</h4>
+<input type="button" onclick="resetAll()" value="Destroy the network and restart it."><br>
+<div id="mynetwork">
+    <div class="vis-network" tabindex="900" style="position: relative; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-drag: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); width: 100%; height: 100%;">
+        <canvas width="1200" height="800" style="position: relative; touch-action: none; user-select: none; -webkit-user-drag: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); width: 100%; height: 100%;">
+
+        </canvas>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    var nodeIds, shadowState, nodesArray, nodes, edgesArray, edges, network;
+    var nodeStyles = [{type: "publication", shape: "box", font:{size:10}, color:{background:'pink', border:'purple'}},
+                     {type: "person", shape: "circle", font:{size:10}, color:{background:'cyan', border:'blue'}},
+                     {type: "venue", shape: "ellipse", font:{size:10}, color:{background:'#F03976', border:'#713E7F'}}];
+    var maxPersonLength =  1, maxPublicationLength = 4;
+
+
+    function startNetwork(mode, requestedResult) {
+        if (mode == 1) { // 示例网络
+            // this list is kept to remove a random node.. we do not add node 1 here because it's used for changes
+            nodeIds = [2, 3, 4, 5];
+            shadowState = false;
+
+            // create an array with nodes
+            nodesArray = [
+                {id: 1, label: 'Node 1'},
+                {id: 2, label: 'Node 2'},
+                {id: 3, label: 'Node 3'},
+                {id: 4, label: 'Node 4'},
+                {id: 5, label: 'Node 5'}
+            ];
+            // create an array with edges
+            edgesArray = [
+                {from: 1, to: 3},
+                {from: 1, to: 2},
+                {from: 2, to: 4},
+                {from: 2, to: 5}
+            ];
+        }else {
+            shadowState = false;
+            var obj = JSON.parse(requestedResult);
+            if (obj["status"] == "") {
+                console.log("failed to get vis data")
+            }
+            edgesArray = obj["relation"];
+            nodesArray = obj["nodes"];
+        }
+        nodes = new vis.DataSet(nodesArray);
+        edges = new vis.DataSet(edgesArray);
+
+        nodeIds = nodes.getIds();
+        nodes.forEach(function(item){
+            index = 0;
+            if (item.type == "person") {
+                index = 1;
+                nodes.update([{id:item.id, label:yourSplit(maxPersonLength, item.label)}]);
+            }else if (item.type == "venue") {
+                index = 2;
+                nodes.update([{id:item.id, label:yourSplit(maxPublicationLength, item.label)}]);
+            }else if (item.type == "publication") {
+                nodes.update([{id:item.id, label:yourSplit(maxPublicationLength, item.label)}]);
+            }
+            nodes.update([{id:item.id, color:nodeStyles[index]["color"], shape:nodeStyles[index]["shape"], font:nodeStyles[index]["font"]}]);
+
+        });
+
+        // create a network
+        var container = document.getElementById('mynetwork');
+        var data = {
+            nodes: nodes,
+            edges: edges
+        };
+        var options = {};
+        network = new vis.Network(container, data, options);
+    }
+
+    function addNode() {
+        var newId = (Math.random() * 1e7).toString(32);
+        nodes.add({id:newId, label:"I'm new!"});
+        nodeIds.push(newId);
+    }
+
+    function changeNode1() {
+        var newColor = '#' + Math.floor((Math.random() * 255 * 255 * 255)).toString(16);
+        nodes.update([{id:1, color:{background:newColor}}]);
+    }
+
+    function removeRandomNode() {
+        var randomNodeId = nodeIds[Math.floor(Math.random() * nodeIds.length)];
+        nodes.remove({id:randomNodeId});
+
+        var index = nodeIds.indexOf(randomNodeId);
+        nodeIds.splice(index,1);
+    }
+
+    function changeOptions() {
+        shadowState = !shadowState;
+        network.setOptions({nodes:{shadow:shadowState},edges:{shadow:shadowState}});
+    }
+
+    function resetAllNodes() {
+        nodes.clear();
+        edges.clear();
+        nodes.add(nodesArray);
+        edges.add(edgesArray);
+    }
+
+    function resetAllNodesStabilize() {
+        resetAllNodes();
+        network.stabilize();
+    }
+
+    function setTheData() {
+        nodes = new vis.DataSet(nodesArray);
+        edges = new vis.DataSet(edgesArray);
+        network.setData({nodes:nodes, edges:edges})
+    }
+
+    function resetAll() {
+        if (network !== null) {
+            network.destroy();
+            network = null;
+        }
+        startNetwork();
+    }
+
+    startNetwork(1, "");
+</script>
+
+
+<script>
+    var request;
+    if (window.XMLHttpRequest){
+        // code for IE7+, Firefox, Chrome, Opera, Safari
+        request=new XMLHttpRequest();
+    }else {
+        // code for IE6, IE5
+        request=new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    $('#myButton').click(function() {
+        request.onreadystatechange = function () { // 状态发生变化时，函数被回调
+            if (request.readyState === 4) { // 成功完成
+                // 判断响应结果:
+                if (request.status === 200) {
+                    // 成功，通过responseText拿到响应的文本:
+                    return success(request.responseText);
+                } else {
+                    // 失败，根据响应码判断失败原因:
+                    return fail(request.status);
+                }
+            } else {
+                // HTTP请求还在继续...
+            }
+        }
+        request.open('GET', 'vis-data/');
+        request.send();
+    });
+
+    function fail(code) {
+        var textArea = document.getElementById('myButton');
+        textArea.innerText = 'Error code: ' + code;
+    }
+    function success(text) {
+        startNetwork(2, text);
+        var textArea = document.getElementById('myButton');
+        textArea.innerText = "Good";
+    }
+    function continueFunc() {
+        var textArea = document.getElementById('myButton');
+        textArea.innerText = "Continue";
+    }
+</script>
+
+<script>
+    //将长句子分成多行
+    var string="The water content is considered acceptable for this voltage class. Dielectric Breakdown Voltage is unacceptable for transformers > 288 KV. Power factors, Interfacial Tension and Neutralization Number are acceptable for continued use in-service.";
+
+    var yourSplit = function(N,string){
+        var app = string.split(' '),
+            arrayApp = [],
+            stringApp = "";
+        app.forEach(function(sentence,index){
+            stringApp += sentence+' ';
+
+            if ( (index+1)%N === 0){
+                arrayApp.push(stringApp);
+                stringApp='';
+            }else if(app.length===index+1 && stringApp!==''){
+                arrayApp.push(stringApp);
+                stringApp='';
+            }
+        });
+        var result = "";
+        for (j=0; j<arrayApp.length-1;j++) {
+            result += arrayApp[j] + "\n";
+        }
+        result += arrayApp[arrayApp.length-1];
+        return result;
+
+    };
+</script>
+</body></html>

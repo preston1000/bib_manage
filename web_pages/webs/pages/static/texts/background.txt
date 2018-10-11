@@ -1,0 +1,61 @@
+<tbody id="authorListTableBody">
+    <tr data-index="0">
+        <td data-field="firstName" id="fn-1">
+            <input class="layui-table-cell laytable-cell-user-defined" type="text" style="border-style:none;padding-top:0; padding-bottom:0;background-color:#f2f2f2;">
+        </td>
+        <td data-field="middleName" id="mn-1">
+            <input class="layui-table-cell laytable-cell-user-defined" type="text" style="border-style:none;padding-top:0; padding-bottom:0;">
+        </td>
+        <td data-field="lastName" id="ln-1">
+            <input class="layui-table-cell laytable-cell-user-defined" type="text" style="border-style:none;padding-top:0; padding-bottom:0;">
+        </td>
+        <td data-field="ranking" id="rk-1">
+            <input class="layui-table-cell laytable-cell-user-defined" type="text" style="border-style:none;padding-top:0; padding-bottom:0;">
+        </td>
+        <td data-field="sign" id="button-1">
+            <div class="layui-table-cell laytable-cell-user-defined">
+                <i class="layui-icon layui-icon-delete layui-btn layui-btn-danger layui-btn-xs" id="tbl-del-1" style="display:none"></i>
+                <i class="layui-icon layui-icon-add-1  layui-btn layui-btn-xs" id="tbl-add-1"></i>
+            </div>
+        </td>
+    </tr>
+    <tr data-index="‘0‘">
+        <td data-field="‘firstName‘" id="‘fn-2‘">
+            <input class="‘layui-table-cell" laytable-cell-user-defined‘="" type="‘text‘" style="‘border-style:none;padding-top:0;" padding-bottom:0;background-color:#f2f2f2;‘="">
+        </td>
+        <td data-field="‘middleName‘" id="‘mn-2‘">
+            <input class="‘layui-table-cell" laytable-cell-user-defined‘="" type="‘text‘" style="‘border-style:none;padding-top:0;" padding-bottom:0;‘="">
+        </td>
+        <td data-field="‘lastName‘" id="‘ln-2‘">
+            <input class="‘layui-table-cell" laytable-cell-user-defined‘="" type="‘text‘" style="‘border-style:none;padding-top:0;" padding-bottom:0;‘="">
+        </td>
+        <td data-field="‘ranking‘" id="‘rk-2‘">
+            <input class="‘layui-table-cell" laytable-cell-user-defined‘="" type="‘text‘" style="‘border-style:none;padding-top:0;" padding-bottom:0;‘="">
+        </td>
+        <td data-field="‘sign‘" id="‘button-2‘">
+            <div class="‘layui-table-cell" laytable-cell-user-defined‘="">
+                <i class="‘layui-icon" layui-icon-delete="" layui-btn="" layui-btn-danger="" layui-btn-xs‘="" id="‘tbl-del-2‘" style="‘display:none‘"></i>
+                <i class="‘layui-icon" layui-icon-add-1="" layui-btn="" layui-btn-xs‘="" id="‘tbl-add-2‘" style="‘display:auto'"></i>
+            </div>
+        </td>
+    </tr><tr data-index="‘0‘">
+        <td data-field="‘firstName‘" id="‘fn-3‘">
+            <input class="‘layui-table-cell" laytable-cell-user-defined‘="" type="‘text‘" style="‘border-style:none;padding-top:0;" padding-bottom:0;background-color:#f2f2f2;‘="">
+        </td>
+        <td data-field="‘middleName‘" id="‘mn-3‘">
+            <input class="‘layui-table-cell" laytable-cell-user-defined‘="" type="‘text‘" style="‘border-style:none;padding-top:0;" padding-bottom:0;‘="">
+        </td>
+        <td data-field="‘lastName‘" id="‘ln-3‘">
+            <input class="‘layui-table-cell" laytable-cell-user-defined‘="" type="‘text‘" style="‘border-style:none;padding-top:0;" padding-bottom:0;‘="">
+        </td>
+        <td data-field="‘ranking‘" id="‘rk-3‘">
+            <input class="‘layui-table-cell" laytable-cell-user-defined‘="" type="‘text‘" style="‘border-style:none;padding-top:0;" padding-bottom:0;‘="">
+        </td>
+        <td data-field="‘sign‘" id="‘button-3‘">
+            <div class="‘layui-table-cell" laytable-cell-user-defined‘="">
+                <i class="‘layui-icon" layui-icon-delete="" layui-btn="" layui-btn-danger="" layui-btn-xs‘="" id="‘tbl-del-3‘" style="‘display:none‘"></i>
+                <i class="‘layui-icon" layui-icon-add-1="" layui-btn="" layui-btn-xs‘="" id="‘tbl-add-3‘" style="‘display:auto'"></i>
+            </div>
+        </td>
+    </tr>
+</tbody>

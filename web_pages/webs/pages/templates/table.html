@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    {% load static %}
+    <title>登录信息</title>
+
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="{% static 'layui/css/layui.css'%}"  media="all">
+    <script src="{% static 'layui/layui.js'%}" charset="utf-8"></script>
+    <style>
+        .layui-table-cell {
+            white-space:normal;
+            height:inherit;
+        }
+    </style>
+</head>
+
+<body>
+<div>
+    <button class="layui-btn layui-btn-radius" onclick="toggleAdvanceSearch()">
+        <p id="advanceSearchButton">高级搜索</p>
+    </button>
+    <div id="advanceSearch" style="display:none">
+        <form class="layui-form" action="">
+        <div class="layui-form-item">
+            <label class="layui-form-label">关键词</label>
+            <div class="layui-input-block">
+                <input type="text" name="title" required  lay-verify="required" placeholder="请输入标题" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">时间范围</label>
+            <div class="layui-input-inline">
+                <input id="test7" type="text" name="startTime"  placeholder="From" autocomplete="off" class="layui-input">
+            </div>
+            <div class="layui-form-mid layui-word-aux">-</div>
+            <div class="layui-input-inline">
+                <input id="test8" type="text" name="startTime" placeholder="From" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">作者排名</label>
+            <div class="layui-input-block">
+                <select name="authorRanking" lay-verify="required" multiple>
+                    <option value="">全选</option>
+                    <option value="0">1</option>
+                    <option value="1">2</option>
+                    <option value="2">3</option>
+                    <option value="3">4</option>
+                    <option value="4">其他</option>
+                    <option value="5">通讯作者</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">文章索引</label>
+            <div class="layui-input-block">
+                <select name="paperIndexing" lay-verify="required">
+                    <option value="">任意</option>
+                    <option value="0">EI</option>
+                    <option value="1">SCI</option>
+                    <option value="2">SSCI</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">文章类型</label>
+            <div class="layui-input-block">
+                <select name="paperType" lay-verify="required">
+                    <option value="">任意</option>
+                    <option value="0">Journal Paper</option>
+                    <option value="1">Conference Paper</option>
+                    <option value="2">Book</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">复选框</label>
+            <div class="layui-input-block">
+                <input type="checkbox" name="like[ALL]" title="全选" checked>
+                <input type="checkbox" name="like[write]" title="Journal Paper" checked>
+                <input type="checkbox" name="like[read]" title="Conference Paper" checked>
+                <input type="checkbox" name="like[dai]" title="Poster" checked>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="formDemo">搜索</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </div>
+    </form>
+    </div>
+</div>
+<div>
+    <table class="layui-hide" id="test"></table>
+</div>
+
+<script>
+layui.use(['form'], function(){
+    var form = layui.form;
+    form.render();
+});
+</script>
+
+<script>
+// 时间范围
+layui.use('laydate', function(){
+    var laydate = layui.laydate;
+    var myDate = new Date();
+    //年选择器
+    laydate.render({
+        elem: '#test2'
+        ,type: 'year'
+    });
+
+    //起始年范围, 限定可选时间
+    var ins2 = laydate.render({
+        elem: '#test7'
+        ,type: 'year'
+        ,range: false
+        ,max: myDate.toLocaleDateString()     //获取当前日期
+        ,min: '1900-01-01'
+        ,showBottom: false
+        ,change: function(value, date, endDate){
+            var $ = jQuery = layui.$;
+            var endTime = document.getElementById('test8').value;
+            if (endTime < value){
+                //不能更早
+                ins2.hint('起始时间不可晚于终止时间');
+            }else {
+                $("#test7").val(value);
+                if($(".layui-laydate").length){
+                    $(".layui-laydate").remove();
+                }
+            }
+        }
+    });
+
+    //终止年范围, 限定可选时间
+    var ins1 = laydate.render({
+        elem: '#test8'
+        ,type: 'year'
+        ,range: false
+        ,max: myDate.toLocaleDateString()     //获取当前日期
+        ,min: '1900-01-01'
+        ,showBottom: false
+        ,isInitValue: true
+        ,value: myDate.getFullYear()
+        ,change: function(value, date, endDate){
+            var $ = jQuery = layui.$;
+            var startTime = document.getElementById('test7').value;
+            if (startTime != "" && startTime > value){
+                //不能更早
+                ins1.hint('终止时间不可超过起始时间');
+            }else {
+                $("#test8").val(value);
+                if($(".layui-laydate").length){
+                    $(".layui-laydate").remove();
+                }
+            }
+        }
+    });
+
+
+});
+</script>
+<script>
+// 文献表格
+
+layui.use('table', function(){
+    var table = layui.table;
+
+    table.render({
+        elem: '#test'
+        ,url:'/sample-data/'
+        ,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+        ,page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
+                layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'] //自定义分页布局
+                //,curr: 5 //设定初始在第 5 页
+                ,groups: 5 //只显示 1 个连续页码
+                ,first: false //不显示首页
+                ,last: false //不显示尾页
+            }
+        ,limit: 10
+        ,cols: [[
+            {field:'ID', width:80, title: 'ID', sort: true}
+            ,{field:'TITLE', width:300, title: '标题', sort: false}
+            ,{field:'AUTHORS', width:200, title: '作者', sort: false}
+            ,{field:'VENUE', width:200, title: '期刊/会议'}
+            ,{field:'YEAR', title: '年', width: '100', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
+            ,{field:'VENUE_TYPE', title: '类型', sort: true}
+        ]]
+    });
+});
+</script>
+<script>
+    // 文献表格高级搜索
+    function toggleAdvanceSearch(){
+        if (document.getElementById("advanceSearch").style.display == "none") {
+            document.getElementById("advanceSearch").setAttribute("style", "display:auto");
+            document.getElementById("advanceSearchButton").innerHTML = "收起";
+        }else {
+            document.getElementById("advanceSearch").setAttribute("style", "display:none");
+            document.getElementById("advanceSearchButton").innerHTML = "高级搜索";
+        }
+    }
+</script>
+
+</body>
+</html>

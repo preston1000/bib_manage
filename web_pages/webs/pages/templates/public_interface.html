@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    {% load static %}
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{% static 'images/favicon.ico'%} ">
+
+    <title>Continuous Piecewise Linear Analysis</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <script src="https://cdn.bootcss.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+
+    <!--控制台样式-->
+    <link href="{% static 'bootstrap-4.1.1-dist/css/dashboard.css'%}" rel="stylesheet">
+    <!--layui-->
+    <link rel="stylesheet" href="{% static 'layui2/css/layui.css'%}"  media="all">
+    <script src="{% static 'layui2/layui.js'%}" charset="utf-8"></script>
+    <script src="{% static 'js/js.cookies.js'%}" charset="utf-8"></script>
+    <style type="text/css">
+        #mynetwork2 {
+            width: 800px;
+            height: 600px;
+            border: 1px solid lightgray;
+        }
+    </style>
+    <script type="text/javascript" src="{% static 'vis/vis.min.js'%}"></script>
+    <script type="text/javascript" src="{% static 'vis/vis.js'%}"></script>
+    <link href="{% static 'vis/vis-network.min.css'%}" rel="stylesheet" type="text/css">
+<!--自定义js-->
+    <script src="{% static 'js/tableOperation.js'%}"></script>
+    <script src="{% static 'js/formOperation.js'%}"></script>
+    <style type="text/css">
+        .small-font { font-size: 1.5vw;}
+        .collapse-disable {transition: none !important;}
+    </style>
+</head>
+<body>
+<!--选择数据库-->
+    <div class="container-fluid row">
+        <div class="col-sm-12 col-md-12">
+            <form class="layui-form" action="">
+                <div class="layui-inline">
+                    <label class="layui-form-item">选择数据库</label>
+                    <div class="layui-input-inline">
+                        <div class="layui-input-inline">
+                            <select name="modules" lay-verify="required" lay-search="">
+                                <option value="">数据库名称</option>
+                                <option value="1">CPWL</option>
+                                <option value="2">form</option>
+                            </select>
+                        </div>
+                        <div class="layui-input-inline">
+                            <button class="layui-btn" lay-submit="" lay-filter="getDatabase">获取数据</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+
+    </div>
+<!--选项卡-->
+    <div class="layui-tab layui-tab-card">
+        <ul class="layui-tab-title">
+            <li class="layui-this">数据库详情</li>
+            <li>查看数据</li>
+            <li>新增数据</li>
+            <li>修改数据</li>
+            <li>数据显示</li>
+            <li></li>
+        </ul>
+        <div class="layui-tab-content" style="height: 500px;">
+            <!--1。数据库详情-->
+            <div class="layui-tab-item layui-show">
+                <p>还未实现</p>
+
+            </div>
+            <!--2.查看数据-->
+            <div class="layui-tab-item">
+                <div id="advanceSearch" class="collapse in" style="border:1px solid #000">
+                    <form class="layui-form" action="">
+                        <!--标题-->
+                        <div class="layui-form-item">
+                            <label class="layui-form-label" style="width:100px">标题</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="title" required  lay-verify="required" placeholder="请输入关键字，以逗号分隔" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--时间范围-->
+                        <div class="layui-form-item">
+                            <label class="layui-form-label" style="width:100px">时间范围</label>
+                            <div class="layui-input-inline" style="margin-left:10px">
+                                <input id="startTime" type="text" name="startTime"  placeholder="From" autocomplete="off" class="layui-input">
+                            </div>
+                            <div class="layui-form-mid layui-word-aux">-</div>
+                            <div class="layui-input-inline">
+                                <input id="endTime" type="text" name="endTime" placeholder="To" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--作者排名-->
+                        <div class="layui-form-item">
+                            <label class="layui-form-label" style="width:100px">作者排名</label>
+                            <div class="layui-input-block">
+                                <select multiple>
+                                    <option value="-1">全选</option>
+                                    <option value="0">1</option>
+                                    <option value="1">2</option>
+                                    <option value="2">3</option>
+                                    <option value="3">4</option>
+                                    <option value="4">其他</option>
+                                    <option value="5">通讯作者</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!--文章索引-->
+                        <div class="layui-form-item">
+                            <label class="layui-form-label" style="width:100px">文章索引</label>
+                            <div class="layui-input-block">
+                                <select name="paperIndexing" multiple>
+                                    <option value="-1">全选</option>
+                                    <option value="0">EI</option>
+                                    <option value="1">SCI</option>
+                                    <option value="2">SSCI</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!--文章类型-->
+                        <div class="layui-form-item">
+                            <label class="layui-form-label" style="width:100px">文章类型</label>
+                            <div class="layui-input-block">
+                                <select name="paperType" multiple>
+                                    <option value="-1">全选</option>
+                                    <option value="0">Journal Paper</option>
+                                    <option value="1">Conference Paper</option>
+                                    <option value="2">Book</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!--按钮建-->
+                        <div class="layui-form-item">
+                            <div class="layui-input-block">
+                                <button class="layui-btn" lay-submit lay-filter="searchPub">搜索</button>
+                                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div id="queriedPubsDiv" class="collapse" style="border:1px solid #000">
+                    <table class="layui-hide" id="pubTableAfterSearch" lay-filter="pubTableAfterSearch"></table>
+                </div>
+            </div>
+            <!--3。新增数据-->
+            <div class="layui-tab-item">
+                <form class="layui-form" action="">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label" style="margin-right:20px;width:100px">添加方式</label>
+                        <div class="layui-input-block">
+                            <input type="checkbox" name="addPubWay" checked lay-skin="switch" lay-filter="addPubWay" lay-text="上传bib文件|手动添加单条记录">
+                        </div>
+                    </div>
+                    <div class="layui-form-item" style="border:1px solid #000">
+                        <div id="uploadBib" class="layui-upload collapse in">
+                            <button type="button" class="layui-btn layui-btn-normal" id="chooseBibFile">选择bib文件</button>
+                            <div class="layui-upload-list">
+                                <table class="layui-table">
+                                    <thead>
+                                    <tr><th>文件名</th>
+                                    <th>大小</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                    </tr></thead>
+                                    <tbody id="demoList"></tbody>
+                                </table>
+                            </div>
+                            <button type="button" class="layui-btn" id="testListAction">开始上传</button>
+                        </div>
+                        <div id="addPub" class="collapse">
+                            <form class="layui-form" action="" lay-filter="addOrEditPubPanel">
+                                <!--文献类型-->
+                                <div class="layui-form-item" id="addPub-pubType">
+                                    <label class="layui-form-label" style="width:100px">文献类型</label>
+                                    <div class="layui-input-block">
+                                        <select name="paperTypeEdit" lay-filter="paperTypeEdit" lay-verify="required">
+                                            <option value="0">Article</option>
+                                            <option value="1">Book</option>
+                                            <option value="2">Booklet</option>
+                                            <option value="3">Conference</option>
+                                            <option value="4">InBook</option>
+                                            <option value="5">InCollection</option>
+                                            <option value="6">InProceedings</option>
+                                            <option value="7">Manual</option>
+                                            <option value="8">MastersThesis</option>
+                                            <option value="9">Misc</option>
+                                            <option value="10">PhDThesis</option>
+                                            <option value="11">Proceedings</option>
+                                            <option value="12">TechReport</option>
+                                            <option value="13">Unpublished</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!--标题-->
+                                <div class="layui-form-item" id="addPub-title" style="display:auto">
+                                    <label class="layui-form-label" style="width:100px">Title</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="title" placeholder="Title" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--book标题-->
+                                <div class="layui-form-item" id="addPub-book_title" style="display:none">
+                                    <label class="layui-form-label" style="width:100px">Book Title</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="book_title" placeholder="Book Title" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--editor-->
+                                <div class="layui-form-item" id="addPub-editor" style="display:none">
+                                    <label class="layui-form-label" style="width:100px">Editor</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="editor" placeholder="Editor" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--keywords-->
+                                <div class="layui-form-item" id="addPub-keywords" style="display:none">
+                                    <label class="layui-form-label" style="width:100px">Keywords</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="keywords" placeholder="Keywords" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--edition-->
+                                <div class="layui-form-item" id="addPub-edition" style="display:none">
+                                    <label class="layui-form-label" style="width:100px">Edition</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="edition" placeholder="Edition" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--作者(表格)-->
+                                <div class="layui-form-item" id="addPub-author" style="display:auto">
+                                    <label class="layui-form-label" style="width:100px;margin-right:10px" >Authors</label>
+                                    <div class="layui-input-block ">
+                                        <script type="text/html" id="authorBarsAdd">
+                                            <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="addAuthor" data-type="reload">新增</a>
+                                            <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delAuthor">删除</a>
+                                        </script>
+
+                                        <table class="layui-hide" id="authorTableAdd" lay-filter="demo" name="author"></table>
+                                    </div>
+                                </div>
+                                <!--year-->
+                                <div class="layui-form-item" id="addPub-year" style="display:auto">
+                                    <label class="layui-form-label" style="width:100px">Year</label>
+                                    <div class="layui-input-inline" style="margin-left:10px">
+                                        <input id="pubYearAdd" type="text" name="year" lay-veryfy="date"  placeholder="Year" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--month-->
+                                <div class="layui-form-item" id="addPub-month" style="display:auto">
+                                    <label class="layui-form-label" style="width:100px">Month</label>
+                                    <div class="layui-input-inline" style="margin-left:10px">
+                                        <input id="pubMonthAdd" type="text" name="month" lay-veryfy="date"  placeholder="Month" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--venue title-->
+                                <div class="layui-form-item" id="addPub-journal" style="display:auto">
+                                    <label class="layui-form-label" style="width:100px">Journal</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="journal" placeholder="Journal" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--volume-->
+                                <div class="layui-form-item" id="addPub-volume" style="display:auto">
+                                    <label class="layui-form-label" style="width:100px">Volume</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="volume" placeholder="Volume" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--type-->
+                                <div class="layui-form-item" id="addPub-type" style="display:none">
+                                    <label class="layui-form-label" style="width:100px">Type</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="type" placeholder="Type" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--chapter-->
+                                <div class="layui-form-item" id="addPub-chapter" style="display:none">
+                                    <label class="layui-form-label" style="width:100px">Chapter</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="chapter" placeholder="Chapter" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--number-->
+                                <div class="layui-form-item" id="addPub-number" style="display:auto">
+                                    <label class="layui-form-label" style="width:100px">Number</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="number" placeholder="Number" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--pages-->
+                                <div class="layui-form-item" id="addPub-pages" style="display:auto">
+                                    <label class="layui-form-label" style="width:100px">Pages</label>
+                                    <div class="layui-input-inline" style="margin-left:10px">
+                                        <input type="text" name="pages1" placeholder="From" autocomplete="off" class="layui-input">
+                                    </div>
+                                    <div class="layui-form-mid">
+                                        -
+                                    </div>
+                                    <div class="layui-input-inline">
+                                        <input type="text" name="pages2" placeholder="To" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--publisher-->
+                                <div class="layui-form-item" id="addPub-publisher" style="display:none">
+                                    <label class="layui-form-label" style="width:100px">Publisher</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="publisher" placeholder="Publisher" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--organization-->
+                                <div class="layui-form-item" id="addPub-organization" style="display:none">
+                                    <label class="layui-form-label" style="width:100px">Organization</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="organization" placeholder="Organization" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--institution-->
+                                <div class="layui-form-item" id="addPub-institution" style="display:none">
+                                    <label class="layui-form-label" style="width:100px">Institution</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="institution" placeholder="Institution" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--school-->
+                                <div class="layui-form-item" id="addPub-school" style="display:none">
+                                    <label class="layui-form-label" style="width:100px">School</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="school" placeholder="School" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--publisher addr-->
+                                <div class="layui-form-item" id="addPub-address" style="display:none">
+                                    <label class="layui-form-label" style="width:100px">Publisher's Address</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="address" placeholder="Address" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--series-->
+                                <div class="layui-form-item" id="addPub-series" style="display:none">
+                                    <label class="layui-form-label" style="width:100px">Series</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="series" placeholder="Series" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--how_published-->
+                                <div class="layui-form-item" id="addPub-how_published" style="display:none">
+                                    <label class="layui-form-label" style="width:100px">How Published</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="how_published" placeholder="How Published" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--文章索引-->
+                                <div class="layui-form-item" id="addPub-indexed" style="display:auto">
+                                    <label class="layui-form-label" style="width:100px">Indexing</label>
+                                    <div class="layui-input-block">
+                                        <select name="indexing" >
+                                            <option value="">必填</option>
+                                            <option value="0">EI</option>
+                                            <option value="1">SCI</option>
+                                            <option value="2">SSCI</option>
+                                            <option value="3">其他</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!--note-->
+                                <div class="layui-form-item" id="addPub-note" style="display:auto">
+                                    <label class="layui-form-label" style="width:100px">Note</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="note" placeholder="Note" autocomplete="off" class="layui-input">
+                                    </div>
+                                </div>
+                                <!--按钮建-->
+                                <div class="layui-form-item">
+                                    <div class="layui-input-block">
+                                        <button class="layui-btn" lay-submit lay-filter="newPubSubmit">提交</button>
+                                        <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetAddPubPanel">重置</button>
+                                        <!--<button class="layui-btn layui-btn-primary" id="cancelEditPanel">取消</button>-->
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <!--4。修改数据-->
+            <div class="layui-tab-item">
+                <p>还未实现</p>
+            </div>
+            <!--5。查询展示数据结果-->
+            <div class="layui-tab-item">
+                <!--查询语句-->
+                <p>还未实现</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        //关于显示上传按钮还是手动输入文献的控件
+        layui.use('form', function(){
+            var form = layui.form
+                ,$ = layui.$;
+            form.on('switch(addPubWay)', function(data){
+                var collapseStateButton = $("#uploadBib").attr("class")
+                    ,collapseStateForm = $("#addPub").attr("class");
+                if (this.checked) {//显示按钮
+                    if (collapseStateButton.indexOf("collapse in") == -1){//当前为隐藏
+                        $("#uploadBib").attr("class", collapseStateButton.replace('collapse', "collapse in"));
+                        $("#addPub").attr("class", collapseStateForm.replace('collapse in', "collapse"));
+                    }
+                }else{//显示输入表单
+                    if (collapseStateForm.indexOf("collapse in") == -1){//当前为隐藏
+                        $("#uploadBib").attr("class", collapseStateButton.replace('collapse in', "collapse"));
+                        $("#addPub").attr("class", collapseStateForm.replace('collapse', "collapse in"));
+                    }
+                }
+            });
+        });
+    </script>
+
+    <script>
+        //新增文献面板内的操作:1）按钮（提交、重置）；2）
+        var formSettings = [{"field":"0", "mandatory":[0,1,2,3,22], "others":[4,5,6,7,8]}
+                            ,{"field":"1", "mandatory":[0,1,3,9,10,22], "others":[4,5,7,8,11,12,13]}
+                            ,{"field":"2", "mandatory":[1,22], "others":[0,3,7,8,12,14]}
+                            ,{"field":"3", "mandatory":[0,1,3,15,22], "others":[4,5,6,7,8,9,10,11,12,16]}
+                            ,{"field":"4", "mandatory":[0,1,3,6,9,10,17,22], "others":[4,5,7,8,11,12,13,18]}
+                            ,{"field":"5", "mandatory":[0,1,3,10,15,22], "others":[4,5,6,7,8,9,11,12,13,17,18]}
+                            ,{"field":"6", "mandatory":[0,1,3,15,22], "others":[4,5,6,7,8,9,10,11,12,16]}
+                            ,{"field":"7", "mandatory":[1,22], "others":[0,3,7,8,12,13,16]}
+                            ,{"field":"8", "mandatory":[0,1,3,19,22], "others":[7,8,12,18]}
+                            ,{"field":"9", "mandatory":[22], "others":[0,1,3,7,8,14]}
+                            ,{"field":"10", "mandatory":[0,1,3,19,22], "others":[7,8,12,20]}
+                            ,{"field":"11", "mandatory":[1,3,22], "others":[4,5,7,8,9,10,11,12,16]}
+                            ,{"field":"12", "mandatory":[0,1,3,21,22], "others":[5,7,8,9,18]}
+                            ,{"field":"13", "mandatory":[0,1,8,22], "others":[3,7]}
+                            ]; //每种类型文献的字段分组，必填和选填内容（数字表示contentStringName中的下标）
+        var contentStringName = ["author","title","journal","year","volume","number",
+                                "pages","month","note","editor","publisher","series","address",
+                                "edition","how_published","book_title","organization","chapter",
+                                "type","school","keywords","institution","indexing"];//文献字段值
+        var pubTypes = ["ARTICLE", "BOOK","BOOKLET","CONFERENCE","INBOOK","INCOLLECTION","INPROCEEDINGS",
+                         "MANUAL","MASTERSTHESIS","MISC","PHDTHESIS","PROCEEDINGS","TECHREPORT","UNPUBLISHED"];//文献类型
+        var currentPubType = 0;//当前选择的文献类型
+
+        var siteUrl = "http://127.0.0.1:8000"
+            ,addPubService = "/add-pub/"
+            ,editPubService = "/edit-pub/"
+            ,authService = "/verify/"
+            ,uploadBib = '/upload-bib/'
+            ,searchPubService = '/search-pub/';
+        //表单的操作:包括文献详情、高级搜索
+
+        layui.use(['element', 'form', 'layedit', 'table'], function(){//element只用来让选项卡工作
+            var form = layui.form
+                ,layer = layui.layer
+                ,table = layui.table
+                ,$ = layui.$;
+
+            //按钮1：重置编辑面板------未检查
+            form.on('submit(resetAddPubPanel)', function(){
+                //文献类型自动重置了
+                toggleEditPanel(formSettings, contentStringName, 0, 'addPub');
+                form.render();
+            });
+            //按钮2：提交文献信息
+            form.on('submit(newPubSubmit)', function(data){
+                console.log("提交的表单数据：" + JSON.stringify(data.field));
+                msg = verifyPubInfo(data.field);
+                if (msg["status"]<1) {
+                    layer.msg(msg["msg"]);
+                    console.log("结束验证————失败，取消创建新文献");
+                }else{
+                    console.log("结束验证————正确，写入数据库....");
+                    writePubToDatabase(siteUrl, addPubService, msg);
+                }
+                return false;
+            });
+            //按钮3：搜索文献
+            form.on('submit(searchPub)', function(data){
+                console.log("提交的表单数据：" + JSON.stringify(data.field));
+                console.log("查找数据库....");
+                //"查看数据"选项卡中，返回的文献表格，当点击搜索按钮时，加载表格
+                //parameters = {"title":data.field.title
+                    //, "startTime":data["startTime"]
+                    //, "endTime": data["endTime"]
+                //    , "paperType": data["paperType"]}
+                $('#queriedPubsDiv').attr("class", "collapse in");
+                table.render(
+                    {
+                        elem: '#pubTableAfterSearch'
+                        ,id: "pubSearchTableContent"
+                        ,url: searchPubService
+                        ,method: 'post'
+                        ,where: {"title":data.field.title
+                            //, "startTime":data["startTime"]
+                            //, "endTime": data["endTime"]
+                            , "paperType": data.field.paperType}
+                        //,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+                        ,page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
+                            layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'] //自定义分页布局
+                            //,curr: 5 //设定初始在第 5 页
+                            ,groups: 5 //只显示 1 个连续页码
+                            ,first: false //不显示首页
+                            ,last: false //不显示尾页
+                        }
+                        ,limit: 10
+                        ,cols: [[{field:"ID", width:60, title: 'ID', sort: true, fixed:'left'}
+                            ,{field:'title', width:300, title: '标题', sort: false}
+                            ,{field:'author', width:200, title: '作者', sort: false}
+                            ,{field:'journal', width:200, title: '期刊/会议'}
+                            ,{field:'year', title: '年', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
+                            ,{field:'month', title: '月', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
+                            ,{field:'paperTypeEdit', width: '100', title: '类型', sort: true}
+                            ,{field:'booktitle', width: '100', title: '书名', sort: false}
+                            ,{field:'editor', width: '100', title: '编辑', sort: false}
+                            ,{field:'edition', width: '100', title: '版本', sort: false}
+                            ,{field:'volume', width: '100', title: '卷', sort: false}
+                            ,{field:'number', width: '100', title: '期', sort: false}
+                            ,{field:'note', width: '100', title: '备注', sort: true}
+                            ,{field:'keywords', width: '100', title: '关键词', sort: false}
+                            ,{field:'pages', width: '100', title: '页码', sort: false}
+                        ]]
+                        ,done: function(data){
+                            console.log("data:");
+                            console.log(data);
+                        }
+                    }
+                );
+                return false;
+            });
+
+            //3）根据选择的文献类型，决定显示的字段都有哪些
+            form.on('select(paperTypeEdit)', function(data){
+                var value = data.value;
+                value = new Number(value);
+                if (value.valueOf() != currentPubType.valueOf()) {
+                    toggleEditPanel(formSettings, contentStringName, value, 'addPub');
+                    form.render();
+                }
+            });
+
+            //监听下拉复选框全选功能:包括高级搜索面板
+            form.on('checkbox', function(data){
+                var allOptions = data.elem.parentElement
+                        .parentElement
+                        .parentElement
+                        .parentElement
+                        .parentElement
+                        .children.item("select").children;
+                if (data.elem.title=="全选"){
+                    if (data.elem.checked) {
+                        for (i=0;i<allOptions.length;i++) {
+                            allOptions[i].setAttribute("selected",true);
+                        }
+                    }else {
+                        for (i=0;i<allOptions.length;i++) {
+                            allOptions[i].removeAttribute("selected");
+                        }
+                    }
+                    form.render('select');
+                    form.render('checkbox');
+                }
+            });
+
+
+
+
+
+        });
+    </script>
+
+    <script>
+        //关于表格的控件
+        //1)新增文献面板中作者信息表格
+        var currentAuthors; // 当前已经填写的作者名单
+
+        layui.use('table', function(){
+            var table = layui.table
+                ,$ = layui.$;
+
+            //监听作者表格中增加/删除按钮
+            table.on('tool(demo)', function(obj){
+                addOrDeleteAuthor(currentAuthors, 'authorTable', layui, obj);
+            });
+
+            //监听作者表格中作者信息编辑
+            table.on('edit(demo)', function(obj){
+                editAuthor(currentAuthors, 'authorTable', layui, obj);
+            });
+            //作者表格
+            table.render({
+                elem: '#authorTableAdd'
+                ,url: '/demo/table/user/'
+                ,cols: [[
+                  {field:'firstName', title:'名', width:100, edit: 'text'}
+                  ,{field:'middleName', title:'中间名', width:100, edit: 'text'}
+                  ,{field:'lastName', title:'姓', width:100, edit: 'text'}
+                  ,{field:'ranking', title:'排名', width:100, sort: true, edit: 'text'}
+                  ,{width:150, align:'center', toolbar: '#authorBarsAdd'}
+                ]]
+                ,id: 'authorTable'
+                ,page: false
+                ,done: function(res, curr, count){
+                    currentAuthors = deepClone(res["data"]);
+                }
+            });
+
+        });
+    </script>
+
+    <script>
+    //关于时间的控件
+    layui.use('laydate', function(){
+        var laydate = layui.laydate
+            ,myDate = new Date();;
+
+        //(1)新增文献面板:文献时间年
+        var ins3 = laydate.render({
+            elem: '#pubYearAdd'
+            ,type: 'year'
+            ,range: false
+            ,showBottom: true
+            ,isInitValue: false
+            ,change:function(value, date, endDate) {
+                console.log(value);
+            }
+        });
+        //(2)新增文献面板:文献时间月
+        var ins4 = laydate.render({
+            elem: '#pubMonthAdd'
+            ,type: 'month'
+            ,range: false
+            ,format: 'MM'
+            ,showBottom: true
+            ,isInitValue: false
+            ,change:function(value, date, endDate) {
+                console.log(value);
+            }
+        });
+        //（3）高级搜索:起始年范围, 限定可选时间
+        var ins2 = laydate.render({
+            elem: '#startTime'
+            ,type: 'year'
+            ,range: false
+            ,max: myDate.toLocaleDateString()     //获取当前日期
+            ,min: '1900-01-01'
+            ,showBottom: false
+            ,change: function(value, date, endDate){
+                var $ = jQuery = layui.$;
+                var endTime = document.getElementById('endTime').value;
+                if (endTime < value){
+                    //不能更早
+                    ins2.hint('起始时间不可晚于终止时间');
+                }else {
+                    $("#startTime").val(value);
+                    if($(".layui-laydate").length){
+                        $(".layui-laydate").remove();
+                    }
+                }
+            }
+        });
+
+        //（4）高级搜索:终止年范围, 限定可选时间
+        var ins1 = laydate.render({
+            elem: '#endTime'
+            ,type: 'year'
+            ,range: false
+            ,max: myDate.toLocaleDateString()     //获取当前日期
+            ,min: '1900-01-01'
+            ,showBottom: false
+            ,isInitValue: true
+            ,value: myDate.getFullYear()
+            ,change: function(value, date, endDate){
+                var $ = jQuery = layui.$;
+                var startTime = document.getElementById('startTime').value;
+                if (startTime != "" && startTime > value){
+                    //不能更早
+                    ins1.hint('终止时间不可超过起始时间');
+                }else {
+                    $("#endTime").val(value);
+                    if($(".layui-laydate").length){
+                        $(".layui-laydate").remove();
+                    }
+                }
+            }
+        });
+    });
+    </script>
+
+    <script>
+        //上传文件的组件
+        layui.use('upload', function(){
+            var $ = layui.jquery
+            ,upload = layui.upload;
+            var demoListView = $('#demoList')
+                ,uploadListIns = upload.render({
+                    elem: '#chooseBibFile'
+                    ,url: siteUrl + uploadBib
+                    ,accept: 'file'
+                    //,exts:"bib|txt"
+                    ,multiple: true
+                    ,auto: false
+                    ,bindAction: '#testListAction'
+                    ,choose: function(obj){
+                        var files = this.files = obj.pushFile(); //将每次选择的文件追加到文件队列
+                        //读取本地文件
+                        obj.preview(function(index, file, result){
+                            var tr = $(['<tr id="upload-'+ index +'">'
+                                ,'<td>'+ file.name +'</td>'
+                                ,'<td>'+ (file.size/1014).toFixed(1) +'kb</td>'
+                                ,'<td>等待上传</td>'
+                                ,'<td>'
+                                ,'<button class="layui-btn layui-btn-xs demo-reload layui-hide">重传</button>'
+                                ,'<button class="layui-btn layui-btn-xs layui-btn-danger demo-delete">删除</button>'
+                                ,'</td>'
+                                ,'</tr>'].join(''));
+
+                        //单个重传
+                        tr.find('.demo-reload').on('click', function(){
+                            obj.upload(index, file);
+                        });
+
+                        //删除
+                        tr.find('.demo-delete').on('click', function(){
+                            delete files[index]; //删除对应的文件
+                            tr.remove();
+                            uploadListIns.config.elem.next()[0].value = ''; //清空 input file 值，以免删除后出现同名文件不可选
+                        });
+
+                        demoListView.append(tr);
+                    });
+                }
+                ,before: function(obj){
+                    var files = this.files;
+                }
+                ,done: function(res, index, upload){
+                    if(res.status == 1){ //上传成功
+                        var tr = demoListView.find('tr#upload-'+ index)
+                            ,tds = tr.children();
+                        tds.eq(2).html('<span style="color: #5FB878;">上传成功</span>');
+                        tds.eq(3).html(''); //清空操作
+                        console.log(res.msg);
+                        return delete this.files[index]; //删除文件队列已经上传成功的文件
+                    }
+                    this.error(index, upload);
+                }
+                ,allDone: function(obj){ //当文件全部被提交后，才触发
+                    console.log(obj.total); //得到总文件数
+                    console.log(obj.successful); //请求成功的文件数
+                    console.log(obj.aborted); //请求失败的文件数
+                }
+                ,error: function(index, upload){
+                    var tr = demoListView.find('tr#upload-'+ index)
+                        ,tds = tr.children();
+                        tds.eq(2).html('<span style="color: #FF5722;">上传失败</span>');
+                        tds.eq(3).find('.demo-reload').removeClass('layui-hide'); //显示重传
+                    }
+                });
+        });
+    </script>
+
+    <script>
+        //函数列表：1）新增文献表单中作者信息格式验证；2）新增文献中其他字段内容格式验证；3）新增文献表单数据验证入口函数，调用了1）-2）
+        //1)新增文献表单函数1：验证作者信息格式是否正确
+            function verifyAuthor(){
+                msg = {"status": 1, "msg": "OK"};
+                if (currentAuthors.length==0) {
+                    msg["status"] = -1;
+                    msg["msg"] = "没有作者信息";
+                }else {
+                    for (var i=0;i<currentAuthors.length;i++) {
+                        if (currentAuthors[i]["firstName"]=="" || currentAuthors[i]["lastName"]=="" || currentAuthors[i]["ranking"]=="") {
+                            msg["status"] = -1;
+                            msg["msg"] = "第" + new Number(i).toString() + "作者信息不全";
+                            break;
+                        }
+                    }
+                }
+                return msg;
+            }
+        //2)判断表单中字段:0 字段空；-1 应为数字的字段值非数字；1正常;-2 字段名不存在
+            function verifyFieldValue(fieldName, valueInForm) {
+                if (fieldName == 'pages1' || fieldName == 'pages2' ) {
+                    fieldName = 'pages' ;
+                }
+                var index = contentStringName.indexOf(fieldName);
+                var numberFieldIndices = [3,4,5,6,7,13,17];
+                if (index<0) {// non-existing field
+                    return {"msg":"Unrecognized field name.", "status": -2};
+                }else if (numberFieldIndices.indexOf(index)>-1) { // number field
+                    var tmp = new Number(valueInForm);
+                    if (isNaN(tmp)) {//非数字
+                        return {"msg":"Field [" + fieldName + "] should be Number.", "status": -1};
+                    }else if (tmp==0) { //空字符或0
+                        if (valueInForm==""){
+                            return {"msg":"Empty string or number 0", "status": 0};
+                        }
+                    }
+                }else { // string field
+                    if (valueInForm == "") {
+                        return {"msg":"Field [" + fieldName + "] is empty", "status": 0};
+                    }
+                }
+                return {"msg":"OK.", "status": 1};
+            }
+        //3)新增文献表单验证入口函数:参数是name：value形式
+            function verifyPubInfo(data) {
+                var pubType = new Number(data["paperTypeEdit"])
+                    ,mandatory = formSettings[pubType]["mandatory"]
+                    ,others = formSettings[pubType]["others"];
+                var msg = {"status": 2, "msg":""};
+                var processedData = {};
+
+                for (indexI=0;indexI<contentStringName.length;indexI++) {
+                    var valueNames = [];
+                    if (indexI == 0) {//作者单独判断
+                        if (mandatory.indexOf(indexI) > -1 | others.indexOf(indexI) > -1) {//必填字段
+                            var tmpMsg = verifyAuthor();
+                            if (tmpMsg["status"]<0) {
+                                console.log("必/选填：作者验证失败");
+                                msg["status"] = tmpMsg["status"];
+                                msg["msg"] = tmpMsg["msg"];
+                                break;
+                            }else{
+                                console.log("必/选填：作者验证成功");
+                                processedData["author"] = currentAuthors;
+                                continue;
+                            }
+                        }else {//未分类字段，要抛出提示
+                            console.log(contentStringName[indexI] + "不是选填或必填字段！")
+                            break;
+                        }
+                    }else if (indexI==6) { //pages
+                        console.log("验证pages");
+                        valueNames = ["pages1","pages2"];
+                    }else {
+                        console.log("验证：" + contentStringName[indexI]);
+                        valueNames = [contentStringName[indexI]];
+                    }
+
+                    var validFlag = true;
+                    for (j=0;j<valueNames.length;j++) {
+                        console.log("开始验证字段：" + valueNames[j]);
+                        if (data.hasOwnProperty(valueNames[j])) {//判断表单中是否有字段
+                            console.log("开始验证表单内容：" + valueNames[j] + ",值：" + data[valueNames[j]]);
+                            msg = verifyFieldValue(valueNames[j], data[valueNames[j]]); // 判断是否为空及数字字段验证
+                            if (msg["status"] == -1 ) {//表单填写错误
+                                console.log("表单填写错误");
+                                validFlag = false;
+                                msg["status"] = -1;
+                                break;
+                            }else if (msg["status"]==0) {
+                                console.log("空字段：" + valueNames[j]);
+                                if (mandatory.indexOf(indexI) > -1){
+                                    msg["msg"] += "\n Field [" + valueNames[j] + "] 不存在";
+                                    validFlag = false;
+                                    break;
+                                }else{
+                                    console.log("此为选填");
+                                }
+                            }else if (msg["status"]==0){
+                                console.log("不存在字段：" + valueNames[j]);
+                                msg["msg"] += "\n Field [" + valueNames[j] + "] 不存在";
+                                validFlag = false;
+                                break;
+                            }else {//填写正确
+                                console.log("填写正确");
+                                processedData[valueNames[j]] = data[valueNames[j]];
+                            }
+                        }else {
+                            console.log("缺少此字段：" + valueNames[j]);
+                            msg = {"msg":"Missing field name[" + valueNames[j] + "]", "status": -1};
+                            validFlag = false;
+                            break;
+                        }
+                    }
+                    if (validFlag == false) {
+                        console.log("必填字段验证失败，退出验证（outer）");
+                        break;
+                    }
+                }
+                if (validFlag == false) {
+                    console.log("字段验证失败，退出验证");
+                    return msg;
+                }
+                processedData["ENTRYTYPE"] = data["paperTypeEdit"];
+                msg["processedData"] = processedData;
+
+                console.log("退出验证");
+                return msg;
+            }
+    </script>
+
+    <script>
+        //ajax接口：1）将文献写入数据库
+        function writePubToDatabase(siteUrl, addPubService, msg){
+            var $ = layui.$;
+            var csrftoken = Cookies.get('csrftoken');
+            $.ajax({
+                type: 'POST'
+                ,url: siteUrl + addPubService
+                ,data:  JSON.stringify(msg["processedData"])
+                ,dataType : "json"
+                ,headers: {'Content-Type': 'application/json',"X-CSRFToken":csrftoken}
+                //,contentType: "application/json"
+                ,beforeSend: function(){
+                    console.log("数据传输前：");
+                    console.log(msg["processedData"]);
+                }
+                ,success: function(result,status,xhr) {
+                    console.log("数据传输成功后：");
+                    //配置一个透明的询问框
+                    layer.msg('新增文献成功！<br>' + JSON.stringify(msg["processedData"]), {
+                        time: 20000, //20s后自动关闭
+                        btn: ['ok'],
+                        icon:1
+                    });
+                    console.log("ok" + result);
+                }
+                ,error: function(xhr,status,error){
+                    console.log("数据传输失败后：");
+                    //如果请求失败要运行的函数
+                    layer.msg("添加数据失败，与数据库服务器断开连接，请稍后再试。", {
+                        time: 20000, //20s后自动关闭
+                        btn: ['ok'],
+                        icon:5
+                    });
+                    console.log(error);
+                }
+                ,complete: function(xhr,status){
+                    console.log("数据传输complete后：");
+                    //完成时的操作，success和error之后
+                }
+
+            });
+        }
+    </script>
+</body>
+</html>
