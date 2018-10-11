@@ -48,6 +48,27 @@ def build_network_of_publications(data_source='bibtex.bib', mode=1, is_list=Fals
     return flag
 
 
+def revise_publications(data):
+    """
+    从文件中提取文献信息，并建立节点
+    :param data: 要修改的文献信息，dict
+    :return:-1:输入数据无效；-2：无法解析输入数据；-3：无法插入数据库;1:修改成功
+    """
+    if data is None or data == []:
+        print('No valid bibliography in the database')
+        return -1
+    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    with driver.session() as session:
+        node = extract_publication(data)  # 提取文献信息，构造节点
+        if node is None or isinstance(node, int):
+            return -2
+        else:
+            tmp = revise_node(session, node, data)  # 创建/更新节点（更新未实现）
+            if tmp is None:
+                return -3
+            return 1
+
+
 def load_data(file_name):
     """
     从bib文件中解析出文献信息
@@ -428,6 +449,36 @@ def query_or_create_node(tx, node):
         print("创建新节点：" + str(record["node"]['uuid']))
         return record["node"]['uuid']
     return None
+
+
+def revise_node(tx, node, field_value_revise):
+    """
+    先查询节点是否存在，若存在，修改内容，否则，创建节点。-1表示出错
+    :param tx:
+    :param node:
+    :param field_value_revise:
+    :return:
+    """
+    if node is None:
+        return None
+    cypher = node.get_match_cypher()
+    nodes = tx.run(cypher)
+    nodes = nodes.data()
+    if len(nodes) == 0:
+        return None
+    nodes = nodes[0]
+    print("查询到了节点：" + str(nodes["node"]['uuid']) + "开始修改：")
+    field_value_match = {"uuid": nodes["node"]['uuid']}
+    cypher = node.get_revise_cypher(field_value_revise, field_value_match)
+    node_revised = tx.run(cypher)
+    node_revised = node_revised.data()
+    node_revised = node_revised[0].get("node", None)
+    if node_revised is None:
+        return None
+    node_revised = node_revised.get("uuid", None)
+    if node_revised is None:
+        return None
+    return 1
 
 
 def process_special_character(word):
@@ -882,6 +933,17 @@ class Publication:
                "institution:'" + ("null" if self.institution is None else self.institution) + "'}"
         return word
 
+    def to_string_for_set(self, node_identifier, field_value):
+        if node_identifier is None or node_identifier == "" or not isinstance(field_value, dict):
+            return ""
+        word = ""
+        for field, value in field_value.items():
+            if value is None or value == 'null':
+                value = ""
+            word += node_identifier + "." + field + "='" + value + "',"
+        word = word[:-1]
+        return word
+
     def get_create_cypher(self):
         cypher = "CREATE (node:Publication " + self.to_string() + ") return node"
         return cypher
@@ -948,6 +1010,15 @@ class Publication:
             print("failed when generating match cypher: " + self.to_string())
             return None
         cypher += " return node"
+        return cypher
+
+    def get_revise_cypher(self, field_value_revise, field_value_match):
+        if field_value_match is None or not isinstance(field_value_match, dict) or not isinstance(field_value_revise, dict):
+            return ""
+        cypher = "CREATE (node:Publication {"
+        for field, value in field_value_match.items():
+            cypher += field + ":'" + str(value) + "',"
+        cypher = cypher[:-1] + "}) set " + self.to_string_for_set("node", field_value_revise) + " return node"
         return cypher
 
 

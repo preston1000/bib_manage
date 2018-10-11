@@ -28,6 +28,7 @@ urlpatterns = [
     path('demo/table/user/', views.get_author_table_data, name='author-table-data'),
     path('add-pub/', views.add_publication, name='add-pub'),
     path('search-pub/', views.search_publication, name='search-pub'),
+    path('revise-pub/', views.revise_publication, name='revise-pub'),
     path('edit-pub/', views.get_pib_info_for_edit, name='edit-pub'),
     path('verify/', views.verify_auth, name='verify_auth'),
     path('pub-interface/', views.pub_interface, name='pub-interface'),

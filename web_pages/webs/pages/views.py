@@ -152,6 +152,74 @@ def add_publication(request):
         return HttpResponse(json.dumps({"msg": "not supported request form", "status": -2}))
 
 
+def revise_publication(request):
+    """
+    利用cypher修改pub
+    :param request:
+    :return:
+    """
+    if request.is_ajax() and request.method == 'POST':
+        pub_info = request.body
+        if pub_info is None or pub_info == "":
+            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
+        try:
+            pub_info = bytes.decode(pub_info)
+            pub_info = json.loads(pub_info)
+        except:
+            return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
+        # 特殊字段的处理：作者
+        authors = pub_info.get("author", None)
+        if authors is None:
+            pub_info["author"] = ""
+        elif isinstance(authors, list):
+            tmp, num, counter = ["", len(authors), 0]
+            for author in authors:
+                tmp += author["lastName"] + ", " + author["firstName"] + " " + author["middleName"]
+                counter += 1
+                if counter < num:
+                    tmp += " and "
+            pub_info["author"] = tmp
+        # 特殊字段的处理：文章类型
+        if pub_info["ENTRYTYPE"] == "0":
+            pub_info["ENTRYTYPE"] = "ARTICLE"
+        elif pub_info["ENTRYTYPE"] == "1":
+            pub_info["ENTRYTYPE"] = "Book"
+        elif pub_info["ENTRYTYPE"] == "2":
+            pub_info["ENTRYTYPE"] = "Booklet"
+        elif pub_info["ENTRYTYPE"] == "3":
+            pub_info["ENTRYTYPE"] = "Conference"
+        elif pub_info["ENTRYTYPE"] == "4":
+            pub_info["ENTRYTYPE"] = "InBook"
+        elif pub_info["ENTRYTYPE"] == "5":
+            pub_info["ENTRYTYPE"] = "InCollection"
+        elif pub_info["ENTRYTYPE"] == "6":
+            pub_info["ENTRYTYPE"] = "InProceedings"
+        elif pub_info["ENTRYTYPE"] == "7":
+            pub_info["ENTRYTYPE"] = "Manual"
+        elif pub_info["ENTRYTYPE"] == "8":
+            pub_info["ENTRYTYPE"] = "MastersThesis"
+        elif pub_info["ENTRYTYPE"] == "9":
+            pub_info["ENTRYTYPE"] = "Misc"
+        elif pub_info["ENTRYTYPE"] == "10":
+            pub_info["ENTRYTYPE"] = "PhDThesis"
+        elif pub_info["ENTRYTYPE"] == "11":
+            pub_info["ENTRYTYPE"] = "Proceedings"
+        elif pub_info["ENTRYTYPE"] == "12":
+            pub_info["ENTRYTYPE"] = "TechReport"
+        elif pub_info["ENTRYTYPE"] == "13":
+            pub_info["ENTRYTYPE"] = "Unpublished"
+        else:
+            return HttpResponse(json.dumps({"msg": "unsupported paper type", "status": -3}))
+        # 调方法写数据库
+        flag = neo4j_access.revise_publications(pub_info)
+        if flag == 1:
+            return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
+        else:
+            return HttpResponse(json.dumps({"msg": "error when writing into database", "status": flag*3}))
+    else:
+        return HttpResponse(json.dumps({"msg": "not supported request form", "status": -2}))
+
+
 def search_publication(request):
     """
     在neo4j中搜索pub
