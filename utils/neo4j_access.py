@@ -7,7 +7,7 @@ from configparser import ConfigParser
 
 cf = ConfigParser()
 # cf.read("./neo4j.conf", encoding="utf-8")
-cf.read("E:\\projects\\web_pages\\webs\\neo4j.conf", encoding="utf-8")
+cf.read("/Volumes/Transcend/projects/services/bib_manage/web_pages/webs/neo4j.conf", encoding="utf-8")
 
 uri = cf.get("neo4j", "uri")
 username = cf.get("neo4j", "username")
@@ -609,9 +609,9 @@ def build_network_of_venues(venue_type="ARTICLE", publication_field='journal'):
         data = {}
         for record in nodes:
             print("提取{NODE}与{NODE2}之间关系过程：查询到节点：".format(NODE="Publication", NODE2="Venue")
-                  + str(record["node"]['uuid']))
+                  + str(record["node"]['title']))
             if not string_util(record["node"][publication_field]):
-                print("{ID} has empty {FIELD} field".format(ID=record["node"]['uuid'], FIELD=publication_field))
+                print("{ID} has empty {FIELD} field".format(ID=record["node"]['title'], FIELD=publication_field))
             else:
                 data[record["node"]['uuid']] = record["node"][publication_field]
         if data is {}:
@@ -829,7 +829,7 @@ def process_person_names(names):
         return None
     names_mapping = {}
     for name in names:
-        #  去除前后空格，转成大写
+        #  去除前后空格，转成大写 name是包含了很多作者 用and连接的
         tmp = name.strip().upper()
         #  去掉重复空格
         tmp = " ".join(tmp.split())
@@ -840,9 +840,10 @@ def process_person_names(names):
         # 将姓名格式统一为first_name last_name格式
         tmp_list = []
         for i in range(0, len(author_list)):
-            author = author_list[i]
+            author = author_list[i].strip()
             if author.find(",") > -1:
                 tmp_l = author.split(",")
+                tmp_l = [iii.strip() for iii in tmp_l]
                 tmp_l = " ".join(tmp_l[::-1])
                 tt = {"name": tmp_l, "index": (i+1)}
                 tmp_list.append(tt)
@@ -1121,7 +1122,7 @@ class Person:
 
 if __name__ == "__main__":
     # # 从文件中解析文献，并创建节点
-    build_network_of_publications('E:\\reference.bib')
+    build_network_of_publications('/Users/xixiangming/Downloads/reference.bib')
     # # build_network_of_publications("bibtex.bib")
     # # 从网络中解析文献节点，并提取journal信息，创建venue节点、[wenxian]->[publication]
     build_network_of_venues(venue_type="ARTICLE", publication_field="journal")
