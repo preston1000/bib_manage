@@ -3,10 +3,10 @@ from django.http import HttpResponse
 from pages.models import Publication, Person, Venue, Affiliation, Place
 import json
 import sys
+sys.path.append('/Volumes/Transcend/projects/CPWL_service')
 from utils import query_data, neo4j_access
 import datetime, os
 import django.forms as forms
-sys.path.append('/Volumes/Transcend/projects/CPWL_service')
 
 
 # Create your views here.

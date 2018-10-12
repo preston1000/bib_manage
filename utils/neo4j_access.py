@@ -6,7 +6,7 @@ from configparser import ConfigParser
 
 
 cf = ConfigParser()
-cf.read("/Volumes/Transcend/projects/CPWL_service/utils/neo4j.conf")
+cf.read("./neo4j.conf", encoding="utf-8")
 
 uri = cf.get("neo4j", "uri")
 username = cf.get("neo4j", "username")
