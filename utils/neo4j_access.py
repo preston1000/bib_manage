@@ -855,7 +855,7 @@ def process_person_names(names):
 
 
 def string_util(string):
-    if string is "null" or string is None or string is "":
+    if string is None or string is "":
         return False
     return True
 
@@ -917,30 +917,30 @@ class Publication:
         self.institution = institution
 
     def to_string(self):
-        word = "{uuid:'" + ("null" if self.uuid is None else self.uuid.hex) + "'," + \
-               "node_type:'" + ("null" if self.node_type is None else self.node_type) + "'," + \
-               "author:'" + ("null" if self.author is None else self.author) + "'," + \
-               "editor:'" + ("null" if self.editor is None else self.editor) + "'," + \
-               "title:'" + ("null" if self.title is None else self.title) + "'," + \
-               "journal:'" + ("null" if self.journal is None else self.journal) + "'," + \
-               "year:'" + ("null" if self.year is None else self.year) + "'," + \
-               "volume:'" + ("null" if self.volume is None else self.volume) + "'," + \
-               "number:'" + ("null" if self.number is None else self.number) + "'," + \
-               "series:'" + ("null" if self.series is None else self.series) + "'," + \
-               "address:'" + ("null" if self.address is None else self.address) + "'," + \
-               "pages:'" + ("null" if self.pages is None else self.pages) + "'," + \
-               "month:'" + ("null" if self.month is None else self.month) + "'," + \
-               "note:'" + ("null" if self.note is None else self.note) + "'," + \
-               "publisher:'" + ("null" if self.publisher is None else self.publisher) + "'," + \
-               "edition:'" + ("null" if self.edition is None else self.edition) + "'," + \
-               "book_title:'" + ("null" if self.book_title is None else self.book_title) + "'," + \
-               "organization:'" + ("null" if self.organization is None else self.organization) + "'," + \
-               "chapter:'" + ("null" if self.chapter is None else self.chapter) + "'," + \
-               "school:'" + ("null" if self.school is None else self.school) + "'," + \
-               "type:'" + ("null" if self.type is None else self.type) + "'," + \
-               "how_published:'" + ("null" if self.how_published is None else self.how_published) + "'," + \
-               "keywords:'" + ("null" if self.keywords is None else self.keywords) + "'," + \
-               "institution:'" + ("null" if self.institution is None else self.institution) + "'}"
+        word = "{uuid:'" + ("" if self.uuid is None else self.uuid.hex) + "'," + \
+               "node_type:'" + ("" if self.node_type is None else self.node_type) + "'," + \
+               "author:'" + ("" if self.author is None else self.author) + "'," + \
+               "editor:'" + ("" if self.editor is None else self.editor) + "'," + \
+               "title:'" + ("" if self.title is None else self.title) + "'," + \
+               "journal:'" + ("" if self.journal is None else self.journal) + "'," + \
+               "year:'" + ("" if self.year is None else self.year) + "'," + \
+               "volume:'" + ("" if self.volume is None else self.volume) + "'," + \
+               "number:'" + ("" if self.number is None else self.number) + "'," + \
+               "series:'" + ("" if self.series is None else self.series) + "'," + \
+               "address:'" + ("" if self.address is None else self.address) + "'," + \
+               "pages:'" + ("" if self.pages is None else self.pages) + "'," + \
+               "month:'" + ("" if self.month is None else self.month) + "'," + \
+               "note:'" + ("" if self.note is None else self.note) + "'," + \
+               "publisher:'" + ("" if self.publisher is None else self.publisher) + "'," + \
+               "edition:'" + ("" if self.edition is None else self.edition) + "'," + \
+               "book_title:'" + ("" if self.book_title is None else self.book_title) + "'," + \
+               "organization:'" + ("" if self.organization is None else self.organization) + "'," + \
+               "chapter:'" + ("" if self.chapter is None else self.chapter) + "'," + \
+               "school:'" + ("" if self.school is None else self.school) + "'," + \
+               "type:'" + ("" if self.type is None else self.type) + "'," + \
+               "how_published:'" + ("" if self.how_published is None else self.how_published) + "'," + \
+               "keywords:'" + ("" if self.keywords is None else self.keywords) + "'," + \
+               "institution:'" + ("" if self.institution is None else self.institution) + "'}"
         return word
 
     def to_string_for_set(self, node_identifier, field_value):
@@ -948,7 +948,7 @@ class Publication:
             return ""
         word = ""
         for field, value in field_value.items():
-            if value is None or value == 'null':
+            if value is None or value == '':
                 value = ""
             word += node_identifier + "." + field + "='" + value + "',"
         word = word[:-1]
@@ -1062,18 +1062,18 @@ class Venue:
         self.ssci_index = ssci_index
 
     def to_string(self):
-        word = "{uuid:'" + ("null" if self.uuid is None else self.uuid.hex) + "'," + \
-               "venue_type:'" + ("null" if self.venue_type is None else self.venue_type) + "'," + \
-               "venue_name:'" + ("null" if self.venue_name is None else self.venue_name) + "'," + \
-               "abbr:'" + ("null" if self.abbr is None else self.abbr) + "'," + \
-               "start_year:'" + ("null" if self.start_year is None else self.start_year) + "'," + \
-               "year:'" + ("null" if self.year is None else self.year) + "'," + \
-               "address:'" + ("null" if self.address is None else self.address) + "'," + \
-               "note:'" + ("null" if self.note is None else self.note) + "'," + \
-               "publisher:'" + ("null" if self.publisher is None else self.publisher) + "'," + \
-               "ei_index:'" + ("null" if self.ei_index is None else self.ei_index) + "'," + \
-               "sci_index:'" + ("null" if self.sci_index is None else self.sci_index) + "'," + \
-               "ssci_index:'" + ("null" if self.ssci_index is None else self.ssci_index) + "'}"
+        word = "{uuid:'" + ("" if self.uuid is None else self.uuid.hex) + "'," + \
+               "venue_type:'" + ("" if self.venue_type is None else self.venue_type) + "'," + \
+               "venue_name:'" + ("" if self.venue_name is None else self.venue_name) + "'," + \
+               "abbr:'" + ("" if self.abbr is None else self.abbr) + "'," + \
+               "start_year:'" + ("" if self.start_year is None else self.start_year) + "'," + \
+               "year:'" + ("" if self.year is None else self.year) + "'," + \
+               "address:'" + ("" if self.address is None else self.address) + "'," + \
+               "note:'" + ("" if self.note is None else self.note) + "'," + \
+               "publisher:'" + ("" if self.publisher is None else self.publisher) + "'," + \
+               "ei_index:'" + ("" if self.ei_index is None else self.ei_index) + "'," + \
+               "sci_index:'" + ("" if self.sci_index is None else self.sci_index) + "'," + \
+               "ssci_index:'" + ("" if self.ssci_index is None else self.ssci_index) + "'}"
         return word
 
     def get_create_cypher(self):
@@ -1103,11 +1103,11 @@ class Person:
         self.research_interest = research_interest
 
     def to_string(self):
-        word = "{uuid:'" + ("null" if self.uuid is None else self.uuid.hex) + "'," + \
-               "name:'" + ("null" if self.name is None else self.name) + "'," + \
-               "name_ch:'" + ("null" if self.name_ch is None else self.name_ch) + "'," + \
-               "affiliation_current:'" + ("null" if self.affiliation_current is None else self.affiliation_current) + "'," + \
-               "research_interest:'" + ("null" if self.research_interest is None else self.research_interest) + "'}"
+        word = "{uuid:'" + ("" if self.uuid is None else self.uuid.hex) + "'," + \
+               "name:'" + ("" if self.name is None else self.name) + "'," + \
+               "name_ch:'" + ("" if self.name_ch is None else self.name_ch) + "'," + \
+               "affiliation_current:'" + ("" if self.affiliation_current is None else self.affiliation_current) + "'," + \
+               "research_interest:'" + ("" if self.research_interest is None else self.research_interest) + "'}"
         return word
 
     def get_create_cypher(self):
