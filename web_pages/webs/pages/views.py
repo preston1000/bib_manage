@@ -3,10 +3,17 @@ from django.http import HttpResponse
 from pages.models import Publication, Person, Venue, Affiliation, Place
 import json
 import sys
-sys.path.append('/Volumes/Transcend/projects/CPWL_service')
+from configparser import ConfigParser
+import datetime
+import os
+
+config_file = "./pages.conf"
+cf = ConfigParser()
+cf.read(os.path.abspath(config_file), encoding="utf-8")
+address = cf.get("moduleAddress", "address1")
+sys.path.append(address)
+
 from utils import query_data, neo4j_access
-import datetime, os
-import django.forms as forms
 
 
 # Create your views here.
