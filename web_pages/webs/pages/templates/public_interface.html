@@ -973,14 +973,14 @@
                             ,analyzedAuthors = [];
                         for (i=0;i<authors.length;i++){
                             //分两种方式，一种是逗号分隔（姓-名），另一种是空格分隔（名-姓）
-                            if (authors[i].indexOf(",")){//逗号分隔
+                            if (authors[i].indexOf(",")>-1){//逗号分隔
                                 var names = authors[i].split(",");
                                 var author;
                                 if (names.length==1) {//逗号后面没有内容
                                     author = {firstName: "", middleName: "", lastName: names[0], ranking: i+1}
                                     analyzedAuthors.push(author);
                                 }else if (names.length==2) {//姓-名
-                                    if (names[1].indexOf(" ")){//包含中间名
+                                    if (names[1].indexOf(" ")>-1){//包含中间名
                                         var tmp;
                                         tmp = names[1].split(" ");
                                         var firstN = tmp[0];
