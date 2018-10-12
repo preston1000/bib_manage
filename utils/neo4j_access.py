@@ -594,9 +594,9 @@ def process_special_character(word):
     }
     for (letter, letter_new) in greek_letters.items():
         word = word.replace(letter, letter_new)
-    word = word.toUpperCase()
+    word = word.upper()
     word = word.split(" ")
-    word = word.join(" ")
+    word = " ".join(word)
     return word
 
 

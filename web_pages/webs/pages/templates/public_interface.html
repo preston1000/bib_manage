@@ -966,49 +966,51 @@
                     enhance.filling(textContent);
                     form.render();
                     //单独处理的：author(现在是bib中的作者格式，要分开每个作者，并赋值)
+                    data[0].author = $.trim(data[0].author);
                     if (data[0].author == "") {
                         console.log("文章缺少作者信息");
                     }else{
                         var authors = data[0].author.split(" and ")
                             ,analyzedAuthors = [];
                         for (i=0;i<authors.length;i++){
+                            var tt = $.trim(authors[i]);
                             //分两种方式，一种是逗号分隔（姓-名），另一种是空格分隔（名-姓）
-                            if (authors[i].indexOf(",")>-1){//逗号分隔
-                                var names = authors[i].split(",");
+                            if (tt.indexOf(",")>-1){//逗号分隔
+                                var names = tt.split(",");
                                 var author;
                                 if (names.length==1) {//逗号后面没有内容
-                                    author = {firstName: "", middleName: "", lastName: names[0], ranking: i+1}
+                                    author = {firstName: "", middleName: "", lastName: $.trim(names[0]), ranking: i+1}
                                     analyzedAuthors.push(author);
                                 }else if (names.length==2) {//姓-名
                                     if (names[1].indexOf(" ")>-1){//包含中间名
                                         var tmp;
-                                        tmp = names[1].split(" ");
-                                        var firstN = tmp[0];
+                                        tmp = ($.trim(names[1])).split(" ");
+                                        var firstN = $.trim(tmp[0]);
                                         tmp.splice(0,1);
-                                        author = {firstName: firstN, middleName: tmp.join(" "), lastName: names[0], ranking: i+1};
+                                        author = {firstName: firstN, middleName: $.trim(tmp.join(" ")), lastName: $.trim(names[0]), ranking: i+1};
                                         analyzedAuthors.push(author);
                                     }else{//没有中间名
-                                        author = {firstName: names[1], middleName: "", lastName: names[0], ranking: i+1};
+                                        author = {firstName: $.trim(names[1]), middleName: "", lastName: $.trim(names[0]), ranking: i+1};
                                         analyzedAuthors.push(author);
                                     }
                                 }else {
-                                    console.log("作者名中存在两个或以上逗号"+authors[i]);
+                                    console.log("作者名中存在两个或以上逗号"+tt);
                                 }
                             }else{//只用空格分开
-                                var names = authors[i].split(" ");
+                                var names = tt.split(" ");
                                 if (names.length==1) {//只有一个名字
-                                    author = {firstName: "", middleName: "", lastName: names[0], ranking: i+1}
+                                    author = {firstName: "", middleName: "", lastName: $.trim(names[0]), ranking: i+1}
                                     analyzedAuthors.push(author);
                                 }else if (names.length==2) {//-名-姓
-                                    author = {firstName: names[0], middleName: "", lastName: names[1], ranking: i+1};
+                                    author = {firstName: $.trim(names[0]), middleName: "", lastName: $.trim(names[1]), ranking: i+1};
                                     analyzedAuthors.push(author);
                                 }else if (names.length==3) {
-                                    author = {firstName: names[0], middleName: names[1], lastName: names[2], ranking: i+1};
+                                    author = {firstName: $.trim(names[0]), middleName: $.trim(names[1]), lastName: $.trim(names[2]), ranking: i+1};
                                     analyzedAuthors.push(author);
                                 }else{
-                                    var tmp1 = names[0], tmp2 = names[names.length-1];
+                                    var tmp1 = $.trim(names[0]), tmp2 = $.trim(names[names.length-1]);
                                     names.slice(1,names.length-1);
-                                    author = {firstName: tmp1, middleName: names.join(" "), lastName: tmp2, ranking: i+1};
+                                    author = {firstName: tmp1, middleName: $.trim(names.join("")), lastName: tmp2, ranking: i+1};
                                     analyzedAuthors.push(author);
                                 }
                             }
