@@ -338,3 +338,15 @@ def handle_uploaded_file(f):
             destination.write(chunk)
         destination.close()
     return file_path
+
+
+def split_name(request):
+    name = request.body
+    name = bytes.decode(name)
+    name = json.loads(name)
+    if name is None or name == {}:
+        return HttpResponse(json.dumps({"first_name": '', "middle_name": "", "last_name": "", "status": -1,
+                                        "msg": "no given name"}))
+    result = neo4j_access.analyze_person_name(name)
+    return HttpResponse(json.dumps(result))
+
