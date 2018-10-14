@@ -2,6 +2,7 @@ from neo4j.v1 import GraphDatabase
 import bibtexparser
 import neo4j.v1
 import uuid
+import re
 from configparser import ConfigParser
 
 
@@ -853,6 +854,78 @@ def process_person_names(names):
 
         names_mapping[name] = tmp_list
     return names_mapping
+
+
+def analyze_person_name(params):
+    processed_name = {"first_name": "", "middle_name": "", "last_name": "", "msg": "", "status": -1}
+    name = params.get("textTo", None)
+    lang = params.get("lang", None)
+    if name is None or lang is None or not isinstance(name, str) or not isinstance(lang, str) or \
+       not (lang == "CH" or lang == "EN"):
+            processed_name["status"] = -1
+            processed_name["msg"] = "输入参数不对"
+            return processed_name
+    first_name, middle_name, last_name = ["", "", ""]
+    if lang == "EN":
+        name = name.strip()
+
+        if name is None or name == "":
+            return processed_name
+        if name.find(",") > -1:  # 姓 名
+            names = name.split(",")
+            names = [tmp.strip() for tmp in names]
+            if len(names) == 2:
+                last_name = names[0]
+            else:
+                processed_name["status"] = -1
+                processed_name["msg"] = "名字中不能多于1个逗号"
+                return processed_name
+            if names[1].find(" ") > -1:
+                sub_names = names[1].split()
+                sub_names = [tmp.strip() for tmp in sub_names]
+                first_name = sub_names[0]
+                if len(sub_names) == 2:
+                    middle_name = sub_names[1]
+                elif len(sub_names) > 2:
+                    middle_name = " ".join(sub_names[1:])
+                else:
+                    processed_name["status"] = -1
+                    processed_name["msg"] = "带逗号格式的名字解析中间名过程错误"
+                    return processed_name
+            else:
+                first_name = names[1]
+        else:  # 名 姓
+            names = name.split()
+            names = [tmp.strip() for tmp in names]
+            if len(names) == 1:
+                last_name = names[0]
+            elif len(names) == 2:
+                first_name = names[0]
+                last_name = names[1]
+            elif len(names) == 3:
+                first_name = names[0]
+                last_name = names[-1]
+                middle_name = names[1]
+            else:
+                first_name = names[0]
+                last_name = names[-1]
+                middle_name = " ".join(names[1:-1])
+    else:
+        name = name.strip()
+        p = re.compile('([\u4e00-\u9fa5])')
+        name = p.split(name)
+        name = [item.strip() for item in name if item != ""]
+        if len(name) == 1:
+            last_name = name[0]
+        else:
+            first_name = "".join(name[1:])
+            last_name = name[0]
+    processed_name["first_name"] = first_name
+    processed_name["middle_name"] = middle_name
+    processed_name["last_name"] = last_name
+    processed_name["status"] = 1
+    processed_name["msg"] = "success"
+    return processed_name
 
 
 def string_util(string):
