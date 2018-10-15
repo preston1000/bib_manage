@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    {% load static %}
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{% static 'images/favicon.ico'%} ">
+
+    <title>Continuous Piecewise Linear Analysis</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <script src="https://cdn.bootcss.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+
+    <!--控制台样式-->
+    <link href="{% static 'bootstrap-4.1.1-dist/css/dashboard.css'%}" rel="stylesheet">
+    <!--layui-->
+    <link rel="stylesheet" href="{% static 'layui2/css/layui.css'%}"  media="all">
+    <script src="{% static 'layui2/layui.js'%}" charset="utf-8"></script>
+    <script src="{% static 'js/js.cookies.js'%}" charset="utf-8"></script>
+    <style type="text/css">
+        #mynetwork2 {
+            width: 800px;
+            height: 600px;
+            border: 1px solid lightgray;
+        }
+    </style>
+    <script type="text/javascript" src="{% static 'vis/vis.min.js'%}"></script>
+    <script type="text/javascript" src="{% static 'vis/vis.js'%}"></script>
+    <link href="{% static 'vis/vis-network.min.css'%}" rel="stylesheet" type="text/css">
+<!--自定义js-->
+    <script src="{% static 'js/tableOperation.js'%}"></script>
+    <script src="{% static 'js/formOperation.js'%}"></script>
+    <style type="text/css">
+        .small-font { font-size: 1.5vw;}
+        .collapse-disable {transition: none !important;}
+    </style>
+</head>
+<body>
+<!--弹出页面1）-->
+    <div class="container-fluid row" id="popUpAdvSearchDivs" style="width:600px">
+        <div id="advanceSearchInPopUp" style="border:1px solid #000;margin-top:10px;margin-bottom:10px">
+            <form class="layui-form" action="">
+                <!--标题-->
+                <div class="layui-form-item">
+                    <label class="layui-form-label" style="width:100px">标题</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="title" required  lay-verify="required" placeholder="请输入关键字，以逗号分隔" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <!--时间范围-->
+                <div class="layui-form-item">
+                    <label class="layui-form-label" style="width:100px">时间范围</label>
+                    <div class="layui-input-inline" style="margin-left:10px">
+                        <input id="startTimeInPopUp" type="text" name="startTime"  placeholder="From" autocomplete="off" class="layui-input">
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">-</div>
+                    <div class="layui-input-inline">
+                        <input id="endTimeInPopUp" type="text" name="endTime" placeholder="To" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <!--作者-->
+                <div class="layui-form-item">
+                    <label class="layui-form-label" style="width:100px">作者</label>
+                    <div class="layui-input-block">
+                        <input id="searchPubAuthorInPopUp" type="text" name="searchPubAuthor" placeholder="作者（用英文逗号分开）" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <!--文章索引-->
+                <div class="layui-form-item">
+                    <label class="layui-form-label" style="width:100px">文章索引</label>
+                    <div class="layui-input-block">
+                        <select name="paperIndexing" multiple>
+                            <option value="">不指定</option>
+                            <option value="0">EI</option>
+                            <option value="1">SCI</option>
+                            <option value="2">SSCI</option>
+                        </select>
+                    </div>
+                </div>
+                <!--文章类型-->
+                <div class="layui-form-item">
+                    <label class="layui-form-label" style="width:100px">文章类型</label>
+                    <div class="layui-input-block">
+                        <select name="paperType" multiple>
+                            <option value="">不指定</option>
+                            <option value="0">Article</option>
+                            <option value="1">Conference</option>
+                            <option value="2">InPeoceedings</option>
+                            <option value="3">Book</option>
+                            <option value="4">InBook</option>
+                            <option value="5">InCollection</option>
+                            <option value="6">Masters Thesis</option>
+                            <option value="7">PhD Thesis</option>
+                            <option value="8">Technical Report</option>
+                        </select>
+                    </div>
+                </div>
+                <!--按钮建-->
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="searchPubInPopUp">搜索</button>
+                        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <!--搜索结果表格-->
+        <div id="queriedPubsDivInPopUp" style="border:1px solid #000;margin-top:10px;margin-bottom:10px">
+            <table class="layui-hide" id="pubTableAfterSearchInPopUp" lay-filter="pubTableAfterSearchInPopUp"></table>
+        </div>
+    </div>
+    <script>
+        window.onload = function(){
+            var index = parent.layer.getFrameIndex(window.name);
+            parent.layer.iframeAuto(index);//添加这行也不能自适应
+            layer.iframeAuto(index);//使用这行也不能自适应
+        }
+    </script>
+
+    <script type="text/html" id="toolbarPopUpGetData">
+        <div class="layui-btn-container">
+            <button class="layui-btn layui-btn-sm" lay-event="getCheckData" id="chooseButtonPopUp">选择</button>
+        </div>
+    </script>
+
+    <script>
+        var searchPubService = '/search-pub/';
+        layui.use(['element', 'form', 'layedit', 'table', 'code'], function(){//element只用来让选项卡工作
+            var form = layui.form
+                ,layer = layui.layer
+                ,table = layui.table
+                ,$ = layui.$;
+            form.on('submit(searchPubInPopUp)', function(data){
+                console.log("提交的表单数据：" + JSON.stringify(data.field));
+                console.log("查找数据库....");
+                advanceSearchHandler('queriedPubsDivInPopUp', '', 'pubTableAfterSearchInPopUp', 'pubSearchTableContentInPopUpt', 'toolbarPopUpGetData', data, table, searchPubService);
+                console.log("查找完成....");
+                return false;
+            });
+            //按钮1：选择文献的表格
+            table.on('toolbar(pubTableAfterSearchInPopUp)', function(obj){
+                var checkStatus = table.checkStatus(obj.config.id);
+                var data = checkStatus.data;//获取被选文献的内容
+                var selectedPubInfo = data[0];
+                if (data.length < 1){
+                    layer.msg("未选择文献！", {
+                        time: 5000, //5s后自动关闭
+                        btn: ['ok'],
+                        icon:5
+                    });
+                }else{//将数据直接更新到父页面中
+                    showRelNodeDetail('addRelInfo', selectedPubInfo);
+                    var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+                    parent.layer.close(index); //再执行关闭
+                }
+                return false;
+            });
+        });
+            //（6）新增关系面板中，点击起讫点之后，向底下的显示框中增加节点信息
+            function showRelNodeDetail(infoDicID, addedInfo){
+                var text = window.parent.document.getElementById(infoDicID).innerText;
+                if (text==""){
+                    text = {};
+                }else{
+                    text = JSON.parse(text);
+                }
+
+                for (var tmpKey in addedInfo){
+                    text[tmpKey] = addedInfo[tmpKey];
+                }
+                text  = JSON.stringify(text, null, 2);
+                window.parent.document.getElementById(infoDicID).innerText = text;
+                layui.code();
+                layui.form.render();
+            }
+            //(7)查看数据&新增关系面板中，高级搜索的div处理过程,
+            //advSearchDivID:高级搜索框div，editPubDivID：编辑文献框div，resultTableFilter：搜索结果表格过滤器（定位）
+            //resultTableID：搜索结果表格ID，没用，toolbarID：搜索结果确认按钮ID， data：高级搜索传入的数据
+            function advanceSearchHandler(advSearchDivID, editPubDivID, resultTableFilter, resultTableID, toolbarID, data, table, searchPubService){
+                var $ = layui.$;
+                // todo 处理搜索条件
+                //parameters = {"title":data.field.title
+                    //, "startTime":data["startTime"]
+                    //, "endTime": data["endTime"]
+                //    , "paperType": data["paperType"]}
+                $('#' + advSearchDivID).attr("class", "collapse in");
+                if (editPubDivID != "") {
+                    $('#' + editPubDivID).attr("class", "collapse");
+                }
+                table.render(
+                    {
+                        elem: '#' + resultTableFilter
+                        ,id: resultTableID
+                        ,url: searchPubService
+                        ,toolbar: '#' + toolbarID
+                        ,method: 'post'
+                        ,where: {"title":data.field.title
+                            //, "startTime":data["startTime"]
+                            //, "endTime": data["endTime"]
+                            , "paperType": data.field.paperType}
+                        //,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+                        ,page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
+                            layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'] //自定义分页布局
+                            //,curr: 5 //设定初始在第 5 页
+                            ,groups: 5 //只显示 1 个连续页码
+                            ,first: false //不显示首页
+                            ,last: false //不显示尾页
+                        }
+                        ,limit: 10
+                        ,cols: [[{type:'radio'}
+                            ,{field:"ID", width:60, title: 'ID', sort: true}
+                            ,{field:'title', width:300, title: '标题', sort: false}
+                            ,{field:'author', width:200, title: '作者', sort: false}
+                            ,{field:'journal', width:200, title: '期刊/会议'}
+                            ,{field:'year', title: '年', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
+                            ,{field:'month', title: '月', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
+                            ,{field:'paperTypeEdit', width: '100', title: '类型', sort: true}
+                            ,{field:'booktitle', width: '100', title: '书名', sort: false}
+                            ,{field:'editor', width: '100', title: '编辑', sort: false}
+                            ,{field:'edition', width: '100', title: '版本', sort: false}
+                            ,{field:'volume', width: '100', title: '卷', sort: false}
+                            ,{field:'number', width: '100', title: '期', sort: false}
+                            ,{field:'note', width: '100', title: '备注', sort: true}
+                            ,{field:'keywords', width: '100', title: '关键词', sort: false}
+                            ,{field:'pages', width: '100', title: '页码', sort: false}
+                        ]]
+                        ,done: function(res, curr, count){
+                            console.log(res);
+                        }
+                    }
+                );
+                return false;
+            }
+    </script>
+</body>
+</html>

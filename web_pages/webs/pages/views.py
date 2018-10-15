@@ -315,6 +315,10 @@ def pub_interface(request):
     return render(request, "public_interface.html")
 
 
+def search_pub_popup(request):
+    return render(request, "searchPub.html")
+
+
 def upload_bib_add_record(request):
     for file in request.FILES.getlist('file'):
         file_path = handle_uploaded_file(file)  # 处理上传来的文件

@@ -68,7 +68,7 @@
 
 
     </div>
-<!--选项卡-->
+    <!--选项卡-->
     <div class="layui-tab layui-tab-card">
         <ul class="layui-tab-title">
             <li>数据库详情</li>
@@ -705,7 +705,7 @@
                                 </div>
                             </form>
                         </div>
-                        <!--字面板：新增期刊-->
+                        <!--子面板：新增期刊-->
                         <div class="layui-tab-item">
                             <form class="layui-form" action="" lay-filter="addVenue">
                                 <!--Venue Name-->
@@ -772,7 +772,7 @@
                                 </div>
                             </form>
                         </div>
-                        <!--字面板：新增关系-->
+                        <!--子面板：新增关系-->
                         <div class="layui-tab-item">
                             <form class="layui-form" action="">
                                 <div class="layui-form-item">
@@ -787,10 +787,14 @@
                                     </div>
                                 </div>
                                 <div class="layui-form-item collapse" id="addRelSourcceTarget">
+                                    <label class="layui-form-label" style="width:100px">起讫点</label>
                                     <div class="layui-input-block">
-                                        <button id="relSource" class="layui-btn layui-btn-radius layui-btn-normal" style="margin-right:100px" lay-filter="relSource">Venue</button>
-                                        <button id="relTarget" class="layui-btn layui-btn-radius layui-btn-warm" style="margin-left:100px" lay-filter="relTarget">Paper</button>
+                                        <button id="relSource" class="layui-btn layui-btn-radius layui-btn-normal" style="margin-right:100px" lay-submit lay-filter="relSource">Venue</button>
+                                        <button id="relTarget" class="layui-btn layui-btn-radius layui-btn-warm" style="margin-left:100px" lay-submit lay-filter="relTarget">Paper</button>
                                     </div>
+                                </div>
+                                <div class="layui-form-item collapse" id="addRelInfoDiv">
+                                    <pre id="addRelInfo"></pre>
                                 </div>
                             </form>
                         </div>
@@ -806,10 +810,89 @@
         </div>
     </div>
 
+    <!--弹出页面1）-->
+    <div class="container-fluid row collapse" id="popUpAdvSearchDivs">
+        <div id="advanceSearchInPopUp" style="border:1px solid #000;margin-top:10px;margin-bottom:10px">
+            <form class="layui-form" action="">
+                <!--标题-->
+                <div class="layui-form-item">
+                    <label class="layui-form-label" style="width:100px">标题</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="title" required  lay-verify="required" placeholder="请输入关键字，以逗号分隔" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <!--时间范围-->
+                <div class="layui-form-item">
+                    <label class="layui-form-label" style="width:100px">时间范围</label>
+                    <div class="layui-input-inline" style="margin-left:10px">
+                        <input id="startTimeInPopUp" type="text" name="startTime"  placeholder="From" autocomplete="off" class="layui-input">
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">-</div>
+                    <div class="layui-input-inline">
+                        <input id="endTimeInPopUp" type="text" name="endTime" placeholder="To" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <!--作者-->
+                <div class="layui-form-item">
+                    <label class="layui-form-label" style="width:100px">作者</label>
+                    <div class="layui-input-block">
+                        <input id="searchPubAuthorInPopUp" type="text" name="searchPubAuthor" placeholder="作者（用英文逗号分开）" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <!--文章索引-->
+                <div class="layui-form-item">
+                    <label class="layui-form-label" style="width:100px">文章索引</label>
+                    <div class="layui-input-block">
+                        <select name="paperIndexing" multiple>
+                            <option value="">不指定</option>
+                            <option value="0">EI</option>
+                            <option value="1">SCI</option>
+                            <option value="2">SSCI</option>
+                        </select>
+                    </div>
+                </div>
+                <!--文章类型-->
+                <div class="layui-form-item">
+                    <label class="layui-form-label" style="width:100px">文章类型</label>
+                    <div class="layui-input-block">
+                        <select name="paperType" multiple>
+                            <option value="">不指定</option>
+                            <option value="0">Article</option>
+                            <option value="1">Conference</option>
+                            <option value="2">InPeoceedings</option>
+                            <option value="3">Book</option>
+                            <option value="4">InBook</option>
+                            <option value="5">InCollection</option>
+                            <option value="6">Masters Thesis</option>
+                            <option value="7">PhD Thesis</option>
+                            <option value="8">Technical Report</option>
+                        </select>
+                    </div>
+                </div>
+                <!--按钮建-->
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="searchPubInPopUp">搜索</button>
+                        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <!--搜索结果表格-->
+        <div id="queriedPubsDivInPopUp" style="border:1px solid #000;margin-top:10px;margin-bottom:10px">
+            <table class="layui-hide" id="pubTableAfterSearchInPopUp" lay-filter="pubTableAfterSearchInPopUp"></table>
+        </div>
+    </div>
 
     <script type="text/html" id="toolbarEditPubGetData">
         <div class="layui-btn-container">
             <button class="layui-btn layui-btn-sm" lay-event="getCheckData">编辑选中文献数据</button>
+        </div>
+    </script>
+
+    <script type="text/html" id="toolbarPopUpGetData">
+        <div class="layui-btn-container">
+            <button class="layui-btn layui-btn-sm" lay-event="getCheckData">选择</button>
         </div>
     </script>
 
@@ -871,7 +954,7 @@
             ,splitNameService = '/split-name/';
         //表单的操作:包括文献详情、高级搜索
 
-        layui.use(['element', 'form', 'layedit', 'table'], function(){//element只用来让选项卡工作
+        layui.use(['element', 'form', 'layedit', 'table', 'code'], function(){//element只用来让选项卡工作
             var form = layui.form
                 ,layer = layui.layer
                 ,table = layui.table
@@ -923,56 +1006,14 @@
             form.on('submit(searchPub)', function(data){
                 console.log("提交的表单数据：" + JSON.stringify(data.field));
                 console.log("查找数据库....");
-                //"查看数据"选项卡中，返回的文献表格，当点击搜索按钮时，加载表格
-                //parameters = {"title":data.field.title
-                    //, "startTime":data["startTime"]
-                    //, "endTime": data["endTime"]
-                //    , "paperType": data["paperType"]}
-                $('#queriedPubsDiv').attr("class", "collapse in");
-                $('#editPub').attr("class", "collapse");
-                table.render(
-                    {
-                        elem: '#pubTableAfterSearch'
-                        ,id: "pubSearchTableContent"
-                        ,url: searchPubService
-                        ,toolbar: '#toolbarEditPubGetData'
-                        ,method: 'post'
-                        ,where: {"title":data.field.title
-                            //, "startTime":data["startTime"]
-                            //, "endTime": data["endTime"]
-                            , "paperType": data.field.paperType}
-                        //,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
-                        ,page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
-                            layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'] //自定义分页布局
-                            //,curr: 5 //设定初始在第 5 页
-                            ,groups: 5 //只显示 1 个连续页码
-                            ,first: false //不显示首页
-                            ,last: false //不显示尾页
-                        }
-                        ,limit: 10
-                        ,cols: [[{type:'radio'}
-                            ,{field:"ID", width:60, title: 'ID', sort: true}
-                            ,{field:'title', width:300, title: '标题', sort: false}
-                            ,{field:'author', width:200, title: '作者', sort: false}
-                            ,{field:'journal', width:200, title: '期刊/会议'}
-                            ,{field:'year', title: '年', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
-                            ,{field:'month', title: '月', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
-                            ,{field:'paperTypeEdit', width: '100', title: '类型', sort: true}
-                            ,{field:'booktitle', width: '100', title: '书名', sort: false}
-                            ,{field:'editor', width: '100', title: '编辑', sort: false}
-                            ,{field:'edition', width: '100', title: '版本', sort: false}
-                            ,{field:'volume', width: '100', title: '卷', sort: false}
-                            ,{field:'number', width: '100', title: '期', sort: false}
-                            ,{field:'note', width: '100', title: '备注', sort: true}
-                            ,{field:'keywords', width: '100', title: '关键词', sort: false}
-                            ,{field:'pages', width: '100', title: '页码', sort: false}
-                        ]]
-                        ,done: function(data){
-                            console.log("data:");
-                            console.log(data);
-                        }
-                    }
-                );
+                advanceSearchHandler('queriedPubsDiv', 'editPub', 'pubTableAfterSearch', 'pubSearchTableContent', 'toolbarEditPubGetData', data, table, searchPubService);
+                return false;
+            });
+
+            form.on('submit(searchPubInPopUp)', function(data){
+                console.log("提交的表单数据：" + JSON.stringify(data.field));
+                console.log("查找数据库....");
+                advanceSearchHandler('queriedPubsDivInPopUp', '', 'pubTableAfterSearchInPopUp', 'pubSearchTableContentInPopUpt', 'toolbarPopUpGetData', data, table, searchPubService);
                 return false;
             });
 
@@ -1052,9 +1093,50 @@
                     console.log('未定义关系类型');
                 }
             });
-            //(6)新增关系-起点
+            //(6)新增关系-起讫点
             form.on('submit(relSource)', function(data){
+                //点击按钮后，先显示弹出窗口，搜索节点
+                var frameID;
+                layer.open({
+                    type: 2,
+                    title: '节点选择确认',
+                    maxmin: true,
+                    area: '700px',
+                    scrollbar: true,
+                    fixed: false,
+                    offset:'30px',
+                    //btn:['确定','取消'],
+                    //btnAlign: 'c',
+                    //yes: function(){//按钮【确定】的回调
+                    //    return false;
+                    //},
+                    //btn2: function(){//按钮【取消】的回调
+                    //    return false;
+                    //},
+                    content: '/search-pub-popup', //$('#' + popUpAdvSearchDivs) //这里content是一个DOM，注意：最好该元素要存放在body最外层，否则可能被其它的相对元素所影响
+                    success: function(layero, index){
+                        frameID = index;
+                        layer.iframeAuto(index);
+                    }
+                });
 
+                //显示选择的节点信息：
+                var infoDivStatus = $('#addRelInfoDiv').attr('class');
+                if (infoDivStatus.indexOf('collapse in') == -1){
+                    $('#addRelInfoDiv').attr('class', infoDivStatus.replace('collapse', 'collapse in'));
+                }
+                //showRelNodeDetail('addRelInfo', addedInfo);
+
+                form.render();
+                return false;
+            });
+            form.on('submit(relTarget)', function(data){
+                var infoDivStatus = $('#addRelInfoDiv').attr('class');
+                if (infoDivStatus.indexOf('collapse in') == -1){
+                    $('#addRelInfoDiv').attr('class', infoDivStatus.replace('collapse', 'collapse in'));
+                }
+                form.render();
+                return false;
             });
         });
     </script>
@@ -1620,51 +1702,125 @@
             //(5)解析中文名字的函数:
             function analyzeNameCH(sourceID, targetIDs, form){
                 var $ = layui.$;
-                    if (targetIDs.length != 2){
-                        console.log("目标节点数量不等于2！");
-                        return -1;
-                    }
-                    var name = $("#" + sourceID).val()
-                        ,params = {textTo:name, lang:"CH"};
-                    var csrftoken = Cookies.get('csrftoken');
-                    $.ajax({
-                        type: 'POST'
-                        ,url: siteUrl + splitNameService
-                        ,data:  JSON.stringify(params)
-                        ,dataType : "json"
-                        ,headers: {'Content-Type': 'application/json',"X-CSRFToken":csrftoken}
-                        //,contentType: "application/json"
-                        ,success: function(result,status,xhr) {  //分配到相应的表单中
-                            console.log("数据传输成功后：");
-                            if (result.status == -1) {
-                                layer.msg('解析人名失败，请手动填写！<br>' + JSON.stringify(result), {
-                                    time: 20000, //20s后自动关闭
-                                    btn: ['ok'],
-                                    icon:1
-                                });
-                            }else{
-                                $('#' + targetIDs[0]).val(result.first_name);
-                                $('#' + targetIDs[1]).val(result.last_name);
-                            }
-                            form.render();
-                            return false;
-                        }
-                        ,error: function(xhr,status,error){
-                            console.log("数据传输失败后：");
-                            //如果请求失败要运行的函数
-                            layer.msg("拆分人名失败，与服务器断开连接，请稍后再试。", {
-                                time: 10000, //20s后自动关闭
+                if (targetIDs.length != 2){
+                    console.log("目标节点数量不等于2！");
+                    return -1;
+                }
+                var name = $("#" + sourceID).val()
+                    ,params = {textTo:name, lang:"CH"};
+                var csrftoken = Cookies.get('csrftoken');
+                $.ajax({
+                    type: 'POST'
+                    ,url: siteUrl + splitNameService
+                    ,data:  JSON.stringify(params)
+                    ,dataType : "json"
+                    ,headers: {'Content-Type': 'application/json',"X-CSRFToken":csrftoken}
+                    //,contentType: "application/json"
+                    ,success: function(result,status,xhr) {  //分配到相应的表单中
+                        console.log("数据传输成功后：");
+                        if (result.status == -1) {
+                            layer.msg('解析人名失败，请手动填写！<br>' + JSON.stringify(result), {
+                                time: 20000, //20s后自动关闭
                                 btn: ['ok'],
-                                icon:5
+                                icon:1
                             });
-                            console.log(error);
+                        }else{
+                            $('#' + targetIDs[0]).val(result.first_name);
+                            $('#' + targetIDs[1]).val(result.last_name);
                         }
-                        ,complete: function(xhr,status){
-                            console.log("数据传输complete后：");
-                            //完成时的操作，success和error之后
-                        }
+                        form.render();
+                        return false;
+                    }
+                    ,error: function(xhr,status,error){
+                        console.log("数据传输失败后：");
+                        //如果请求失败要运行的函数
+                        layer.msg("拆分人名失败，与服务器断开连接，请稍后再试。", {
+                            time: 10000, //20s后自动关闭
+                            btn: ['ok'],
+                            icon:5
+                        });
+                        console.log(error);
+                    }
+                    ,complete: function(xhr,status){
+                        console.log("数据传输complete后：");
+                        //完成时的操作，success和error之后
+                    }
+                });
+            }
+            //（6）新增关系面板中，点击起讫点之后，向底下的显示框中增加节点信息
+            function showRelNodeDetail(infoDicID, addedInfo){
+                var text = document.getElementById(infoDicID).innerText;
+                if (text==""){
+                    text = {};
+                }else{
+                    text = JSON.parse(text);
+                }
 
-                    });
+                for (var tmpKey in addedInfo){
+                    text[tmpKey] = addedInfo[tmpKey];
+                }
+                text  = JSON.stringify(text, null, 2);
+                document.getElementById(infoDicID).innerText = text;
+                layui.code();
+                layui.form.render();
+            }
+            //(7)查看数据&新增关系面板中，高级搜索的div处理过程,
+            //advSearchDivID:高级搜索框div，editPubDivID：编辑文献框div，resultTableFilter：搜索结果表格过滤器（定位）
+            //resultTableID：搜索结果表格ID，没用，toolbarID：搜索结果确认按钮ID， data：高级搜索传入的数据
+            function advanceSearchHandler(advSearchDivID, editPubDivID, resultTableFilter, resultTableID, toolbarID, data, table, searchPubService){
+                var $ = layui.$;
+                // todo 处理搜索条件
+                //parameters = {"title":data.field.title
+                    //, "startTime":data["startTime"]
+                    //, "endTime": data["endTime"]
+                //    , "paperType": data["paperType"]}
+                $('#' + advSearchDivID).attr("class", "collapse in");
+                if (editPubDivID != "") {
+                    $('#' + editPubDivID).attr("class", "collapse");
+                }
+                table.render(
+                    {
+                        elem: '#' + resultTableFilter
+                        ,id: resultTableID
+                        ,url: searchPubService
+                        ,toolbar: '#' + toolbarID
+                        ,method: 'post'
+                        ,where: {"title":data.field.title
+                            //, "startTime":data["startTime"]
+                            //, "endTime": data["endTime"]
+                            , "paperType": data.field.paperType}
+                        //,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+                        ,page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
+                            layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'] //自定义分页布局
+                            //,curr: 5 //设定初始在第 5 页
+                            ,groups: 5 //只显示 1 个连续页码
+                            ,first: false //不显示首页
+                            ,last: false //不显示尾页
+                        }
+                        ,limit: 10
+                        ,cols: [[{type:'radio'}
+                            ,{field:"ID", width:60, title: 'ID', sort: true}
+                            ,{field:'title', width:300, title: '标题', sort: false}
+                            ,{field:'author', width:200, title: '作者', sort: false}
+                            ,{field:'journal', width:200, title: '期刊/会议'}
+                            ,{field:'year', title: '年', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
+                            ,{field:'month', title: '月', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
+                            ,{field:'paperTypeEdit', width: '100', title: '类型', sort: true}
+                            ,{field:'booktitle', width: '100', title: '书名', sort: false}
+                            ,{field:'editor', width: '100', title: '编辑', sort: false}
+                            ,{field:'edition', width: '100', title: '版本', sort: false}
+                            ,{field:'volume', width: '100', title: '卷', sort: false}
+                            ,{field:'number', width: '100', title: '期', sort: false}
+                            ,{field:'note', width: '100', title: '备注', sort: true}
+                            ,{field:'keywords', width: '100', title: '关键词', sort: false}
+                            ,{field:'pages', width: '100', title: '页码', sort: false}
+                        ]]
+                        ,done: function(res, curr, count){;
+                            console.log(res);
+                        }
+                    }
+                );
+                return false;
             }
     </script>
 
