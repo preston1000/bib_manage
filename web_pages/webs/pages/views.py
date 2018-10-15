@@ -271,6 +271,76 @@ def search_publication(request):
         return HttpResponse(json.dumps({"code": -1, "msg": "not support request method, should be post", "count": 0, "data": ""}))
 
 
+def search_person(request):
+    """
+    在neo4j中搜索person
+    :param request:
+    :return:
+    """
+    if request.method == 'POST':
+        the_paras = request.POST
+        pub_info = the_paras.keys()
+        if pub_info is None:
+            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
+        # 调方法写数据库
+        full_name = the_paras.get("full_name", None)
+        if full_name is None or full_name.strip() == "":
+            return HttpResponse(
+                json.dumps({"code": -2, "msg": "标题一定要有才能搜索", "count": 0, "data": ""}))
+        parameters = {"full_name": full_name}
+        flag = query_data.query_one_pub_by_multiple_field(parameters)  # todo 新增查询人的接口
+        data = json.loads(flag)
+        if data["code"] < 1:
+            return HttpResponse(flag)
+        else:  # 返回数据
+            count = 1
+            persons = []
+            for person in data["data"]:
+                person["ID"] = count
+                count += 1
+                persons.append(person)
+            data["data"] = persons
+            data["code"] = 0
+            return HttpResponse(json.dumps(data))
+    else:
+        return HttpResponse(json.dumps({"code": -1, "msg": "not support request method, should be post", "count": 0, "data": ""}))
+
+
+def search_venue(request):
+    """
+    在neo4j中搜索venue
+    :param request:
+    :return:
+    """
+    if request.method == 'POST':
+        the_paras = request.POST
+        pub_info = the_paras.keys()
+        if pub_info is None:
+            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
+        # 调方法写数据库
+        title = the_paras.get("venue_name", None)
+        if title is None or title.strip() == "":
+            return HttpResponse(
+                json.dumps({"code": -2, "msg": "标题一定要有才能搜索", "count": 0, "data": ""}))
+        parameters = {"venue_name": title}
+        flag = query_data.query_one_pub_by_multiple_field(parameters)  # todo 新增修改venue的方法
+        data = json.loads(flag)
+        if data["code"] < 1:
+            return HttpResponse(flag)
+        else:  # 返回数据
+            count = 1
+            venues = []
+            for venue in data["data"]:
+                venue["ID"] = count
+                count += 1
+                venues.append(venue)
+            data["data"] = venues
+            data["code"] = 0
+            return HttpResponse(json.dumps(data))
+    else:
+        return HttpResponse(json.dumps({"code": -1, "msg": "not support request method, should be post", "count": 0, "data": ""}))
+
+
 def verify_auth(request):
     """
         验证用户-----现在是从固定列表中读取
