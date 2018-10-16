@@ -8,7 +8,7 @@ from configparser import ConfigParser
 
 cf = ConfigParser()
 # cf.read("./neo4j.conf", encoding="utf-8")
-cf.read("/Volumes/Transcend/projects/services/bib_manage/web_pages/webs/neo4j.conf", encoding="utf-8")
+cf.read("E:\\projects\\web_pages\\webs/neo4j.conf", encoding="utf-8")
 
 uri = cf.get("neo4j", "uri")
 username = cf.get("neo4j", "username")

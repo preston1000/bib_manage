@@ -247,7 +247,7 @@ def search_publication(request):
         paper_type = the_paras.get("paperType", None)
         if paper_type is not None and paper_type.strip() != "":
             parameters["paperTypeEdit"] = paper_type
-        flag = query_data.query_one_pub_by_multiple_field(parameters)  # -1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
+        flag = query_data.query_pub_by_multiple_field(parameters)  # -1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
         data = json.loads(flag)
         if data["code"] < 1:
             return HttpResponse(flag)
@@ -288,7 +288,7 @@ def search_person(request):
             return HttpResponse(
                 json.dumps({"code": -2, "msg": "标题一定要有才能搜索", "count": 0, "data": ""}))
         parameters = {"full_name": full_name}
-        flag = query_data.query_one_pub_by_multiple_field(parameters)  # todo 新增查询人的接口
+        flag = query_data.query_person_or_venue_by_multiple_field(parameters, "Person")
         data = json.loads(flag)
         if data["code"] < 1:
             return HttpResponse(flag)
@@ -323,7 +323,7 @@ def search_venue(request):
             return HttpResponse(
                 json.dumps({"code": -2, "msg": "标题一定要有才能搜索", "count": 0, "data": ""}))
         parameters = {"venue_name": title}
-        flag = query_data.query_one_pub_by_multiple_field(parameters)  # todo 新增修改venue的方法
+        flag = query_data.query_person_or_venue_by_multiple_field(parameters, "Venue")
         data = json.loads(flag)
         if data["code"] < 1:
             return HttpResponse(flag)
