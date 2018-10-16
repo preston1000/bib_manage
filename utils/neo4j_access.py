@@ -3,6 +3,7 @@ import bibtexparser
 import neo4j.v1
 import uuid
 import re
+import os
 from configparser import ConfigParser
 
 
@@ -15,29 +16,27 @@ username = cf.get("neo4j", "username")
 pwd = cf.get("neo4j", "pwd")
 
 
-def build_network_of_publications(data_source='bibtex.bib', mode=1, is_list=False):
+def create_or_match_publications(data_source='bibtex.bib', mode=1, is_list=False):
     """
-    从文件中提取文献信息，并建立节点
-    :param data_source: 若mode=1，则问文件名；若mode=2，则为pub信息list of dict or dict
+    从“文件/给定信息”中提取文献信息，建立节点
+    :param data_source: 若mode=1，则文件名；若mode=2，则为pub信息list of dict or dict
     :param mode: 1：从文件中读取；2：给定pub的dict信息
     :param is_list: true：有多个文献的list；false：只有一个文献，是dict
-    :return:
+    :return: -1:读取/解析文献信息错误；1：处理成功；-2：提取文献信息失败；-3：写入数据库失败（可能全失败或部分失败）
     """
     if mode == 1:
-        bib_data = load_data(data_source)
+        bib_data = load_bib_file(data_source)
         bib_data = bib_data.entries
     else:
         if is_list:
             bib_data = data_source
         else:
             bib_data = [data_source]
-
     if bib_data is None or bib_data == []:
         print('No valid bibliography in the database')
         return -1
     driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
     with driver.session() as session:
-        # tx = session.begin_transaction()
         flag = 1
         for entry in bib_data:
             node = extract_publication(entry)  # 提取文献信息，构造节点
@@ -46,8 +45,404 @@ def build_network_of_publications(data_source='bibtex.bib', mode=1, is_list=Fals
             else:
                 tmp = query_or_create_node(session, node)  # 创建/更新节点（更新未实现）
                 if tmp is None:
-                    flag = -1
+                    flag = -3
     return flag
+
+
+def create_or_match_venues(data_source, mode=1):
+    """
+    从“文件或数据结构”中创建/匹配venue节点
+    :param data_source: file name or dict/list of dict or venues
+    :param mode: 1:file;2:dict or list of dict
+    :return: code:-3:位置的mode值；-2:文件不存在；-1:参数类型错误；1：处理成功；-4：提取venue信息封装节点失败；
+                -5：写入数据库失败（可能全失败或部分失败）
+                data：venue_name和uuid的对应关系,dict
+                names: 原始name和处理后name的映射
+    """
+    # 检查数据有效性
+    result = {"code": 0, "data": "", "msg": ""}
+    if mode == 1:
+        if not os.path.exists(data_source):
+            result["code"] = -2
+            result["msg"] = "文件不存在"
+            return result
+    #     todo 读取file
+    elif mode == 2:
+        if isinstance(data_source, dict):
+            data_source = [data_source]
+        elif isinstance(data_source, list):
+            data_source = data_source
+        else:
+            result["code"] = -1
+            result["msg"] = "参数类型错误"
+            return result
+    else:
+        result["code"] = -3
+        result["msg"] = "mode值错误"
+        return result
+    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    with driver.session() as session:
+        flag = 1
+        mappings = []
+        name_mappings = []
+        for data in data_source:
+            node = extract_venue(data)  # 提取venue信息，构造节点
+            mapping = {"source": node.venue_name, "target": ""}
+            name_mapping = {"source": data["venue_name"], "target": node["venue_name".upper()]}
+            name_mappings.append(name_mapping)
+            if node is None:
+                flag = min(-4, flag)
+                result["msg"] += "，提取venue信息错误"
+            else:
+                tmp = query_or_create_node(session, node)  # 创建/更新节点（更新未实现）
+                if tmp is None:
+                    flag = min(-5, flag)
+                    result["msg"] += "，写入数据库错误"
+                else:
+                    mapping["target"] = tmp
+                    mappings.append(mapping)
+        result["data"] = mappings
+        result["names"] = name_mappings
+        result["code"] = flag
+        if flag == 1:
+            result["msg"] = "创建venue节点成功"
+    return result
+
+
+def create_or_match_persons(data_source, mode=1):
+    """
+    从“文件或数据结构”中创建/匹配person节点
+    :param data_source: file name or dict/list of dict or venues
+    :param mode: 1:file;2:dict or list of dict
+    :return: code:-3:位置的mode值；-2:文件不存在；-1:参数类型错误；1：处理成功；-4：提取venue信息封装节点失败；
+                -5：写入数据库失败（可能全失败或部分失败）
+                data：venue_name和uuid的对应关系,dict
+                names: 原始name和处理后name的映射
+    """
+    # 检查数据有效性
+    result = {"code": 0, "data": "", "msg": ""}
+    if mode == 1:
+        if not os.path.exists(data_source):
+            result["code"] = -2
+            result["msg"] = "文件不存在"
+            return result
+    #     TODO 读取file
+    elif mode == 2:
+        if isinstance(data_source, dict):
+            data_source = [data_source]
+        elif isinstance(data_source, list):
+            data_source = data_source
+        else:
+            result["code"] = -1
+            result["msg"] = "参数类型错误"
+            return result
+    else:
+        result["code"] = -3
+        result["msg"] = "mode值错误"
+        return result
+    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    with driver.session() as session:
+        flag = 1
+        mappings = []
+        name_mappings = []
+        for data in data_source:
+            node = extract_person(data)  # 提取person信息，构造节点
+            mapping = {"source": node.full_name, "target": ""}  # target 是uuid 跟中英文名没有关系
+            name_mapping = {"source": data["full_name"], "target": node["full_name".upper()]}
+            name_mappings.append(name_mapping)
+            if node is None:
+                flag = min(-4, flag)
+                result["msg"] += "，提取person信息错误"
+            else:
+                tmp = query_or_create_node(session, node)  # 创建/更新节点（todo 更新未实现）
+                if tmp is None:
+                    flag = min(-5, flag)
+                    result["msg"] += "，写入数据库错误"
+                else:
+                    mapping["target"] = tmp
+                    mappings.append(mapping)
+        result["data"] = mappings
+        result["names"] = name_mappings
+        result["code"] = flag
+        if flag == 1:
+            result["msg"] = "创建full_name节点成功"
+    return result
+
+
+def create_or_match_person_using_name(data_source, mode=1):
+    """
+    从“文件或数据结构”中创建/匹配person节点
+    :param data_source: file name or dict/list of dict or venues
+    :param mode: 1:file;2:dict or list of dict
+    :return: code:-3:位置的mode值；-2:文件不存在；-1:参数类型错误；1：处理成功；-4：提取venue信息封装节点失败；
+                -5：写入数据库失败（可能全失败或部分失败）:-9;创建新的人失败
+                data：venue_name和uuid的对应关系,dict
+                names: 原始name和处理后name的映射
+    """
+    # 检查数据有效性
+    result = {"code": 0, "data": "", "msg": ""}
+    if mode == 1:
+        if not os.path.exists(data_source):
+            result["code"] = -2
+            result["msg"] = "文件不存在"
+            return result
+    #     TODO 读取file
+    elif mode == 2:
+        if isinstance(data_source, dict):
+            data_source = [data_source]
+        elif isinstance(data_source, list):
+            data_source = data_source
+        else:
+            result["code"] = -1
+            result["msg"] = "参数类型错误"
+            return result
+    else:
+        result["code"] = -3
+        result["msg"] = "mode值错误"
+        return result
+    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    with driver.session() as session:
+        flag = 1
+        mappings = []
+        name_mapping = {}
+        for data in data_source:
+            field = "full_name"
+            name = data.get("full_name", None)
+            if name is None:
+                name = data.get("name_ch", None)
+                if name is None:
+                    result["msg"] += "【" +  str(data) +"】没有中英文名信息，无法搜索"
+                else:
+                    field = "name_ch"
+            processed_name = process_special_character(name)
+            mapping = {"source": processed_name, "target": ""}  # target 是uuid 跟中英文名没有关系
+            name_mapping[name] = processed_name
+            cypher = "MATCH (n:Person) where n.{field} =~ '(?i){name} return n".format(field=field, name=name)
+            tmp = session.run(cypher)
+            tmp = tmp.data()
+            if len(tmp) < 1:
+                flag = min(-5, flag)
+                result["msg"] += "没有搜索结果（人）"
+                cypher = "CREATE (n:Person{" + field + ":'" + name + "'}) return n"
+                tmp = session.run(cypher)
+                tmp = tmp.data()
+                if len(tmp) < 1:
+                    flag = min(-9, flag)
+                    result["msg"] += ",创建新的人失败"
+                else:
+                    mapping["target"] = tmp[0]["n"]["uuid"]
+                    mappings.append(mapping)
+            elif len(tmp) == 1:
+                mapping["target"] = tmp[0]["n"]["uuid"]
+                mappings.append(mapping)
+            else:
+                result["msg"] += "【" + name + "】有超过一个搜索结果（人），暂取第一个"
+                mapping["target"] = tmp[0]["n"]["uuid"]
+                mappings.append(mapping)
+        result["data"] = mappings
+        result["names"] = name_mapping
+        result["code"] = flag
+        if flag == 1:
+            result["msg"] = "创建节点成功"
+    return result
+
+
+def build_network_of_venues(source_node_type="Publication", venue_type="ARTICLE", publication_field='journal'):
+    """
+    从publication中查询article 和conference字段，创建节点，再提取关系
+    :param source_node_type:
+    :param venue_type:
+    :param publication_field:
+    :return:code:-6:创建节点时，venue name和uuid关系提取失败；-7:现在只能处理article和conference；-8：未查询到有效的venue name;
+                  -9：原始数据、处理后name、uuid对应失败,-10创建关系失败;1:成功
+             data:
+             msg:
+    """
+    result = {"code": 0, "msg": "", "data": ""}
+    # 查询指定venue_type字段的source_node_type
+    cypher = "match (node:{NODE}) where node.node_type='{TYPE}' return node".format(NODE=source_node_type,
+                                                                                    TYPE=venue_type)
+    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    with driver.session() as session:
+        nodes = session.run(cypher)
+        data = {}  # key: source_node_type的uuid， value：venue的name
+        for record in nodes:
+            print("提取{NODE}与{NODE2}之间关系过程：查询到节点：".format(NODE=source_node_type, NODE2="Venue")
+                  + str(record["node"]['title']))
+            if not string_util(record["node"][publication_field]):
+                print("{ID} has empty {FIELD} field".format(ID=record["node"]['title'], FIELD=publication_field))
+            else:
+                data[record["node"]['uuid']] = record["node"][publication_field]
+        if data is {}:
+            print("提取{NODE}与{NODE2}之间关系过程：未查询到{NODE}.{TYPE}中的节点".format(NODE=source_node_type,
+                                                                        TYPE=venue_type, NODE2="Venue"))
+            result["code"] = -8
+            result["msg"] = "提取{NODE}与{NODE2}之间关系过程：未查询到{NODE}.{TYPE}中的节点".format(NODE=source_node_type,
+                                                                        TYPE=venue_type, NODE2="Venue")
+            return result
+    # 创建Venue节点
+    if not (venue_type == "ARTICLE" or venue_type == "CONFERENCE"):
+        print("现在不能处理【" + venue_type + "】类型的venue")
+        result["code"] = -7
+        result["msg"] = "现在不能处理【" + venue_type + "】类型的venue"
+        return result
+    venue_info = []
+    venue_names = list(set(data.values()))
+    for venue in venue_names:
+        info = {"venue_name": venue, "venue_type": venue_type}
+        venue_info.append(info)
+    create_result = create_or_match_venues(venue_info, mode=2)
+    if create_result["code"] < 0:
+        result["code"] = create_result["code"]
+        result["msg"] = create_result["msg"] + "\n 停止创建关系"
+        return result
+    # 提取Venue和Publication关系
+    rel_mapping_name_uuid = create_result["data"]  # 这是venue name 和uuid之间的mapping关系
+    name_mappings = create_result["names"]
+    if rel_mapping_name_uuid is None or not isinstance(rel_mapping_name_uuid, dict):
+        result["code"] = -6
+        result["msg"] = create_result["msg"] + "\n 停止创建关系"
+        return result
+    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    with driver.session() as session:
+        for source_id, target_name in data.items():
+            processed_name = name_mappings.get(target_name, None)
+            if processed_name is None:
+                result["code"] = min(-9, result["code"])
+                result["msg"] += ",提取处理后venue name失败：" + target_name
+                print("提取处理后venue name失败：" + target_name)
+                continue
+            venue_id = rel_mapping_name_uuid.get(processed_name, None)
+            if venue_id is None:
+                result["code"] = min(-9, result["code"])
+                result["msg"] += ",提取venue的uuid失败： " + processed_name
+                print("提取venue的uuid失败： " + processed_name)
+                continue
+            match_cypher = "MATCH  (pub:Publication {uuid:'" + source_id + "'}) -[:PUBLISH_IN]-> (ven:Venue {uuid:'" \
+                           + venue_id + "'})  return pub, ven"
+            result = session.run(match_cypher)
+            result = result.data()
+            if len(result) > 0:
+                print("关系已存在(PUBLISH_IN):" + source_id + "->" + venue_id)
+                continue
+            create_cypher = "MATCH  (pub:Publication {uuid:'" + source_id + "'}) , (ven:Venue {uuid:'" + venue_id + "'}) " \
+                            " CREATE (pub) -[:PUBLISH_IN]-> (ven) return pub, ven"
+            result = session.run(create_cypher)
+            result = result.data()
+            if len(result) > 0:
+                print("，创建关系成功(PUBLISH_IN):" + source_id + "->" + venue_id)
+            else:
+                result["code"] = min(-10, result["code"])
+                result["msg"] += "，创建关系失败(PUBLISH_IN):" + source_id + "->" + venue_id
+                print("，创建关系失败(PUBLISH_IN):" + source_id + "->" + venue_id)
+        if result["code"] == 0:
+            result["msg"] = "成功"
+            result["code"] = 1
+    return result
+
+
+def build_network_of_persons(publication_field='author'):
+    # 查询所有articles of publication
+    cypher = "match (node:{NODE}) return node".format(NODE="Publication")
+    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    with driver.session() as session:
+        nodes = session.run(cypher)
+        data = {}
+        for record in nodes:
+            print("提取{NODE}与{NODE2}之间关系过程：查询到节点：".format(NODE="Publication", NODE2="Person")
+                  + str(record["node"]['uuid']))
+            if not string_util(record["node"][publication_field]):
+                print("{ID} has empty {FIELD} field".format(ID=record["node"]['uuid'], FIELD=publication_field))
+            else:
+                data[record["node"]['uuid']] = record["node"][publication_field]
+        if data is {}:
+            print("提取{NODE}与{NODE2}之间关系过程：未查询到{NODE}.{TYPE}中的节点".format(NODE="Publication",
+                                                                        TYPE="author", NODE2="Person"))
+            return
+        # 创建Person节点
+        venue_info = []
+        venue_names = list(set(data.values()))
+        for venue in venue_names:
+            info = {"venue_name": venue, "venue_type": venue_type}
+            venue_info.append(info)
+        create_result = create_or_match_venues(venue_info, mode=2)
+        if create_result["code"] < 0:
+            result["code"] = create_result["code"]
+            result["msg"] = create_result["msg"] + "\n 停止创建关系"
+            return result
+        # 提取Venue和Publication关系
+        rel_mapping_name_uuid = create_result["data"]  # 这是venue name 和uuid之间的mapping关系
+        name_mappings = create_result["names"]
+        if rel_mapping_name_uuid is None or not isinstance(rel_mapping_name_uuid, dict):
+            result["code"] = -6
+            result["msg"] = create_result["msg"] + "\n 停止创建关系"
+            return result
+        driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+        with driver.session() as session:
+            for source_id, target_name in data.items():
+                processed_name = name_mappings.get(target_name, None)
+                if processed_name is None:
+                    result["code"] = min(-9, result["code"])
+                    result["msg"] += ",提取处理后venue name失败：" + target_name
+                    print("提取处理后venue name失败：" + target_name)
+                    continue
+                venue_id = rel_mapping_name_uuid.get(processed_name, None)
+                if venue_id is None:
+                    result["code"] = min(-9, result["code"])
+                    result["msg"] += ",提取venue的uuid失败： " + processed_name
+                    print("提取venue的uuid失败： " + processed_name)
+                    continue
+                match_cypher = "MATCH  (pub:Publication {uuid:'" + source_id + "'}) -[:PUBLISH_IN]-> (ven:Venue {uuid:'" \
+                               + venue_id + "'})  return pub, ven"
+                result = session.run(match_cypher)
+                result = result.data()
+                if len(result) > 0:
+                    print("关系已存在(PUBLISH_IN):" + source_id + "->" + venue_id)
+                    continue
+                create_cypher = "MATCH  (pub:Publication {uuid:'" + source_id + "'}) , (ven:Venue {uuid:'" + venue_id + "'}) " \
+                                                                                                                        " CREATE (pub) -[:PUBLISH_IN]-> (ven) return pub, ven"
+                result = session.run(create_cypher)
+                result = result.data()
+                if len(result) > 0:
+                    print("，创建关系成功(PUBLISH_IN):" + source_id + "->" + venue_id)
+                else:
+                    result["code"] = min(-10, result["code"])
+                    result["msg"] += "，创建关系失败(PUBLISH_IN):" + source_id + "->" + venue_id
+                    print("，创建关系失败(PUBLISH_IN):" + source_id + "->" + venue_id)
+            if result["code"] == 0:
+                result["msg"] = "成功"
+                result["code"] = 1
+        return result
+        # 提取Person和Publication关系
+        pub_person_rel = extract_pub_per_rel(session, data)  # {pubId: [{authorId, index}]}
+        # 建立Venue和Publication关系
+        if pub_person_rel is None:
+            print("未提取出有效的pub和person关系。")
+        else:
+            for (pub_id, per_id_indexes) in pub_person_rel.items():
+                for per_id_index in per_id_indexes:
+                    cypher = "MATCH  (pub:Publication {uuid:'" + pub_id + "'}) <-[r:Write]- (per:Person {uuid:'"\
+                             + per_id_index["id"] + "'})  return pub, per, r"
+                    result = session.run(cypher)
+                    result = result.data()
+                    if len(result) > 0:
+                        print("关系已存在(Write):" + pub_id + "<-" + per_id_index["id"])
+                        existing_index = result[0]["r"]["index"]
+                        if existing_index != per_id_index["index"]:
+                            print("person:{person}-->publication:{pub}关系中作者顺序冲突(保持原有数据不变)，"
+                                  "已有：{old}, 新{current}".format(person=per_id_index["id"], pub=pub_id,
+                                                                old=existing_index, current=per_id_index["index"]))
+                    else:
+                        print("创建关系(Write):" + pub_id + "<-" + per_id_index["id"])
+                        cypher = "MATCH  (pub:Publication {uuid:'" + pub_id + "'}) , (per:Person {uuid:'" + \
+                                 per_id_index["id"] + "'}) CREATE (pub) <-[:Write{index:" + str(per_id_index["index"]) \
+                                 + "}]- (per) return pub, per"
+                        result = session.run(cypher)
+                        result = result.data()
+                        if len(result) == 0:
+                            print("创建关系失败(Write):" + pub_id + "<-" + per_id_index["id"])
+                        else:
+                            print("创建关系成功(Write):" + pub_id + "<-" + per_id_index["id"])
 
 
 def revise_publications(data):
@@ -71,7 +466,37 @@ def revise_publications(data):
             return 1
 
 
-def load_data(file_name):
+def revise_node(tx, node, field_value_revise):
+    """
+    先查询节点是否存在，若存在，修改内容，否则，创建节点。-1表示出错
+    :param tx:
+    :param node:
+    :param field_value_revise:
+    :return:
+    """
+    if node is None:
+        return None
+    cypher = node.get_match_cypher()
+    nodes = tx.run(cypher)
+    nodes = nodes.data()
+    if len(nodes) == 0:
+        return None
+    nodes = nodes[0]
+    print("查询到了节点：" + str(nodes["node"]['uuid']) + "开始修改：")
+    field_value_match = {"uuid": nodes["node"]['uuid']}
+    cypher = node.get_revise_cypher(field_value_revise, field_value_match)
+    node_revised = tx.run(cypher)
+    node_revised = node_revised.data()
+    node_revised = node_revised[0].get("node", None)
+    if node_revised is None:
+        return None
+    node_revised = node_revised.get("uuid", None)
+    if node_revised is None:
+        return None
+    return 1
+
+
+def load_bib_file(file_name):
     """
     从bib文件中解析出文献信息
     :param file_name:
@@ -83,26 +508,6 @@ def load_data(file_name):
         return None
     else:
         return bib_database
-
-
-def is_valid_key(entry, key):
-    value = entry.get(key)
-    if value is None:
-        return None
-    else:
-        return value
-
-
-def parse_bib_keys(entry):
-    """
-    将每个文献中的字段名称转成大写，并对应其在entry中的key
-    :param entry:
-    :return:
-    """
-    mapping = {}
-    for (key, value) in entry.items():
-        mapping[key.upper()] = key
-    return mapping
 
 
 def extract_publication(entry):
@@ -429,6 +834,124 @@ def extract_publication(entry):
     return node
 
 
+def extract_venue(entry):
+    """
+    从节点信息中，提取出venue节点
+    :param entry:
+    :return:
+    """
+    entry_parsed_keys = parse_bib_keys(entry)
+    # venue name
+    venue_name = is_valid_key(entry_parsed_keys, "venue_name".upper())
+    venue_name = "" if venue_name is None else entry.get(venue_name, None)
+    venue_name = process_special_character(venue_name)  # 包括了转大写、去除空格、转换特殊字符等操作
+    # abbr
+    abbr = is_valid_key(entry_parsed_keys, "abbr".upper())
+    abbr = "" if abbr is None else entry.get(abbr, None)
+    abbr = process_special_character(abbr)  # 包括了转大写、去除空格、转换特殊字符等操作
+    # venue type
+    venue_type = is_valid_key(entry_parsed_keys, "venue_type".upper())
+    venue_type = "" if venue_type is None else entry.get(venue_type, None)
+    venue_type = process_special_character(venue_type)
+    # publisher
+    publisher = is_valid_key(entry_parsed_keys, "publisher".upper())
+    publisher = "" if publisher is None else entry.get(publisher, None)
+    publisher = process_special_character(publisher)
+    # address
+    address = is_valid_key(entry_parsed_keys, "address".upper())
+    address = "" if address is None else entry.get(address, None)
+    address = process_special_character(address)
+    # sci_index
+    sci_index = is_valid_key(entry_parsed_keys, "sci_index".upper())
+    sci_index = "" if sci_index is None else entry.get(sci_index, None)
+    # ei_index
+    ei_index = is_valid_key(entry_parsed_keys, "ei_index".upper())
+    ei_index = "" if ei_index is None else entry.get(ei_index, None)
+    # ssci_index
+    ssci_index = is_valid_key(entry_parsed_keys, "ssci_index".upper())
+    ssci_index = "" if ssci_index is None else entry.get(ssci_index, None)
+    # start year
+    start_year = is_valid_key(entry_parsed_keys, "start_year".upper())
+    start_year = "" if start_year is None else entry.get(start_year, None)
+    # year
+    year = is_valid_key(entry_parsed_keys, "year".upper())
+    year = "" if year is None else entry.get(year, None)
+    # note
+    note = is_valid_key(entry_parsed_keys, "note".upper())
+    note = "" if note is None else entry.get(note, None)
+    note = process_special_character(note)
+    if venue_name is "" or venue_type is "":
+        print("No valid node! venue name and venue type are mandatory fields: " + str(entry))
+        return None
+    node = Venue(uuid="", venue_name=venue_name, abbr=abbr, venue_type=venue_type, publisher=publisher, year=year,
+                 address=address, sci_index=sci_index, ei_index=ei_index, ssci_index=ssci_index, note=note,
+                 start_year=start_year)
+    return node
+
+
+def extract_person(entry):
+    """
+    从节点信息中，提取出person节点
+    :param entry:
+    :return:
+    """
+    entry_parsed_keys = parse_bib_keys(entry)
+    # full name
+    full_name = is_valid_key(entry_parsed_keys, "full_name".upper())
+    full_name = "" if full_name is None else entry.get(full_name, None)
+    full_name = process_special_character(full_name)  # 包括了转大写、去除空格、转换特殊字符等操作
+    # last_name
+    last_name = is_valid_key(entry_parsed_keys, "last_name".upper())
+    last_name = "" if last_name is None else entry.get(last_name, None)
+    last_name = process_special_character(last_name)  # 包括了转大写、去除空格、转换特殊字符等操作
+    # middle_name
+    middle_name = is_valid_key(entry_parsed_keys, "middle_name".upper())
+    middle_name = "" if middle_name is None else entry.get(middle_name, None)
+    middle_name = process_special_character(middle_name)
+    # first_name
+    first_name = is_valid_key(entry_parsed_keys, "first_name".upper())
+    first_name = "" if first_name is None else entry.get(first_name, None)
+    first_name = process_special_character(first_name)
+    # name_ch
+    name_ch = is_valid_key(entry_parsed_keys, "name_ch".upper())
+    name_ch = "" if name_ch is None else entry.get(name_ch, None)
+    name_ch = process_special_character(name_ch)
+    # first_name_ch
+    first_name_ch = is_valid_key(entry_parsed_keys, "first_name_ch".upper())
+    first_name_ch = "" if first_name_ch is None else entry.get(first_name_ch, None)
+    first_name_ch = process_special_character(first_name_ch)
+    # last_name_ch
+    last_name_ch = is_valid_key(entry_parsed_keys, "last_name_ch".upper())
+    last_name_ch = "" if last_name_ch is None else entry.get(last_name_ch, None)
+    last_name_ch = process_special_character(last_name_ch)
+    # research_interest
+    research_interest = is_valid_key(entry_parsed_keys, "research_interest".upper())
+    research_interest = "" if research_interest is None else entry.get(research_interest, None)
+    research_interest = process_special_character(research_interest)
+    # institution
+    institution = is_valid_key(entry_parsed_keys, "institution".upper())
+    institution = "" if institution is None else entry.get(institution, None)
+    institution = process_special_character(institution)
+    # added_by
+    added_by = is_valid_key(entry_parsed_keys, "added_by".upper())
+    added_by = "" if added_by is None else entry.get(added_by, None)
+    added_by = process_special_character(added_by)
+    # added_date
+    added_date = is_valid_key(entry_parsed_keys, "added_date".upper())
+    added_date = "" if added_date is None else entry.get(added_date, None)
+    # note
+    note = is_valid_key(entry_parsed_keys, "note".upper())
+    note = "" if note is None else entry.get(note, None)
+    note = process_special_character(note)
+    if full_name is "" and name_ch is "":
+        print("No valid node! full name or name_ch is mandatory fields: " + str(entry))
+        return None
+    node = Person(uuid="", full_name=full_name, first_name=first_name, middle_name=middle_name, last_name=last_name, name_ch=name_ch,
+                  first_name_ch=first_name_ch, last_name_ch=last_name_ch, institution=institution, research_interest=research_interest, note=note,
+                  added_by=added_by, added_date=added_date)
+    return node
+
+
 def query_or_create_node(tx, node):
     """
     先查询节点是否存在，若存在，直接返回节点id，否则，创建节点并返回id。-1表示出错
@@ -452,34 +975,24 @@ def query_or_create_node(tx, node):
     return None
 
 
-def revise_node(tx, node, field_value_revise):
+def is_valid_key(entry, key):
+    value = entry.get(key)
+    if value is None:
+        return None
+    else:
+        return value
+
+
+def parse_bib_keys(entry):
     """
-    先查询节点是否存在，若存在，修改内容，否则，创建节点。-1表示出错
-    :param tx:
-    :param node:
-    :param field_value_revise:
+    将每个文献中的字段名称转成大写，并对应其在entry中的key
+    :param entry:
     :return:
     """
-    if node is None:
-        return None
-    cypher = node.get_match_cypher()
-    nodes = tx.run(cypher)
-    nodes = nodes.data()
-    if len(nodes) == 0:
-        return None
-    nodes = nodes[0]
-    print("查询到了节点：" + str(nodes["node"]['uuid']) + "开始修改：")
-    field_value_match = {"uuid": nodes["node"]['uuid']}
-    cypher = node.get_revise_cypher(field_value_revise, field_value_match)
-    node_revised = tx.run(cypher)
-    node_revised = node_revised.data()
-    node_revised = node_revised[0].get("node", None)
-    if node_revised is None:
-        return None
-    node_revised = node_revised.get("uuid", None)
-    if node_revised is None:
-        return None
-    return 1
+    mapping = {}
+    for (key, value) in entry.items():
+        mapping[key.upper()] = key
+    return mapping
 
 
 def process_special_character(word):
@@ -595,151 +1108,13 @@ def process_special_character(word):
     }
     for (letter, letter_new) in greek_letters.items():
         word = word.replace(letter, letter_new)
+    # 全部转大写
     word = word.upper()
+    # 去除多余空格
     word = word.split(" ")
+    word = [item.strip() for item in word]
     word = " ".join(word)
     return word
-
-
-def build_network_of_venues(venue_type="ARTICLE", publication_field='journal'):
-    # 查询所有aritcles of publication
-    cypher = "match (node:{NODE}) where node.node_type='{TYPE}' return node".format(NODE="Publication", TYPE=venue_type)
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
-    with driver.session() as session:
-        nodes = session.run(cypher)
-        data = {}
-        for record in nodes:
-            print("提取{NODE}与{NODE2}之间关系过程：查询到节点：".format(NODE="Publication", NODE2="Venue")
-                  + str(record["node"]['title']))
-            if not string_util(record["node"][publication_field]):
-                print("{ID} has empty {FIELD} field".format(ID=record["node"]['title'], FIELD=publication_field))
-            else:
-                data[record["node"]['uuid']] = record["node"][publication_field]
-        if data is {}:
-            print("提取{NODE}与{NODE2}之间关系过程：未查询到{NODE}.{TYPE}中的节点".format(NODE="Publication",
-                                                                        TYPE="ARTICLE", NODE2="Venue"))
-        else:
-            # 提取Venue和Publication关系
-            if venue_type == "ARTICLE":
-                pub_venue_rel = extract_pub_ven_rel(session, data, venue_type)
-            else:
-                pub_venue_rel = extract_pub_ven_rel(session, data, "CONFERENCE")
-            # 建立Venue和Publication关系
-            if pub_venue_rel is None:
-                print("未提取出有效的pub和venue关系。")
-            else:
-                for (pub_id, ven_id) in pub_venue_rel.items():
-                    cypher = "MATCH  (pub:Publication {uuid:'" + pub_id + "'}) -[:PUBLISH_IN]-> (ven:Venue {uuid:'"\
-                             + ven_id + "'})  return pub, ven"
-                    result = session.run(cypher)
-                    has_result = False
-                    for record in result:
-                        has_result = True
-                        print("关系已存在(PUBLISH_IN):" + pub_id + "->" + ven_id)
-                        break
-                    if has_result:
-                        continue
-                    cypher = "MATCH  (pub:Publication {uuid:'" + pub_id + "'}) , (ven:Venue {uuid:'" + ven_id + "'}) " \
-                             " CREATE (pub) -[:PUBLISH_IN]-> (ven) return pub, ven"
-                    result = session.run(cypher)
-                    has_result = False
-                    for record in result:
-                        has_result = True
-                        print("创建关系成功(PUBLISH_IN):" + pub_id + "->" + ven_id)
-                    if not has_result:
-                        print("创建关系失败(PUBLISH_IN):" + pub_id + "->" + ven_id)
-
-
-def build_network_of_persons(publication_field='author'):
-    # 查询所有articles of publication
-    cypher = "match (node:{NODE}) return node".format(NODE="Publication")
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
-    with driver.session() as session:
-        nodes = session.run(cypher)
-        data = {}
-        for record in nodes:
-            print("提取{NODE}与{NODE2}之间关系过程：查询到节点：".format(NODE="Publication", NODE2="Person")
-                  + str(record["node"]['uuid']))
-            if not string_util(record["node"][publication_field]):
-                print("{ID} has empty {FIELD} field".format(ID=record["node"]['uuid'], FIELD=publication_field))
-            else:
-                if record["node"]['uuid'] == 'a139070c79ef11e8bc9aa45e60c2e1a5':
-                    print(record["node"]['uuid'])
-                data[record["node"]['uuid']] = record["node"][publication_field]
-        if data is {}:
-            print("提取{NODE}与{NODE2}之间关系过程：未查询到{NODE}.{TYPE}中的节点".format(NODE="Publication",
-                                                                        TYPE="author", NODE2="Person"))
-        else:
-            # 提取Person和Publication关系
-            pub_person_rel = extract_pub_per_rel(session, data)  # {pubId: [{authorId, index}]}
-            # 建立Venue和Publication关系
-            if pub_person_rel is None:
-                print("未提取出有效的pub和person关系。")
-            else:
-                for (pub_id, per_id_indexes) in pub_person_rel.items():
-                    for per_id_index in per_id_indexes:
-                        cypher = "MATCH  (pub:Publication {uuid:'" + pub_id + "'}) <-[r:Write]- (per:Person {uuid:'"\
-                                 + per_id_index["id"] + "'})  return pub, per, r"
-                        result = session.run(cypher)
-                        result = result.data()
-                        if len(result) > 0:
-                            print("关系已存在(Write):" + pub_id + "<-" + per_id_index["id"])
-                            existing_index = result[0]["r"]["index"]
-                            if existing_index != per_id_index["index"]:
-                                print("person:{person}-->publication:{pub}关系中作者顺序冲突(保持原有数据不变)，"
-                                      "已有：{old}, 新{current}".format(person=per_id_index["id"], pub=pub_id,
-                                                                    old=existing_index, current=per_id_index["index"]))
-                        else:
-                            print("创建关系(Write):" + pub_id + "<-" + per_id_index["id"])
-                            cypher = "MATCH  (pub:Publication {uuid:'" + pub_id + "'}) , (per:Person {uuid:'" + \
-                                     per_id_index["id"] + "'}) CREATE (pub) <-[:Write{index:" + str(per_id_index["index"]) \
-                                     + "}]- (per) return pub, per"
-                            result = session.run(cypher)
-                            result = result.data()
-                            if len(result) == 0:
-                                print("创建关系失败(Write):" + pub_id + "<-" + per_id_index["id"])
-                            else:
-                                print("创建关系成功(Write):" + pub_id + "<-" + per_id_index["id"])
-
-
-def extract_pub_ven_rel(session, data, venue_type):
-    if data is None or data is {}:
-        return None
-    #  提取所有venue，创建节点，并记录uuid
-    venues = data.values()
-    venues_mappings = process_venue_names(venues)
-    venue_name_id = {}
-    pub_venue_rel = {}
-    for (pub_id, venue) in data.items():
-        venue_mapping = venues_mappings[venue]  # 映射后的venue
-        if venue_mapping in venue_name_id.keys():  # 已经创建过Venue节点
-            pub_venue_rel[pub_id] = venue_name_id[venue_mapping]
-        else:  # 未创建过Venue节点，或已创建但未缓存
-            venue_node = Venue(uuid="", venue_type=venue_type.upper(), venue_name=venue_mapping)
-            cypher = venue_node.get_match_cypher()
-            result = session.run(cypher)
-            has_result = False
-            for record in result: # 查询到了venue节点
-                has_result = True
-                venue_name_id[venue_mapping] = record["node"]["uuid"]
-            if not has_result:  # 未查询到Venue节点
-                venue_node.uuid = uuid.uuid1()
-                cypher = venue_node.get_create_cypher()
-                result = session.run(cypher)
-                has_result = False
-                for record in result:
-                    print("创建Venue节点成功")
-                    has_result = True
-                    venue_name_id[venue_mapping] = venue_node.uuid.hex
-                    break
-                if not has_result:
-                    print("创建Venue节点失败")
-                    continue
-            pub_venue_rel[pub_id] = venue_name_id[venue_mapping]
-    if pub_venue_rel is {}:
-        return None
-    else:
-        return pub_venue_rel
 
 
 def extract_pub_per_rel(session, data):
@@ -765,7 +1140,7 @@ def extract_pub_per_rel(session, data):
             if author["name"] in person_name_id.keys():  # 已经创建过Person节点
                 author_ids.append({"id": person_name_id[author["name"]], "index": author["index"]})
             else:  # 未创建过Person节点，或已创建但未缓存
-                person_node = Person(uuid="", name=author["name"])
+                person_node = Person(uuid="", name=author["full_name"])
                 cypher = person_node.get_match_cypher()
                 try:
                     result = session.run(cypher)
@@ -868,7 +1243,6 @@ def analyze_person_name(params):
     first_name, middle_name, last_name = ["", "", ""]
     if lang == "EN":
         name = name.strip()
-
         if name is None or name == "":
             return processed_name
         if name.find(",") > -1:  # 姓 名
@@ -1161,26 +1535,52 @@ class Venue:
 
 class Person:
     """
-    name是first_name last_name格式
+    name是first_name middle_name last_name格式
     """
-    name = None
+    full_name = None
+    first_name = None
+    middle_name = None
+    last_name = None
     name_ch = None
-    affiliation_current = None
+    first_name_ch = None
+    last_name_ch = None
+    affiliation = None
     research_interest = None
+    note = None
+    added_by = None  # 节点创建人
+    added_date = None  # 节点创建时间
     uuid = None
 
-    def __init__(self, uuid, name, name_ch=None, affiliation_current=None, research_interest=None):
+    def __init__(self, uuid, full_name=None, first_name=None, middle_name=None, last_name=None, name_ch=None,
+                 first_name_ch=None, last_name_ch=None, institution=None, research_interest=None, note=None,
+                 added_by=None, added_date=None):
         self.uuid = uuid
-        self.name = name
+        self.first_name = first_name
+        self.middle_name = middle_name
+        self.last_name = last_name
+        self.full_name = full_name
         self.name_ch = name_ch
-        self.affiliation_current = affiliation_current
+        self.last_name_ch = last_name_ch
+        self.first_name_ch = first_name_ch
+        self.affiliation = institution
         self.research_interest = research_interest
+        self.note = note
+        self.added_by = added_by
+        self.added_date = added_date
 
     def to_string(self):
         word = "{uuid:'" + ("" if self.uuid is None else self.uuid.hex) + "'," + \
-               "name:'" + ("" if self.name is None else self.name) + "'," + \
+               "full_name:'" + ("" if self.full_name is None else self.full_name) + "'," + \
+               "first_name:'" + ("" if self.first_name is None else self.first_name) + "'," + \
+               "middle_name:'" + ("" if self.middle_name is None else self.middle_name) + "'," + \
+               "last_name:'" + ("" if self.last_name is None else self.last_name) + "'," + \
                "name_ch:'" + ("" if self.name_ch is None else self.name_ch) + "'," + \
-               "affiliation_current:'" + ("" if self.affiliation_current is None else self.affiliation_current) + "'," + \
+               "first_name_ch:'" + ("" if self.first_name_ch is None else self.first_name_ch) + "'," + \
+               "last_name_ch:'" + ("" if self.last_name_ch is None else self.last_name_ch) + "'," + \
+               "affiliation:'" + ("" if self.affiliation is None else self.affiliation) + "'," + \
+               "note:'" + ("" if self.note is None else self.note) + "'," + \
+               "added_by:'" + ("" if self.added_by is None else self.added_by) + "'," + \
+               "added_date:'" + ("" if self.affiliation is None else self.added_date) + "'," + \
                "research_interest:'" + ("" if self.research_interest is None else self.research_interest) + "'}"
         return word
 
@@ -1189,13 +1589,13 @@ class Person:
         return cypher
 
     def get_match_cypher(self):
-        cypher = "MATCH (node:Person {name:'" + self.name + "'}) return node"
+        cypher = "MATCH (node:Person {full_name:'" + self.full_name + "'}) return node"
         return cypher
 
 
 if __name__ == "__main__":
     # # 从文件中解析文献，并创建节点
-    build_network_of_publications('/Users/xixiangming/Downloads/reference.bib')
+    create_or_match_publications('/Users/xixiangming/Downloads/reference.bib')
     # # build_network_of_publications("bibtex.bib")
     # # 从网络中解析文献节点，并提取journal信息，创建venue节点、[wenxian]->[publication]
     build_network_of_venues(venue_type="ARTICLE", publication_field="journal")

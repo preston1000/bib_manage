@@ -150,7 +150,7 @@ def add_publication(request):
         else:
             return HttpResponse(json.dumps({"msg": "unsupported paper type", "status": -3}))
         # 调方法写数据库
-        flag = neo4j_access.build_network_of_publications(pub_info, mode=2, is_list=False)
+        flag = neo4j_access.create_or_match_publications(pub_info, mode=2, is_list=False)
         if flag == 1:
             return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
         else:
@@ -392,7 +392,7 @@ def search_pub_popup(request):
 def upload_bib_add_record(request):
     for file in request.FILES.getlist('file'):
         file_path = handle_uploaded_file(file)  # 处理上传来的文件
-        flag = neo4j_access.build_network_of_publications(file_path, mode=1)
+        flag = neo4j_access.create_or_match_publications(file_path, mode=1)
         os.remove(file_path)
         if flag == 1:
             return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
