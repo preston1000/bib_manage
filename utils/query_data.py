@@ -168,49 +168,20 @@ def query_one_pub_by_uuid(pub_id):
     return msg
 
 
-def query_one_pub_by_multiple_field(pub_info):
+def query_pub_by_multiple_field(pub_info):
     """
     :param pub_info:pub uuid
     :return:-1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
     """
-    # 初始化Neo4j数据库连接,及查询结果
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
-
-    msg = {"code": -1,
-           "msg": "",
-           "count": 0,
-           "data": ""}
-    if pub_info is None or not isinstance(pub_info, dict):
-        msg["msg"] = "no data is given"
-        return msg
-    # 查询是否存在数据
-    cypher = "match (m:Publication) where "
-    for key, value in pub_info.items():
-        cypher += "m." + key + " =~ '(?i)" + value + "' and"
-    cypher = cypher[:-3] + " return m"
-
-    with driver.session() as session:
-        records = session.run(cypher)
-        records = records.data()
-    if records is None or len(records) == 0:
-        msg["msg"] = "no records"
-        msg["code"] = 0
-        return json.dumps(msg)
-    elif len(records) > 1:
-        msg["msg"] = "more than one record. suppose that the publication has more than one author but not have " \
-                     "duplicated records for the same publication"
-        msg["code"] = 2
-    else:
-        msg["msg"] = "found one record"
-        msg["code"] = 1
-    msg["count"] = len(records)
-
+    # 根据提供的文献信息，查询数据库，并整理结果
+    result = query_by_multiple_field(pub_info, "Publication")
+    if result["code"] < 1:  # 没有搜索到数据或没有传入数据
+        return json.dumps(result)
     pubs = []
-    for record in records:
+    for record in result["data"]:
         pages = record["m"]["pages"]
         page1 = None
         page2 = None
-
         # 处理页码
         if pages is not None and pages != "null" and pages != "":
             pages = str.split(pages, "-")
@@ -245,8 +216,70 @@ def query_one_pub_by_multiple_field(pub_info):
                 "indexing": 0,
                 "note": null_string(record["m"]["note"])}
         pubs.append(pub)
-    msg["data"] = pubs
-    return json.dumps(msg)
+    result["data"] = pubs
+    return json.dumps(result)
+
+
+def query_person_or_venue_by_multiple_field(person_info, node_type):
+    """
+    :param person_info:dict of person info
+    :return:-1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
+    """
+    # 根据提供的文献信息，查询数据库，并整理结果
+    result = query_by_multiple_field(person_info, node_type)
+    if result["code"] < 1:  # 没有搜索到数据或没有传入数据
+        return json.dumps(result)
+    nodes = []
+    for record in result["data"]:
+        record = record["m"]
+        node = {}
+        for field, value in record.items():
+            node[field] = value
+        nodes.append(node)
+    result["data"] = nodes
+    return json.dumps(result)
+
+
+def query_by_multiple_field(node_info, node_type):
+    """
+    通用方法：给予节点的一个或多个字段来搜索节点信息
+    :param node_info: dict
+    :param node_type:数据库节点类型名
+    :return:返回的是dict，其中code：-1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
+    """
+    # 输入数据检测
+    msg = {"code": -1,
+           "msg": "",
+           "count": 0,
+           "data": ""}
+    if node_info is None or not isinstance(node_info, dict):
+        msg["msg"] = "no data is given"
+        return msg
+    # 查询数据库
+    cypher = "match (m:{}) where ".format(node_type)
+    for key, value in node_info.items():
+        cypher += "m." + key + " =~ '(?i)" + value + "' and"
+    cypher = cypher[:-3] + " return m"
+    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))  # 初始化Neo4j数据库连接,及查询结果
+
+    with driver.session() as session:
+        records = session.run(cypher)
+        records = records.data()
+    if records is None or len(records) == 0:
+        msg["msg"] = "no records"
+        msg["code"] = 0
+    elif len(records) > 1:
+        msg["msg"] = "more than one record. suppose that the publication has more than one author but not have " \
+                     "duplicated records for the same publication"
+        msg["code"] = 2
+        msg["count"] = len(records)
+        msg["data"] = records
+    else:
+        msg["msg"] = "found one record"
+        msg["code"] = 1
+        msg["count"] = len(records)
+        msg["data"] = records
+    return msg
 
 
 def null_string(string):
