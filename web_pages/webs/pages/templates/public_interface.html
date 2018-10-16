@@ -38,6 +38,7 @@
 <!--自定义js-->
     <script src="{% static 'js/tableOperation.js'%}"></script>
     <script src="{% static 'js/formOperation.js'%}"></script>
+    <script src="{% static 'js/referenceAction.js'%}"></script>
     <style type="text/css">
         .small-font { font-size: 1.5vw;}
         .collapse-disable {transition: none !important;}
@@ -566,7 +567,7 @@
                                     <!--按钮建-->
                                     <div class="layui-form-item">
                                         <div class="layui-input-block">
-                                            <button class="layui-btn" lay-submit lay-filter="queriedVenueSubmit">提交</button>
+                                            <button class="layui-btn" lay-submit lay-filter="searchVenue">提交</button>
                                             <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetSearchVenuePanel">重置</button>
                                         </div>
                                     </div>
@@ -636,7 +637,7 @@
                                     <!--按钮建-->
                                     <div class="layui-form-item">
                                         <div class="layui-input-block">
-                                            <button class="layui-btn" lay-submit lay-filter="SearchVenue">提交</button>
+                                            <button class="layui-btn" lay-submit lay-filter="editPubSubmit">提交</button>
                                             <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetEditVenuePanel">重置</button>
                                             <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="cancelEditVenuePanel">取消</button>
                                         </div>
@@ -1232,14 +1233,14 @@
             form.on('submit(searchPerson)', function(data){
                 console.log("提交的表单数据：" + JSON.stringify(data.field));
                 console.log("查找数据库....");
-                advanceSearchHandler('queriedPersonsDiv', 'editPerson', 'personTableAfterSearch', 'personSearchTableContent', 'toolbarEditPersonGetData', data, table, searchPersonService);
+                advanceSearchPersonHandler('queriedPersonsDiv', 'editPerson', 'personTableAfterSearch', 'personSearchTableContent', 'toolbarEditPersonGetData', data, table, searchPersonService);
                 return false;
             });
             //按钮4-3：高级搜索（venue）
             form.on('submit(searchVenue)', function(data){
                 console.log("提交的表单数据：" + JSON.stringify(data.field));
                 console.log("查找数据库....");
-                advanceSearchHandler('queriedVenueDiv', 'editVenue', 'venueTableAfterSearch', 'venueSearchTableContent', 'toolbarEditVenueGetData', data, table, searchVenueService);
+                advanceSearchVenueHandler('queriedVenueDiv', 'editVenue', 'venueTableAfterSearch', 'venueSearchTableContent', 'toolbarEditVenueGetData', data, table, searchVenueService);
                 return false;
             });
             //按钮5：新增关系面板---选择文献按钮
@@ -1441,138 +1442,9 @@
                     currentAuthors = deepClone(res["data"]);
                 }
             });
-            //按钮1：文献详情表格中，文献编辑按钮
+            //按钮1：查看详情选项卡-----查询结果表格，文献编辑按钮
             table.on('toolbar(pubTableAfterSearch)', function(obj){
-                $('#editPub').attr('class', 'collapse in');//显示 编辑文献的表单
-                var checkStatus = table.checkStatus(obj.config.id);
-                var data = checkStatus.data;//获取被选文献的内容
-                selectedPubInfo = data[0];
-                if (data.length < 1){
-                    layer.msg("未选择文献！", {
-                        time: 5000, //5s后自动关闭
-                        btn: ['ok'],
-                        icon:5
-                    });
-                }else{
-                    //先决定显示的字段都有哪些
-                    var value = data[0].paperTypeEdit;
-                    if (value == 'Book'.toUpperCase()){
-                        value = 1;
-                    }else if (value == 'Booklet'.toUpperCase()){
-                        value = 2;
-                    }else if (value == 'Conference'.toUpperCase()){
-                        value = 3;
-                    }else if (value == 'InBook'.toUpperCase()){
-                        value = 4;
-                    }else if (value == 'InCollection'.toUpperCase()){
-                        value = 5;
-                    }else if (value == 'InProceedings'.toUpperCase()){
-                        value = 6;
-                    }else if (value == 'Manual'.toUpperCase()){
-                        value = 7;
-                    }else if (value == 'MastersThesis'.toUpperCase()){
-                        value = 8;
-                    }else if (value == 'Misc'.toUpperCase()){
-                        value = 9;
-                    }else if (value == 'PhDThesis'.toUpperCase()){
-                        value = 10;
-                    }else if (value == 'Proceedings'.toUpperCase()){
-                        value = 11;
-                    }else if (value == 'TechReport'.toUpperCase()){
-                        value = 12;
-                    }else if (value == 'Unpublished'.toUpperCase()){
-                        value = 13;
-                    }else if (value == 'Article'.toUpperCase()){
-                        value = 0;
-                    }
-                    toggleEditPanel(formSettings, contentStringName, value, 'editPub');
-                    //更改表单中显示的内容
-
-                    var enhance = new enhanceForm({
-                        elem: '#editPubForm' //表单选择器
-                    });
-                    enhance.setSelectVal('paperTypeEdit', value, true);//设置文献类型下拉框选项(,,是否触发选中事件)
-                    enhance.setSelectVal('indexing', 0, true);//设置文献类型下拉框选项(,,是否触发选中事件)
-                    //赋值文本框
-                    var pages1 = "", pages2 = "";
-                    if (data[0].pages.indexOf("-")>-1){
-                        tmp = data[0].pages.split("-");
-                        pages1 = tmp[0];
-                        pages2 = tmp[1];
-                    }
-                    textContent = {title:data[0].title,journal:data[0].journal,year:data[0].year,volume:data[0].volume,number:data[0].number,
-                                month:data[0].month,note:data[0].note,editor:data[0].editor,publisher:data[0].publisher,series:data[0].series,address:data[0].address,
-                                edition:data[0].edition,how_published:data[0].how_published,book_title:data[0].book_title,organization:data[0].organization,chapter:data[0].chapter,
-                                type:data[0].type,school:data[0].school,keywords:data[0].keywords,institution:data[0].institution,
-                                pages1:pages1, pages2:pages2};
-                    enhance.filling(textContent);
-                    form.render();
-                    //单独处理的：author(现在是bib中的作者格式，要分开每个作者，并赋值)
-                    data[0].author = $.trim(data[0].author);
-                    if (data[0].author == "") {
-                        console.log("文章缺少作者信息");
-                    }else{
-                        var authors = data[0].author.split(" AND ")
-                            ,analyzedAuthors = [];
-                        for (i=0;i<authors.length;i++){
-                            var tt = $.trim(authors[i]);
-                            //分两种方式，一种是逗号分隔（姓-名），另一种是空格分隔（名-姓）
-                            if (tt.indexOf(",")>-1){//逗号分隔
-                                var names = tt.split(",");
-                                var author;
-                                if (names.length==1) {//逗号后面没有内容
-                                    author = {firstName: "", middleName: "", lastName: $.trim(names[0]), ranking: i+1}
-                                    analyzedAuthors.push(author);
-                                }else if (names.length==2) {//姓-名
-                                    if (names[1].indexOf(" ")>-1){//包含中间名
-                                        var tmp;
-                                        tmp = ($.trim(names[1])).split(" ");
-                                        var firstN = $.trim(tmp[0]);
-                                        tmp.splice(0,1);
-                                        author = {firstName: firstN, middleName: $.trim(tmp.join(" ")), lastName: $.trim(names[0]), ranking: i+1};
-                                        analyzedAuthors.push(author);
-                                    }else{//没有中间名
-                                        author = {firstName: $.trim(names[1]), middleName: "", lastName: $.trim(names[0]), ranking: i+1};
-                                        analyzedAuthors.push(author);
-                                    }
-                                }else {
-                                    console.log("作者名中存在两个或以上逗号"+tt);
-                                }
-                            }else{//只用空格分开
-                                var names = tt.split(" ");
-                                if (names.length==1) {//只有一个名字
-                                    author = {firstName: "", middleName: "", lastName: $.trim(names[0]), ranking: i+1}
-                                    analyzedAuthors.push(author);
-                                }else if (names.length==2) {//-名-姓
-                                    author = {firstName: $.trim(names[0]), middleName: "", lastName: $.trim(names[1]), ranking: i+1};
-                                    analyzedAuthors.push(author);
-                                }else if (names.length==3) {
-                                    author = {firstName: $.trim(names[0]), middleName: $.trim(names[1]), lastName: $.trim(names[2]), ranking: i+1};
-                                    analyzedAuthors.push(author);
-                                }else{
-                                    var tmp1 = $.trim(names[0]), tmp2 = $.trim(names[names.length-1]);
-                                    names.slice(1,names.length-1);
-                                    author = {firstName: tmp1, middleName: $.trim(names.join("")), lastName: tmp2, ranking: i+1};
-                                    analyzedAuthors.push(author);
-                                }
-                            }
-                        }
-                    }
-                    currentAuthors = analyzedAuthors;
-                    table.render({
-                        elem: '#authorTableEdit'
-                        ,cols: [[
-                          {field:'firstName', title:'名', width:100, edit: 'text'}
-                          ,{field:'middleName', title:'中间名', width:100, edit: 'text'}
-                          ,{field:'lastName', title:'姓', width:100, edit: 'text'}
-                          ,{field:'ranking', title:'排名', width:100, sort: true, edit: 'text'}
-                          ,{width:150, align:'center', toolbar: '#authorBarsAdd'}
-                        ]]
-                        ,id: 'authorTableEdit'
-                        ,page: false
-                        ,data: analyzedAuthors
-                    });
-                }
+                currentAuthors = setEditNodePanel(obj, "Publication", siteUrl, splitNameService, formSettings, contentStringName, enhanceForm);
             });
         });
     </script>
@@ -1885,52 +1757,52 @@
             //(4)解析英文名字的函数:
             function analyzeNameEN(sourceID, targetIDs, form){
                 var $ = layui.$;
-                    if (targetIDs.length != 3){
-                        console.log("目标节点数量不等于3！");
-                        return -1;
-                    }
-                    var name = $("#" + sourceID).val()
-                        ,params = {textTo:name, lang:"EN"};
-                    var csrftoken = Cookies.get('csrftoken');
-                    $.ajax({
-                        type: 'POST'
-                        ,url: siteUrl + splitNameService
-                        ,data:  JSON.stringify(params)
-                        ,dataType : "json"
-                        ,headers: {'Content-Type': 'application/json',"X-CSRFToken":csrftoken}
-                        //,contentType: "application/json"
-                        ,success: function(result,status,xhr) {  //分配到相应的表单中
-                            console.log("数据传输成功后：");
-                            if (result.status == -1) {
-                                layer.msg('解析人名失败，请手动填写！<br>' + JSON.stringify(result), {
-                                    time: 20000, //20s后自动关闭
-                                    btn: ['ok'],
-                                    icon:1
-                                });
-                            }else{
-                                $('#' + targetIDs[0]).val(result.first_name);
-                                $('#' + targetIDs[1]).val(result.middle_name);
-                                $('#' + targetIDs[2]).val(result.last_name);
-                            }
-                            form.render();
-                            return false;
-                        }
-                        ,error: function(xhr,status,error){
-                            console.log("数据传输失败后：");
-                            //如果请求失败要运行的函数
-                            layer.msg("拆分人名失败，与服务器断开连接，请稍后再试。", {
-                                time: 10000, //20s后自动关闭
+                if (targetIDs.length != 3){
+                    console.log("目标节点数量不等于3！");
+                    return -1;
+                }
+                var name = $("#" + sourceID).val()
+                    ,params = {textTo:name, lang:"EN"}
+                    ,csrftoken = Cookies.get('csrftoken');
+                $.ajax({
+                    type: 'POST'
+                    ,url: siteUrl + splitNameService
+                    ,data:  JSON.stringify(params)
+                    ,dataType : "json"
+                    ,headers: {'Content-Type': 'application/json',"X-CSRFToken":csrftoken}
+                    //,contentType: "application/json"
+                    ,success: function(result,status,xhr) {  //分配到相应的表单中
+                        console.log("数据传输成功后：");
+                        if (result.status == -1) {
+                            layer.msg('解析人名失败，请手动填写！<br>' + JSON.stringify(result), {
+                                time: 20000, //20s后自动关闭
                                 btn: ['ok'],
-                                icon:5
+                                icon:1
                             });
-                            console.log(error);
+                        }else{
+                            $('#' + targetIDs[0]).val(result.first_name);
+                            $('#' + targetIDs[1]).val(result.middle_name);
+                            $('#' + targetIDs[2]).val(result.last_name);
                         }
-                        ,complete: function(xhr,status){
-                            console.log("数据传输complete后：");
-                            //完成时的操作，success和error之后
-                        }
+                        form.render();
+                        return false;
+                    }
+                    ,error: function(xhr,status,error){
+                        console.log("数据传输失败后：");
+                        //如果请求失败要运行的函数
+                        layer.msg("拆分人名失败，与服务器断开连接，请稍后再试。", {
+                            time: 10000, //20s后自动关闭
+                            btn: ['ok'],
+                            icon:5
+                        });
+                        console.log(error);
+                    }
+                    ,complete: function(xhr,status){
+                        console.log("数据传输complete后：");
+                        //完成时的操作，success和error之后
+                    }
 
-                    });
+                });
             }
             //(5)解析中文名字的函数:
             function analyzeNameCH(sourceID, targetIDs, form){
@@ -2058,7 +1930,7 @@
             //(8)查看数据&新增关系面板中，高级搜索（人）的div处理过程,
             //advSearchDivID:高级搜索框div，editPubDivID：编辑文献框div，resultTableFilter：搜索结果表格过滤器（定位）
             //resultTableID：搜索结果表格ID，没用，toolbarID：搜索结果确认按钮ID， data：高级搜索传入的数据
-            function advanceSearchHandler(advSearchDivID, editDivID, resultTableFilter, resultTableID, toolbarID, data, table, searchService){
+            function advanceSearchPersonHandler(advSearchDivID, editDivID, resultTableFilter, resultTableID, toolbarID, data, table, searchService){
                 var $ = layui.$;
                 // todo 处理搜索条件
                 //parameters = {"full_name":data.field.full_name
@@ -2109,7 +1981,7 @@
             //(9)查看数据&新增关系面板中，高级搜索（venue）的div处理过程,
             //advSearchDivID:高级搜索框div，editPubDivID：编辑文献框div，resultTableFilter：搜索结果表格过滤器（定位）
             //resultTableID：搜索结果表格ID，没用，toolbarID：搜索结果确认按钮ID， data：高级搜索传入的数据
-            function advanceSearchHandler(advSearchDivID, editDivID, resultTableFilter, resultTableID, toolbarID, data, table, searchService){
+            function advanceSearchVenueHandler(advSearchDivID, editDivID, resultTableFilter, resultTableID, toolbarID, data, table, searchService){
                 var $ = layui.$;
                 // todo 处理搜索条件
                 //parameters = {"venue_name":data.field.venue_name
