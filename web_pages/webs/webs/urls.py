@@ -37,4 +37,6 @@ urlpatterns = [
     path('upload-bib/', views.upload_bib_add_record, name='upload-bib'),
     path('split-name/', views.split_name, name='split-name'),
     path('search-pub-popup/', views.search_pub_popup, name='search-pub-popup'),
+    path('search-person-popup/', views.search_person_popup, name='search-person-popup'),
+    path('search-venue-popup/', views.search_venue_popup, name='search-venue-popup'),
 ]

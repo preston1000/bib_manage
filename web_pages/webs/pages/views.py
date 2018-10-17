@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from pages.models import Publication, Person, Venue, Affiliation, Place
 import json
 import sys
 from configparser import ConfigParser
@@ -18,7 +17,6 @@ sys.path.append(address)
 from utils import query_data, neo4j_access
 
 
-# Create your views here.
 def index(request):
     # return HttpResponse('welcome to the front page')
     return render(request, 'index.html')
@@ -389,6 +387,14 @@ def pub_interface(request):
 
 def search_pub_popup(request):
     return render(request, "searchPub.html")
+
+
+def search_person_popup(request):
+    return render(request, "searchPerson.html")
+
+
+def search_venue_popup(request):
+    return render(request, "searchVenue.html")
 
 
 def upload_bib_add_record(request):
