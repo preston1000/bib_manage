@@ -7,6 +7,8 @@ from configparser import ConfigParser
 import datetime
 import os
 
+import utils.text_utils
+
 config_file = "./pages.conf"
 cf = ConfigParser()
 cf.read(os.path.abspath(config_file), encoding="utf-8")
@@ -421,6 +423,6 @@ def split_name(request):
     if name is None or name == {}:
         return HttpResponse(json.dumps({"first_name": '', "middle_name": "", "last_name": "", "status": -1,
                                         "msg": "no given name"}))
-    result = neo4j_access.analyze_person_name(name)
+    result = utils.text_utils.analyze_person_name(name)
     return HttpResponse(json.dumps(result))
 
