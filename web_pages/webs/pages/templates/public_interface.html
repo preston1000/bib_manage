@@ -427,56 +427,56 @@
                             <div id="queriedPersonsDiv" class="collapse" style="border:1px solid #000;margin-top:10px;margin-bottom:10px">
                                 <table class="layui-hide" id="personTableAfterSearch" lay-filter="personTableAfterSearch"></table>
                             </div>
-                            <!--文献编辑表单-->
+                            <!--ren编辑表单-->
                             <div id="editPerson" class="collapse" style="border:1px solid #000;margin-top:10px;margin-bottom:10px">
                                 <form class="layui-form" action="" lay-filter="editPersonPanel" id="editPersonForm">
                                     <!--全名-->
                                     <div class="layui-form-item" id="editPerson-fullname">
                                         <label class="layui-form-label" style="width:100px">Full Name</label>
                                         <div class="layui-input-block">
-                                            <input type="text" name="full_name" placeholder="Full Name" autocomplete="off" class="layui-input">
+                                            <input type="text" name="full_name" placeholder="Full Name" autocomplete="off" class="layui-input" id="full_name_edit">
                                         </div>
                                     </div>
                                     <!--名-->
                                     <div class="layui-form-item" id="editPerson-first_name">
                                         <label class="layui-form-label" style="width:100px">First Name</label>
                                         <div class="layui-input-block">
-                                            <input type="text" name="first_name" placeholder="First Name" autocomplete="off" class="layui-input">
+                                            <input type="text" name="first_name" placeholder="First Name" autocomplete="off" class="layui-input" id="first_name_edit">
                                         </div>
                                     </div>
                                     <!--Middle Name-->
                                     <div class="layui-form-item" id="editPerson-middle_name">
                                         <label class="layui-form-label" style="width:100px">Middle Name</label>
                                         <div class="layui-input-block">
-                                            <input type="text" name="middle_name" placeholder="Middle Name" autocomplete="off" class="layui-input">
+                                            <input type="text" name="middle_name" placeholder="Middle Name" autocomplete="off" class="layui-input" id="middle_name_edit">
                                         </div>
                                     </div>
                                     <!--Last Name-->
                                     <div class="layui-form-item" id="editPerson-last_name">
                                         <label class="layui-form-label" style="width:100px">Last Name</label>
                                         <div class="layui-input-block">
-                                            <input type="text" name="last_name" placeholder="Last Name" autocomplete="off" class="layui-input">
+                                            <input type="text" name="last_name" placeholder="Last Name" autocomplete="off" class="layui-input" id="last_name_edit">
                                         </div>
                                     </div>
                                     <!--Chinese Name-->
                                     <div class="layui-form-item" id="editPerson-name_ch">
                                         <label class="layui-form-label" style="width:100px">中文名</label>
                                         <div class="layui-input-block">
-                                            <input type="text" name="name_ch" placeholder="中文名" autocomplete="off" class="layui-input">
+                                            <input type="text" name="name_ch" placeholder="中文名" autocomplete="off" class="layui-input" id="name_ch_edit">
                                         </div>
                                     </div>
                                     <!--姓（中文）-->
                                     <div class="layui-form-item" id="editPerson-last_name_ch">
                                         <label class="layui-form-label" style="width:100px">姓-</label>
                                         <div class="layui-input-block">
-                                            <input type="text" name="last_name_ch" placeholder="姓" autocomplete="off" class="layui-input">
+                                            <input type="text" name="last_name_ch" placeholder="姓" autocomplete="off" class="layui-input" id="last_name_ch_edit">
                                         </div>
                                     </div>
                                     <!--名（中文）-->
                                     <div class="layui-form-item" id="editPerson-first_name_ch">
                                         <label class="layui-form-label" style="width:100px">名</label>
                                         <div class="layui-input-block">
-                                            <input type="text" name="first_name_ch" placeholder="名" autocomplete="off" class="layui-input">
+                                            <input type="text" name="first_name_ch" placeholder="名" autocomplete="off" class="layui-input" id="first_name_ch_edit">
                                         </div>
                                     </div>
                                     <!--Institution-->
@@ -656,14 +656,14 @@
             <div class="layui-tab-item">
                 <div class="layui-tab layui-tab-card">
                     <ul class="layui-tab-title">
-                        <li>文献</li>
-                        <li class="layui-this">人</li>
+                        <li class="layui-this">文献</li>
+                        <li>人</li>
                         <li>Venue</li>
                         <li>关系</li>
                     </ul>
                     <div class="layui-tab-content">
                         <!--子面板：新增文献-->
-                        <div class="layui-tab-item">
+                        <div class="layui-tab-item layui-show">
                             <form class="layui-form collaspe in" action="">
                                 <!--文献添加方式按钮-->
                                 <div class="layui-form-item">
@@ -1331,6 +1331,21 @@
             form.on('submit(relSource)', function(data){
                 //点击按钮后，先显示弹出窗口，搜索节点
                 var frameID;
+                var nodeType = $('#relSource').text();
+                if (nodeType == undefined){
+                    return -1;
+                }
+                var popupUrl;
+                if (nodeType == "Person"){
+                    popupUrl = '/search-person-popup';
+                }else if (nodeType == "Venue"){
+                    popupUrl = '/search-venue-popup';
+                }else if (nodeType == "Publication"){
+                    popupUrl = '/search-pub-popup';
+                }else{
+                    console.log("未知的文献类型");
+                    return -1;
+                }
                 layer.open({
                     type: 2,
                     title: '节点选择确认',
@@ -1347,7 +1362,7 @@
                     //btn2: function(){//按钮【取消】的回调
                     //    return false;
                     //},
-                    content: '/search-pub-popup', //$('#' + popUpAdvSearchDivs) //这里content是一个DOM，注意：最好该元素要存放在body最外层，否则可能被其它的相对元素所影响
+                    content:popupUrl,
                     success: function(layero, index){
                         frameID = index;
                         layer.iframeAuto(index);
@@ -1408,7 +1423,7 @@
                 editAuthor(currentAuthors, 'authorTableEdit', layui, obj);
             });
 
-            //新增文献表格中作者信息表格作者表格
+            //表格1）新增文献表格中作者信息表格作者表格
             table.render({
                 elem: '#authorTableAdd'
                 ,url: '/demo/table/user/'
@@ -1425,7 +1440,7 @@
                     currentAuthors = deepClone(res["data"]);
                 }
             });
-            //编辑文献表格中作者信息表格
+            //表格2）编辑文献表格中作者信息表格
             table.render({
                 elem: '#authorTableEdit'
                 ,url: '/demo/table/user/'
@@ -1445,6 +1460,14 @@
             //按钮1：查看详情选项卡-----查询结果表格，文献编辑按钮
             table.on('toolbar(pubTableAfterSearch)', function(obj){
                 currentAuthors = setEditNodePanel(obj, "Publication", siteUrl, splitNameService, formSettings, contentStringName, enhanceForm);
+            });
+            //按钮2：查看详情选项卡-----查询结果表格，人员信息编辑按钮
+            table.on('toolbar(personTableAfterSearch)', function(obj){
+                currentPersons = setEditNodePanel(obj, "Person", "", "", "", "", enhanceForm);
+            });
+            //按钮3：查看详情选项卡-----查询结果表格，venue编辑按钮
+            table.on('toolbar(venueTableAfterSearch)', function(obj){
+                currentPersons = setEditNodePanel(obj, "Venue", "", "", "", "", enhanceForm);
             });
         });
     </script>
@@ -1852,7 +1875,7 @@
                     }
                 });
             }
-            //（6）新增关系面板中，点击起讫点之后，向底下的显示框中增加节点信息
+            //（6）新增关系面板中，点击起讫点之后，向底下的显示框中增加节点信息--------searchPub.html&person中需要同步修改
             function showRelNodeDetail(infoDicID, addedInfo){
                 var text = document.getElementById(infoDicID).innerText;
                 if (text==""){
@@ -1869,7 +1892,7 @@
                 layui.code();
                 layui.form.render();
             }
-            //(7)查看数据&新增关系面板中，高级搜索（文献）的div处理过程,
+            //(7)查看数据&新增关系面板中，高级搜索（文献）的div处理过程,--------searchPub.html中需要同步修改
             //advSearchDivID:高级搜索框div，editPubDivID：编辑文献框div，resultTableFilter：搜索结果表格过滤器（定位）
             //resultTableID：搜索结果表格ID，没用，toolbarID：搜索结果确认按钮ID， data：高级搜索传入的数据
             function advanceSearchHandler(advSearchDivID, editPubDivID, resultTableFilter, resultTableID, toolbarID, data, table, searchPubService){
@@ -1927,7 +1950,7 @@
                 );
                 return false;
             }
-            //(8)查看数据&新增关系面板中，高级搜索（人）的div处理过程,
+            //(8)查看数据&新增关系面板中，高级搜索（人）的div处理过程,--------searchPerson.html中需要同步修改
             //advSearchDivID:高级搜索框div，editPubDivID：编辑文献框div，resultTableFilter：搜索结果表格过滤器（定位）
             //resultTableID：搜索结果表格ID，没用，toolbarID：搜索结果确认按钮ID， data：高级搜索传入的数据
             function advanceSearchPersonHandler(advSearchDivID, editDivID, resultTableFilter, resultTableID, toolbarID, data, table, searchService){
@@ -2088,27 +2111,42 @@
             var $ = layui.$
                 ,form = layui.form
                 .layer = layui.layer;
-            $(document).ready(  
-                function() {  
-                    $("#full_name_en").keydown(function(event) {  
-                        if (event.keyCode == 13) {  
-                            analyzeNameEN('full_name_en', ['first_en', 'mid_en', 'last_en'], form);
-                            return false;
-                        }  
-                    }); 
-                    $("#full_name_ch").keydown(function(event) {  
-                        if (event.keyCode == 13) {  
-                            analyzeNameCH('full_name_ch', ['first_ch', 'last_ch'], form);
-                            return false;
-                        }  
-                    }); 
-                    $(".layui-input").keydown(function(event) {  
-                        if (event.keyCode == 13) {  
-                            return false;
-                        }  
-                    }); 
-                }  
-            );
+            $(document).ready(function(){ 
+                //1）新增面板：英文名 
+                $("#full_name_en").keydown(function(event){  
+                    if (event.keyCode == 13){  
+                        analyzeNameEN('full_name_en', ['first_en', 'mid_en', 'last_en'], form);
+                        return false;
+                    }  
+                }); 
+                //2）新增面板：中文名
+                $("#full_name_ch").keydown(function(event){  
+                    if (event.keyCode == 13) {  
+                    analyzeNameCH('full_name_ch', ['first_ch', 'last_ch'], form);
+                        return false;
+                    }
+                }); 
+                //3）新增面板：英文名 
+                $("#full_name_edit").keydown(function(event){  
+                    if (event.keyCode == 13){  
+                        analyzeNameEN('full_name_edit', ['first_name_edit', 'mid_name_edit', 'last_name_edit'], form);
+                        return false;
+                    }  
+                }); 
+                //4）新增面板：中文名
+                $("#name_ch_edit").keydown(function(event){  
+                    if (event.keyCode == 13) {  
+                    analyzeNameCH('name_ch_edit', ['first_name_ch_edit', 'last_name_ch_edit'], form);
+                        return false;
+                    }
+                });  
+                //其他input回车不提交 
+                $(".layui-input").keydown(function(event){  
+                    if (event.keyCode == 13){  
+                        return false;
+                    }  
+                }); 
+            });
         });
     </script>
 </body>
