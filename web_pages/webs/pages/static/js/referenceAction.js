@@ -3,7 +3,7 @@ function setEditNodePanel(obj, nodeType, siteUrl, splitNameService, formSettings
     var $ = layui.$;
     var data = layui.table.checkStatus(obj.config.id).data;//获取被选节点的内容
     if (data.length < 1){
-        layui.layer.msg("未选择文献！", {
+        layui.layer.msg("未选择项目！", {
             time: 5000, //5s后自动关闭
             btn: ['ok'],
             icon:5
@@ -15,11 +15,20 @@ function setEditNodePanel(obj, nodeType, siteUrl, splitNameService, formSettings
                 ,panelFormID = 'editPubForm'
                 ,authorTableID = 'authorTableEdit';
             $('#' + panelDivID).attr('class', 'collapse in');//显示 编辑节点信息的表单
-            currentAuthors = processPubPanel(selectedInfo, formSettings, contentStringName, panelDivID, panelFormID, authorTableID, siteUrl, splitNameService, enhanceForm)
+            currentAuthors = processPubPanel(selectedInfo, formSettings, contentStringName, panelDivID, panelFormID, authorTableID, siteUrl, splitNameService, enhanceForm);
+        }else if (nodeType == "Person"){
+            var panelDivID = "editPerson"
+                ,panelFormID = 'editPersonForm';
+            $('#' + panelDivID).attr('class', 'collapse in');//显示 编辑节点信息的表单
+            processPersonPanel(selectedInfo, panelFormID, enhanceForm);
+        }else if (nodeType == "Venue") {
+            var panelDivID = "editVenue"
+                ,panelFormID = 'editVenueForm';
+            $('#' + panelDivID).attr('class', 'collapse in');//显示 编辑节点信息的表单
+            processVenuePanel(selectedInfo, panelFormID, enhanceForm);
         }
     }
-
-
+    return currentAuthors;
 }
 
 function processPubPanel(selectedPubInfo, formSettings, contentStringName, panelDivID, panelFormID, authorTableID, siteUrl, splitNameService, enhanceForm){
@@ -104,6 +113,38 @@ function processPubPanel(selectedPubInfo, formSettings, contentStringName, panel
     //刷新表单
     layui.form.render();
     return analyzedAuthors;
+}
+
+function processPersonPanel(selectedPersonInfo, panelFormID, enhanceForm){
+    var $ = layui.$;
+    //更改表单中显示的内容
+    var enhance = new enhanceForm({
+        elem: '#' + panelFormID //表单选择器
+    });
+    textContent = {full_name:selectedPersonInfo.full_name, first_name:selectedPersonInfo.first_name,  middle_name:selectedPersonInfo.middle_name,
+                    last_name:selectedPersonInfo.last_name,name_ch:selectedPersonInfo.name_ch,last_name_ch:selectedPersonInfo.last_name_ch,
+                    first_name_ch:selectedPersonInfo.first_name_ch,institution:selectedPersonInfo.institution,research_interest:selectedPersonInfo.research_interest,
+                    note:selectedPersonInfo.note};//赋值文本框
+    enhance.filling(textContent);
+    //刷新表单
+    layui.form.render();
+}
+
+function processVenuePanel(selectedVenueInfo, panelFormID, enhanceForm){
+    var $ = layui.$;
+    //更改表单中显示的内容
+    var enhance = new enhanceForm({
+        elem: '#' + panelFormID //表单选择器
+    });
+    //indexing
+    enhance.setSelectVal('indexing', 1, true);//设置文献类型下拉框选项(,,是否触发选中事件)
+    //文本填充
+    textContent = {venue_name:selectedVenueInfo.venue_name, abbr:selectedVenueInfo.abbr,  publisher:selectedVenueInfo.publisher,
+                    start_year:selectedVenueInfo.start_year,venue_type:selectedVenueInfo.venue_type,
+                    note:selectedVenueInfo.note};//赋值文本框
+    enhance.filling(textContent);
+    //刷新表单
+    layui.form.render();
 }
 
  //(4)解析英文名字的函数:
