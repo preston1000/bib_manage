@@ -46,75 +46,68 @@
 <body>
 <!--弹出页面1）-->
     <div class="container-fluid row" id="popUpAdvSearchDivs" style="width:600px">
-        <div id="advanceSearchInPopUp" style="border:1px solid #000;margin-top:10px;margin-bottom:10px">
+        <!--高级搜搜框-->
+        <div id="advanceSearchVenue" class="collapse in" style="border:1px solid #000;margin-top:10px;margin-bottom:10px">
             <form class="layui-form" action="">
-                <!--标题-->
-                <div class="layui-form-item">
-                    <label class="layui-form-label" style="width:100px">标题</label>
+                <!--Venue Name-->
+                <div class="layui-form-item" id="queriedVenue-venue_name">
+                    <label class="layui-form-label" style="width:100px">Venue Name</label>
                     <div class="layui-input-block">
-                        <input type="text" name="title" required  lay-verify="required" placeholder="请输入关键字，以逗号分隔" autocomplete="off" class="layui-input">
+                        <input type="text" name="venue_name" placeholder="Venue Name" autocomplete="off" class="layui-input">
                     </div>
                 </div>
-                <!--时间范围-->
-                <div class="layui-form-item">
-                    <label class="layui-form-label" style="width:100px">时间范围</label>
-                    <div class="layui-input-inline" style="margin-left:10px">
-                        <input id="startTimeInPopUp" type="text" name="startTime"  placeholder="From" autocomplete="off" class="layui-input">
-                    </div>
-                    <div class="layui-form-mid layui-word-aux">-</div>
-                    <div class="layui-input-inline">
-                        <input id="endTimeInPopUp" type="text" name="endTime" placeholder="To" autocomplete="off" class="layui-input">
+                <!--Abbr-->
+                <div class="layui-form-item" id="queriedVenue-abbr">
+                    <label class="layui-form-label" style="width:100px">Abbr.</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="abbr" placeholder="Abbr" autocomplete="off" class="layui-input">
                     </div>
                 </div>
-                <!--作者-->
-                <div class="layui-form-item">
-                    <label class="layui-form-label" style="width:100px">作者</label>
+                <!--publisher-->
+                <div class="layui-form-item" id="queriedVenue-publisher">
+                    <label class="layui-form-label" style="width:100px">Publisher</label>
                     <div class="layui-input-block">
-                        <input id="searchPubAuthorInPopUp" type="text" name="searchPubAuthor" placeholder="作者（用英文逗号分开）" autocomplete="off" class="layui-input">
+                        <input type="text" name="publisher" placeholder="Publisher" autocomplete="off" class="layui-input">
                     </div>
                 </div>
-                <!--文章索引-->
-                <div class="layui-form-item">
-                    <label class="layui-form-label" style="width:100px">文章索引</label>
+                <!--start_year-->
+                <div class="layui-form-item" id="queriedVenue-start_year">
+                    <label class="layui-form-label" style="width:100px">Start Year</label>
                     <div class="layui-input-block">
-                        <select name="paperIndexing" multiple>
-                            <option value="">不指定</option>
+                        <input type="text" name="start_year" placeholder="Start Year" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <!--venue_type-->
+                <div class="layui-form-item" id="queriedVenue-venue_type">
+                    <label class="layui-form-label" style="width:100px">Venue Type</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="venue_type" placeholder="venue type" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <!--Indexing-->
+                <div class="layui-form-item" id="queriedVenue-indexing">
+                    <label class="layui-form-label" style="width:100px;margin-right:10px" >Indexing</label>
+                    <div class="layui-input-block">
+                        <select name="indexing" multiple>
+                            <option value="">其他</option>
                             <option value="0">EI</option>
                             <option value="1">SCI</option>
                             <option value="2">SSCI</option>
                         </select>
                     </div>
                 </div>
-                <!--文章类型-->
-                <div class="layui-form-item">
-                    <label class="layui-form-label" style="width:100px">文章类型</label>
-                    <div class="layui-input-block">
-                        <select name="paperType" multiple>
-                            <option value="">不指定</option>
-                            <option value="0">Article</option>
-                            <option value="1">Conference</option>
-                            <option value="2">InPeoceedings</option>
-                            <option value="3">Book</option>
-                            <option value="4">InBook</option>
-                            <option value="5">InCollection</option>
-                            <option value="6">Masters Thesis</option>
-                            <option value="7">PhD Thesis</option>
-                            <option value="8">Technical Report</option>
-                        </select>
-                    </div>
-                </div>
                 <!--按钮建-->
                 <div class="layui-form-item">
                     <div class="layui-input-block">
-                        <button class="layui-btn" lay-submit lay-filter="searchPubInPopUp">搜索</button>
-                        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                        <button class="layui-btn" lay-submit lay-filter="searchVenue">提交</button>
+                        <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetSearchVenuePanel">重置</button>
                     </div>
                 </div>
             </form>
         </div>
         <!--搜索结果表格-->
-        <div id="queriedPubsDivInPopUp" style="border:1px solid #000;margin-top:10px;margin-bottom:10px">
-            <table class="layui-hide" id="pubTableAfterSearchInPopUp" lay-filter="pubTableAfterSearchInPopUp"></table>
+        <div id="queriedVenueDiv" class="collapse" style="border:1px solid #000;margin-top:10px;margin-bottom:10px">
+            <table class="layui-hide" id="venueTableAfterSearch" lay-filter="venueTableAfterSearch"></table>
         </div>
     </div>
     <script>
@@ -132,24 +125,30 @@
     </script>
 
     <script>
-        var searchPubService = '/search-pub/';
+        var searchVenueService = '/search-venue/';
         layui.use(['element', 'form', 'layedit', 'table', 'code'], function(){//element只用来让选项卡工作
             var form = layui.form
                 ,layer = layui.layer
                 ,table = layui.table
                 ,$ = layui.$;
-            form.on('submit(searchPubInPopUp)', function(data){
+            //其他input回车不提交 
+            $(".layui-input").keydown(function(event){  
+                if (event.keyCode == 13){  
+                    return false;
+                }  
+            }); 
+            //按钮4-3：高级搜索（venue）
+            form.on('submit(searchVenue)', function(data){
                 console.log("提交的表单数据：" + JSON.stringify(data.field));
                 console.log("查找数据库....");
-                advanceSearchHandler('queriedPubsDivInPopUp', '', 'pubTableAfterSearchInPopUp', 'pubSearchTableContentInPopUpt', 'toolbarPopUpGetData', data, table, searchPubService);
-                console.log("查找完成....");
+                advanceSearchVenueHandler('queriedVenueDiv', '', 'venueTableAfterSearch', 'venueSearchTableContent', 'toolbarPopUpGetData', data, table, searchVenueService);
                 return false;
             });
-            //按钮1：选择文献的表格
-            table.on('toolbar(pubTableAfterSearchInPopUp)', function(obj){
+            //按钮1：选择人的表格
+            table.on('toolbar(venueTableAfterSearch)', function(obj){
                 var checkStatus = table.checkStatus(obj.config.id);
                 var data = checkStatus.data;//获取被选文献的内容
-                var selectedPubInfo = data[0];
+                var selectedVenueInfo = data[0];
                 if (data.length < 1){
                     layer.msg("未选择文献！", {
                         time: 5000, //5s后自动关闭
@@ -159,9 +158,9 @@
                 }else{//将数据直接更新到父页面中
                     var panelID = parent.window.currentClickButton;
                     if (panelID == "relSource"){
-                        showRelNodeDetail('addRelSourceInfo', selectedPubInfo);
+                        showRelNodeDetail('addRelSourceInfo', selectedVenueInfo);
                     }else if (panelID == "relTarget"){
-                        showRelNodeDetail('addRelTargetInfo', selectedPubInfo);
+                        showRelNodeDetail('addRelTargetInfo', selectedVenueInfo);
                     }
                     var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
                     parent.layer.close(index); //再执行关闭
@@ -186,31 +185,28 @@
                 layui.code();
                 layui.form.render();
             }
-            //(7)查看数据&新增关系面板中，高级搜索的div处理过程,
+            //(9)查看数据&新增关系面板中，高级搜索（venue）的div处理过程,--------searchVenue.html中需要同步修改
             //advSearchDivID:高级搜索框div，editPubDivID：编辑文献框div，resultTableFilter：搜索结果表格过滤器（定位）
             //resultTableID：搜索结果表格ID，没用，toolbarID：搜索结果确认按钮ID， data：高级搜索传入的数据
-            function advanceSearchHandler(advSearchDivID, editPubDivID, resultTableFilter, resultTableID, toolbarID, data, table, searchPubService){
+            function advanceSearchVenueHandler(advSearchDivID, editDivID, resultTableFilter, resultTableID, toolbarID, data, table, searchService){
                 var $ = layui.$;
                 // todo 处理搜索条件
-                //parameters = {"title":data.field.title
+                //parameters = {"venue_name":data.field.venue_name
                     //, "startTime":data["startTime"]
                     //, "endTime": data["endTime"]
                 //    , "paperType": data["paperType"]}
                 $('#' + advSearchDivID).attr("class", "collapse in");
-                if (editPubDivID != "") {
-                    $('#' + editPubDivID).attr("class", "collapse");
+                if (editDivID != "") {
+                    $('#' + editDivID).attr("class", "collapse");
                 }
                 table.render(
                     {
                         elem: '#' + resultTableFilter
                         ,id: resultTableID
-                        ,url: searchPubService
+                        ,url: searchService
                         ,toolbar: '#' + toolbarID
                         ,method: 'post'
-                        ,where: {"title":data.field.title
-                            //, "startTime":data["startTime"]
-                            //, "endTime": data["endTime"]
-                            , "paperType": data.field.paperType}
+                        ,where: {"venue_name":data.field.venue_name}
                         //,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
                         ,page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
                             layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'] //自定义分页布局
@@ -222,22 +218,15 @@
                         ,limit: 10
                         ,cols: [[{type:'radio'}
                             ,{field:"ID", width:60, title: 'ID', sort: true}
-                            ,{field:'title', width:300, title: '标题', sort: false}
-                            ,{field:'author', width:200, title: '作者', sort: false}
-                            ,{field:'journal', width:200, title: '期刊/会议'}
-                            ,{field:'year', title: '年', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
-                            ,{field:'month', title: '月', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
-                            ,{field:'paperTypeEdit', width: '100', title: '类型', sort: true}
-                            ,{field:'booktitle', width: '100', title: '书名', sort: false}
-                            ,{field:'editor', width: '100', title: '编辑', sort: false}
-                            ,{field:'edition', width: '100', title: '版本', sort: false}
-                            ,{field:'volume', width: '100', title: '卷', sort: false}
-                            ,{field:'number', width: '100', title: '期', sort: false}
-                            ,{field:'note', width: '100', title: '备注', sort: true}
-                            ,{field:'keywords', width: '100', title: '关键词', sort: false}
-                            ,{field:'pages', width: '100', title: '页码', sort: false}
+                            ,{field:'venue_name', width:200, title: 'Venue Name', sort: false}
+                            ,{field:'abbr', width:200, title: 'Abbr.', sort: false}
+                            ,{field:'publisher', width:200, title: 'Publisher'}
+                            ,{field:'start_year', title: 'Start Year', width: '200', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
+                            ,{field:'indexing', title: 'Indexing', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
+                            ,{field:'venue_type', width: '100', title: 'Venue Type', sort: true}
+                            ,{field:'note', width: '200', title: 'Note', sort: false}
                         ]]
-                        ,done: function(res, curr, count){
+                        ,done: function(res, curr, count){;
                             console.log(res);
                         }
                     }

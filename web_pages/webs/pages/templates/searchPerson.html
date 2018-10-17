@@ -111,7 +111,6 @@
                 ,layer = layui.layer
                 ,table = layui.table
                 ,$ = layui.$;
-                  
             //其他input回车不提交 
             $(".layui-input").keydown(function(event){  
                 if (event.keyCode == 13){  
@@ -131,13 +130,18 @@
                 var data = checkStatus.data;//获取被选文献的内容
                 var selectedPersonInfo = data[0];
                 if (data.length < 1){
-                    layer.msg("未选择文献！", {
+                    layer.msg("未选择！", {
                         time: 5000, //5s后自动关闭
                         btn: ['ok'],
                         icon:5
                     });
                 }else{//将数据直接更新到父页面中
-                    showRelNodeDetail('addRelInfo', selectedPersonInfo);
+                    var panelID = parent.window.currentClickButton;
+                    if (panelID == "relSource"){
+                        showRelNodeDetail('addRelSourceInfo', selectedPersonInfo);
+                    }else if (panelID == "relTarget"){
+                        showRelNodeDetail('addRelTargetInfo', selectedPersonInfo);
+                    }
                     var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
                     parent.layer.close(index); //再执行关闭
                 }

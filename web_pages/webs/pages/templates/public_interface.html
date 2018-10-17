@@ -1056,6 +1056,7 @@
                         <!--子面板：新增关系-->
                         <div class="layui-tab-item">
                             <form class="layui-form" action="">
+                                <!--关系选择下拉菜单-->
                                 <div class="layui-form-item">
                                     <label class="layui-form-label" style="width:100px">关系类型</label>
                                     <div class="layui-input-block">
@@ -1067,6 +1068,7 @@
                                         </select>
                                     </div>
                                 </div>
+                                <!--起讫点选择-->
                                 <div class="layui-form-item collapse" id="addRelSourcceTarget">
                                     <label class="layui-form-label" style="width:100px">起讫点</label>
                                     <div class="layui-input-block">
@@ -1074,8 +1076,19 @@
                                         <button id="relTarget" class="layui-btn layui-btn-radius layui-btn-warm" style="margin-left:100px" lay-submit lay-filter="relTarget">Paper</button>
                                     </div>
                                 </div>
+                                <!--选择点信息展示-->
                                 <div class="layui-form-item collapse" id="addRelInfoDiv">
-                                    <pre id="addRelInfo"></pre>
+                                    <div class="layui-row">
+                                        <div class="layui-col-xs4 layui-col-sm12 layui-col-md4">
+                                            <pre id="addRelSourceInfo"></pre>
+                                        </div>
+                                        <div class="layui-col-xs4 layui-col-sm7 layui-col-md8">
+                                            <pre id="addRelInfo"></pre>
+                                        </div>
+                                        <div class="layui-col-xs4 layui-col-sm5 layui-col-md4">
+                                            <pre id="addRelTargetInfo"></pre>
+                                        </div>
+                                    </div>
                                 </div>
                             </form>
                         </div>
@@ -1292,9 +1305,30 @@
                 }
             });
             //(5)新建节点关系时,显示节点搜索框
+            var currentSelectedRel;
+            function resetNodeInfoDiv(){
+                var $ = layui.$;
+                var divStatus = $('#addRelInfoDiv').attr('class');
+                if (divStatus.indexOf('collapse in') > -1){
+                    $('#addRelInfoDiv').attr('class', divStatus.replace('collapse in', 'collapse'));
+                }
+                document.getElementById("addRelSourceInfo").innerText = "";
+                layui.code();
+                document.getElementById("addRelTargetInfo").innerText = "";
+                layui.code();
+            }
+            function resetAddRelDivs(){
+                var $ = layui.$;
+                var divStatus = $('#addRelSourcceTarget').attr('class');
+                if (divStatus.indexOf('collapse in') > -1){
+                    $('#addRelSourcceTarget').attr('class', divStatus.replace('collapse in', 'collapse'));
+                }
+                resetNodeInfoDiv();
+            }
             form.on('select(relation_type_select)', function(data){
                 var value = data.value;
                 if (value == "") {
+                    resetAddRelDivs();
                     console.log('未选择关系类型');
                     return;
                 }
@@ -1304,7 +1338,7 @@
                     if (addRelSourcceTargetStatus.indexOf('collapse in') == -1){
                         $('#addRelSourcceTarget').attr('class', addRelSourcceTargetStatus.replace('collapse', 'collapse in'));
                     }
-                    document.getElementById("relSource").innerHTML = 'Paper';
+                    document.getElementById("relSource").innerHTML = 'Publication';
                     document.getElementById("relTarget").innerHTML = 'Venue';
                     form.render();
                 }else if (value == 1){
@@ -1313,78 +1347,36 @@
                         $('#addRelSourcceTarget').attr('class', addRelSourcceTargetStatus.replace('collapse', 'collapse in'));
                     }
                     document.getElementById("relSource").innerHTML = 'Person';
-                    document.getElementById("relTarget").innerHTML = 'Paper';
+                    document.getElementById("relTarget").innerHTML = 'Publication';
                     form.render();
                 }else if (value == 2){
                     var addRelSourcceTargetStatus = $('#addRelSourcceTarget').attr('class');
                     if (addRelSourcceTargetStatus.indexOf('collapse in') == -1){
                         $('#addRelSourcceTarget').attr('class', addRelSourcceTargetStatus.replace('collapse', 'collapse in'));
                     }
-                    document.getElementById("relSource").innerHTML = 'Paper';
-                    document.getElementById("relTarget").innerHTML = 'Paper';
+                    document.getElementById("relSource").innerHTML = 'Publication';
+                    document.getElementById("relTarget").innerHTML = 'Publication';
                     form.render();
                 }else{
                     console.log('未定义关系类型');
+                    resetAddRelDivs();
+                    return;
                 }
+                //当不是第一次点击时，隐藏下面节点详细信息的div
+                if (currentSelectedRel != undefined & currentSelectedRel != value){
+                    resetNodeInfoDiv(); //
+                }
+                currentSelectedRel = value;
             });
             //(6)新增关系-起讫点
             form.on('submit(relSource)', function(data){
-                //点击按钮后，先显示弹出窗口，搜索节点
-                var frameID;
-                var nodeType = $('#relSource').text();
-                if (nodeType == undefined){
-                    return -1;
-                }
-                var popupUrl;
-                if (nodeType == "Person"){
-                    popupUrl = '/search-person-popup';
-                }else if (nodeType == "Venue"){
-                    popupUrl = '/search-venue-popup';
-                }else if (nodeType == "Publication"){
-                    popupUrl = '/search-pub-popup';
-                }else{
-                    console.log("未知的文献类型");
-                    return -1;
-                }
-                layer.open({
-                    type: 2,
-                    title: '节点选择确认',
-                    maxmin: true,
-                    area: '700px',
-                    scrollbar: true,
-                    fixed: false,
-                    offset:'30px',
-                    //btn:['确定','取消'],
-                    //btnAlign: 'c',
-                    //yes: function(){//按钮【确定】的回调
-                    //    return false;
-                    //},
-                    //btn2: function(){//按钮【取消】的回调
-                    //    return false;
-                    //},
-                    content:popupUrl,
-                    success: function(layero, index){
-                        frameID = index;
-                        layer.iframeAuto(index);
-                    }
-                });
-
-                //显示选择的节点信息：
-                var infoDivStatus = $('#addRelInfoDiv').attr('class');
-                if (infoDivStatus.indexOf('collapse in') == -1){
-                    $('#addRelInfoDiv').attr('class', infoDivStatus.replace('collapse', 'collapse in'));
-                }
-                //showRelNodeDetail('addRelInfo', addedInfo);
-
-                form.render();
+                window.currentClickButton = "relSource";
+                processPopupWindow('relSource', "addRelInfoDiv");
                 return false;
             });
             form.on('submit(relTarget)', function(data){
-                var infoDivStatus = $('#addRelInfoDiv').attr('class');
-                if (infoDivStatus.indexOf('collapse in') == -1){
-                    $('#addRelInfoDiv').attr('class', infoDivStatus.replace('collapse', 'collapse in'));
-                }
-                form.render();
+                window.currentClickButton = "relTarget";
+               processPopupWindow('relTarget', "addRelInfoDiv");
                 return false;
             });
         });
@@ -2001,7 +1993,7 @@
                 );
                 return false;
             }
-            //(9)查看数据&新增关系面板中，高级搜索（venue）的div处理过程,
+            //(9)查看数据&新增关系面板中，高级搜索（venue）的div处理过程,--------searchVenue.html中需要同步修改
             //advSearchDivID:高级搜索框div，editPubDivID：编辑文献框div，resultTableFilter：搜索结果表格过滤器（定位）
             //resultTableID：搜索结果表格ID，没用，toolbarID：搜索结果确认按钮ID， data：高级搜索传入的数据
             function advanceSearchVenueHandler(advSearchDivID, editDivID, resultTableFilter, resultTableID, toolbarID, data, table, searchService){
@@ -2049,6 +2041,56 @@
                 );
                 return false;
             }
+            //10)新增关系面板，点击按钮后，先显示弹出窗口，搜索节点
+        function processPopupWindow(buttonID, addRelInfoDiv){
+            var $ = layui.$;
+            var frameID;
+            var nodeType = $('#' + buttonID).text();
+            if (nodeType == undefined){
+                return -1;
+            }
+            var popupUrl;
+            if (nodeType == "Person"){
+                popupUrl = '/search-person-popup';
+            }else if (nodeType == "Venue"){
+                popupUrl = '/search-venue-popup';
+            }else if (nodeType == "Publication"){
+                popupUrl = '/search-pub-popup';
+            }else{
+                console.log("未知的文献类型");
+                return -1;
+            }
+            layer.open({
+                type: 2,
+                title: '节点选择确认',
+                maxmin: true,
+                area: '700px',
+                scrollbar: true,
+                fixed: false,
+                offset:'30px',
+                //btn:['确定','取消'],
+                //btnAlign: 'c',
+                //yes: function(){//按钮【确定】的回调
+                //    return false;
+                //},
+                //btn2: function(){//按钮【取消】的回调
+                //    return false;
+                //},
+                content:popupUrl,
+                success: function(layero, index){
+                    frameID = index;
+                    layer.iframeAuto(index);
+                }
+            });
+
+            //显示选择的节点信息：
+            var infoDivStatus = $('#' + addRelInfoDiv).attr('class');
+            if (infoDivStatus.indexOf('collapse in') == -1){
+                $('#' + addRelInfoDiv).attr('class', infoDivStatus.replace('collapse', 'collapse in'));
+            }
+            layui.form.render();
+            return false;
+        }
     </script>
 
     <script>
