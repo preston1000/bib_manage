@@ -250,7 +250,7 @@ class Person:
     name_ch = None
     first_name_ch = None
     last_name_ch = None
-    affiliation = None
+    institution = None
     research_interest = None
     note = None
     added_by = None  # 节点创建人
@@ -268,7 +268,7 @@ class Person:
         self.name_ch = name_ch
         self.last_name_ch = last_name_ch
         self.first_name_ch = first_name_ch
-        self.affiliation = institution
+        self.institution = institution
         self.research_interest = research_interest
         self.note = note
         self.added_by = added_by
@@ -283,10 +283,10 @@ class Person:
                "name_ch:'" + ("" if self.name_ch is None else self.name_ch) + "'," + \
                "first_name_ch:'" + ("" if self.first_name_ch is None else self.first_name_ch) + "'," + \
                "last_name_ch:'" + ("" if self.last_name_ch is None else self.last_name_ch) + "'," + \
-               "affiliation:'" + ("" if self.affiliation is None else self.affiliation) + "'," + \
+               "institution:'" + ("" if self.institution is None else self.institution) + "'," + \
                "note:'" + ("" if self.note is None else self.note) + "'," + \
                "added_by:'" + ("" if self.added_by is None else self.added_by) + "'," + \
-               "added_date:'" + ("" if self.affiliation is None else self.added_date) + "'," + \
+               "added_date:'" + ("" if self.institution is None else self.added_date) + "'," + \
                "research_interest:'" + ("" if self.research_interest is None else self.research_interest) + "'}"
         return word
 
