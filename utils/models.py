@@ -115,27 +115,14 @@ class Publication:
                 print("unrecognized entry (type):" + self.to_string())
                 return None
             elif self.node_type == "ARTICLE":
-                cypher += "author:'" + self.author + "', title:'" + self.title + \
+                cypher += "title:'" + self.title + \
                          "', journal:'" + self.journal + "', year:'" + self.year + "'})"
             elif self.node_type == "BOOK":
-                if self.author is not None:
-                    cypher += "author:'" + self.author + "', title:'" + self.title + \
-                             "',publisher:'" + self.publisher + "', year:'" + self.year + "'})"
-                elif self.editor is not None:
-                    cypher += "editor:'" + self.editor + "', title:'" + self.title + \
-                             "',publisher:'" + self.publisher + "', year:'" + self.year + "'})"
-                else:
-                    return None
+                cypher += "title:'" + self.title + \
+                         "',publisher:'" + self.publisher + "', year:'" + self.year + "'})"
             elif self.node_type == "INBOOK":
-                if self.author is not None:
-                    cypher += "author:'" + self.author + "', title:'" + self.title + \
-                              "', year:'" + self.year
-                elif self.editor is not None:
-                    cypher += "editor:'" + self.editor + "', title:'" + self.title + \
-                              "', year:'" + self.year
-                else:
-                    return None
-
+                cypher += "title:'" + self.title + \
+                          "', year:'" + self.year
                 if self.chapter is not None:
                     cypher += "', chapter:'" + self.chapter + "'})"
                 elif self.pages is not None:
@@ -143,10 +130,10 @@ class Publication:
                 else:
                     return None
             elif self.node_type == "INPROCEEDINGS" or self.node_type == "CONFERENCE":
-                cypher += "author:'" + self.author + "', title:'" + self.title + \
+                cypher += "title:'" + self.title + \
                          "', book_title:'" + self.book_title + "', year:'" + self.year + "'})"
             elif self.node_type == "INCOLLECTION":
-                cypher += "author:'" + self.author + "', title:'" + self.title + \
+                cypher += "title:'" + self.title + \
                          "', book_title:'" + self.book_title + "', year:'" + self.year + "', publisher:'" + \
                           self.publisher + "'})"
             elif self.node_type == "MISC":
@@ -175,7 +162,7 @@ class Publication:
     def get_revise_cypher(self, field_value_revise, field_value_match):
         if field_value_match is None or not isinstance(field_value_match, dict) or not isinstance(field_value_revise, dict):
             return ""
-        cypher = "CREATE (node:Publication {"
+        cypher = "MATCH (node:Publication {"
         for field, value in field_value_match.items():
             cypher += field + ":'" + str(value) + "',"
         cypher = cypher[:-1] + "}) set " + self.to_string_for_modification("node", field_value_revise) + " return node"
@@ -230,12 +217,38 @@ class Venue:
                "ssci_index:'" + ("" if self.ssci_index is None else self.ssci_index) + "'}"
         return word
 
+    def to_string_for_modification(self, node_identifier, field_value):
+        """
+        修改字段时，需要的where后字符串
+        :param node_identifier: cypher中，(n:Publication)中的n
+        :param field_value: 要修改的field name 和value
+        :return: string
+        """
+        if node_identifier is None or node_identifier == "" or not isinstance(field_value, dict):
+            return ""
+        word = ""
+        for field, value in field_value.items():
+            if value is None or value == '':
+                value = ""
+            word += node_identifier + "." + field + "='" + value + "',"
+        word = word[:-1]
+        return word
+
     def get_create_cypher(self):
         cypher = "CREATE (node:Venue " + self.to_string() + ") return node"
         return cypher
 
     def get_match_cypher(self):
         cypher = "MATCH (node:Venue { venue_name:'" + self.venue_name + "'})  return node"
+        return cypher
+
+    def get_revise_cypher(self, field_value_revise, field_value_match):
+        if field_value_match is None or not isinstance(field_value_match, dict) or not isinstance(field_value_revise, dict):
+            return ""
+        cypher = "MATCH (node:Venue {"
+        for field, value in field_value_match.items():
+            cypher += field + ":'" + str(value) + "',"
+        cypher = cypher[:-1] + "}) set " + self.to_string_for_modification("node", field_value_revise) + " return node"
         return cypher
 
 
@@ -290,6 +303,23 @@ class Person:
                "research_interest:'" + ("" if self.research_interest is None else self.research_interest) + "'}"
         return word
 
+    def to_string_for_modification(self, node_identifier, field_value):
+        """
+        修改字段时，需要的where后字符串
+        :param node_identifier: cypher中，(n:Publication)中的n
+        :param field_value: 要修改的field name 和value
+        :return: string
+        """
+        if node_identifier is None or node_identifier == "" or not isinstance(field_value, dict):
+            return ""
+        word = ""
+        for field, value in field_value.items():
+            if value is None or value == '':
+                value = ""
+            word += node_identifier + "." + field + "='" + value + "',"
+        word = word[:-1]
+        return word
+
     def get_create_cypher(self):
         cypher = "CREATE (node:Person " + self.to_string() + ") return node"
         return cypher
@@ -300,3 +330,13 @@ class Person:
         elif field == "name_ch":
             cypher = "MATCH (node:Person {" + field + ":'" + self.name_ch + "'}) return node"
         return cypher
+
+    def get_revise_cypher(self, field_value_revise, field_value_match):
+        if field_value_match is None or not isinstance(field_value_match, dict) or not isinstance(field_value_revise, dict):
+            return ""
+        cypher = "MATCH (node:Person {"
+        for field, value in field_value_match.items():
+            cypher += field + ":'" + str(value) + "',"
+        cypher = cypher[:-1] + "}) set " + self.to_string_for_modification("node", field_value_revise) + " return node"
+        return cypher
+
