@@ -214,6 +214,7 @@ def query_pub_by_multiple_field(pub_info):
                 "series": null_string(record["m"]["series"]),
                 "howpublished": null_string(record["m"]["how_published"]),
                 "indexing": 0,
+                "uuid": null_string(record["m"]["uuid"]),
                 "note": null_string(record["m"]["note"])}
         pubs.append(pub)
     result["data"] = pubs
