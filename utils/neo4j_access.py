@@ -389,6 +389,48 @@ def revise_publications(data):
             return 1
 
 
+def revise_persons(data):
+    """
+    提取人信息，并修改节点
+    :param data: 要修改的文献信息，dict
+    :return:-1:输入数据无效；-2：无法解析输入数据；-3：无法插入数据库;1:修改成功
+    """
+    if data is None or data == []:
+        print('No valid person info is given')
+        return -1
+    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    with driver.session() as session:
+        node = extract_person(data)  # 提取文献信息，构造节点
+        if node is None or isinstance(node, int):
+            return -2
+        else:
+            tmp = revise_node(session, node, data)  # 更新节点
+            if tmp is None:
+                return -3
+            return 1
+
+
+def revise_venues(data):
+    """
+    提取人信息，并修改节点
+    :param data: 要修改的文献信息，dict
+    :return:-1:输入数据无效；-2：无法解析输入数据；-3：无法插入数据库;1:修改成功
+    """
+    if data is None or data == []:
+        print('No valid venue info is given')
+        return -1
+    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    with driver.session() as session:
+        node = extract_venue(data)  # 提取文献信息，构造节点
+        if node is None or isinstance(node, int):
+            return -2
+        else:
+            tmp = revise_node(session, node, data)  # 更新节点
+            if tmp is None:
+                return -3
+            return 1
+
+
 def revise_node(tx, node, field_value_revise):
     """
     先查询节点是否存在，若存在，修改内容，否则，创建节点。-1表示出错
@@ -890,6 +932,54 @@ def query_or_create_node(tx, node, to_create=True, match_field=None):
             return record["node"]['uuid']
         return None
     return None
+
+
+def query_or_create_relation(tx, source_type, source_id, target_type, target_id, relation_type, to_create=True):
+    """
+    先查询关系是否存在，若存在，直接返回关系id，否则，创建关系并返回id。-1表示出错
+    :param relation_type:
+    :param target_id:
+    :param target_type:
+    :param source_id:
+    :param source_type:
+    :param tx:
+    :param to_create:
+    :return:
+    """
+    message = {"status": -1, "msg": ""}
+    if source_type is None or source_id is None or target_id is None or target_type is None or relation_type is None:
+        message["msg"] = "输入参数不完整"
+        return None
+    if tx is None:
+        driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+        tx = driver.session()
+    cypher = "MATCH (s:{source}) -[r:{rel}]-> (t:{target}) where s.uuid='{IDs}' and t.uuid='{IDt}'  " \
+             "return s, r, t" .format(source=source_type, target=target_type, IDs=source_id,
+                                      IDt=target_id, rel=relation_type.upper())
+    result = tx.run(cypher)
+    result = result.data()
+    if len(result) > 1:
+        print("查询到了关系：")
+        message["status"] = 2
+        message["msg"] = "关系已经存在"
+        return message
+    if to_create:
+        cypher = "MATCH (s:{source}), (t:{target}) where s.uuid='{IDs}' and t.uuid='{IDt}' CREATE (s) -[r:{rel}]->(t) " \
+             "return s, r, t" .format(source=source_type, target=target_type, IDs=source_id,
+                                      IDt=target_id, rel=relation_type.upper())
+        result = tx.run(cypher)
+        result = result.data()
+        if len(result) > 1:
+            print("创建新关系：")
+            message["status"] = 1
+            message["msg"] = "关系已创建"
+            return message
+        message["status"] = -2
+        message["msg"] = "创建关系失败，数据库操作失败"
+        return message
+    message["status"] = -3
+    message["msg"] = "数据库无记录，已选择不创建新节点"
+    return message
 
 
 if __name__ == "__main__":
