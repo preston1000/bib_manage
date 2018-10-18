@@ -374,7 +374,6 @@
                                     <div class="layui-form-item">
                                         <div class="layui-input-block">
                                             <button class="layui-btn" lay-submit lay-filter="editPubSubmit">提交</button>
-                                            <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetEditPubPanel">重置</button>
                                             <button class="layui-btn layui-btn-primary" lay-submit lay-filter="cancelEditPubPanel">取消</button>
                                         </div>
                                     </div>
@@ -505,7 +504,6 @@
                                     <div class="layui-form-item">
                                         <div class="layui-input-block">
                                             <button class="layui-btn" lay-submit lay-filter="editPersonSubmit">提交</button>
-                                            <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetEditPersonPanel">重置</button>
                                             <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="cancelEditPersonPanel">取消</button>
                                         </div>
                                     </div>
@@ -594,6 +592,29 @@
                                             <input type="text" name="abbr" placeholder="Abbr" autocomplete="off" class="layui-input">
                                         </div>
                                     </div>
+                                    <!--venue_type-->
+                                    <div class="layui-form-item" id="editVenue-venue_type">
+                                        <label class="layui-form-label" style="width:100px">Venue Type</label>
+                                        <div class="layui-input-block">
+                                            <select name="venue_type" lay-filter="paperTypeEdit" lay-verify="required">
+                                                <option value="">venue type</option>
+                                                <option value="0">Article</option>
+                                                <option value="1">Book</option>
+                                                <option value="2">Booklet</option>
+                                                <option value="3">Conference</option>
+                                                <option value="4">InBook</option>
+                                                <option value="5">InCollection</option>
+                                                <option value="6">InProceedings</option>
+                                                <option value="7">Manual</option>
+                                                <option value="8">MastersThesis</option>
+                                                <option value="9">Misc</option>
+                                                <option value="10">PhDThesis</option>
+                                                <option value="11">Proceedings</option>
+                                                <option value="12">TechReport</option>
+                                                <option value="13">Unpublished</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                     <!--publisher-->
                                     <div class="layui-form-item" id="editVenue-publisher">
                                         <label class="layui-form-label" style="width:100px">Publisher</label>
@@ -601,18 +622,18 @@
                                             <input type="text" name="publisher" placeholder="Publisher" autocomplete="off" class="layui-input">
                                         </div>
                                     </div>
+                                    <!--address-->
+                                    <div class="layui-form-item" id="editVenue-address">
+                                        <label class="layui-form-label" style="width:100px">Address</label>
+                                        <div class="layui-input-block">
+                                            <input type="text" name="address" placeholder="Address" autocomplete="off" class="layui-input">
+                                        </div>
+                                    </div>
                                     <!--start_year-->
                                     <div class="layui-form-item" id="editVenue-start_year">
                                         <label class="layui-form-label" style="width:100px">Start Year</label>
                                         <div class="layui-input-block">
                                             <input type="text" name="start_year" placeholder="Start Year" autocomplete="off" class="layui-input">
-                                        </div>
-                                    </div>
-                                    <!--venue_type-->
-                                    <div class="layui-form-item" id="editVenue-venue_type">
-                                        <label class="layui-form-label" style="width:100px">Venue Type</label>
-                                        <div class="layui-input-block">
-                                            <input type="text" name="venue_type" placeholder="venue type" autocomplete="off" class="layui-input">
                                         </div>
                                     </div>
                                     <!--Indexing-->
@@ -637,8 +658,7 @@
                                     <!--按钮建-->
                                     <div class="layui-form-item">
                                         <div class="layui-input-block">
-                                            <button class="layui-btn" lay-submit lay-filter="editPubSubmit">提交</button>
-                                            <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetEditVenuePanel">重置</button>
+                                            <button class="layui-btn" lay-submit lay-filter="editVenueSubmit">提交</button>
                                             <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="cancelEditVenuePanel">取消</button>
                                         </div>
                                     </div>
@@ -669,12 +689,12 @@
                                 <div class="layui-form-item">
                                     <label class="layui-form-label" style="margin-right:20px;width:100px">添加方式</label>
                                     <div class="layui-input-block">
-                                        <input type="checkbox" name="addPubWay" checked lay-skin="switch" lay-filter="addPubWay" lay-text="上传bib文件|手动添加单条记录">
+                                        <input type="checkbox" name="addPubWay" checked lay-skin="switch" lay-filter="addPubWay" lay-text="手动添加单条记录|上传bib文件">
                                     </div>
                                 </div>
                                 <!--上传文献框/文献字段编辑框-->
                                 <div class="layui-form-item" style="border:1px solid #000">
-                                    <div id="uploadBib" class="layui-upload collapse in">
+                                    <div id="uploadBib" class="layui-upload collapse">
                                         <button type="button" class="layui-btn layui-btn-normal" id="chooseBibFile">选择bib文件</button>
                                         <div class="layui-upload-list">
                                             <table class="layui-table">
@@ -689,7 +709,7 @@
                                         </div>
                                         <button type="button" class="layui-btn" id="testListAction">开始上传</button>
                                     </div>
-                                    <div id="addPub" class="collapse">
+                                    <div id="addPub" class="collapse in">
                                         <form class="layui-form" action="" lay-filter="addOrEditPubPanel">
                                             <!--文献类型-->
                                             <div class="layui-form-item" id="addPub-pubType">
@@ -896,7 +916,6 @@
                                                 <div class="layui-input-block">
                                                     <button class="layui-btn" lay-submit lay-filter="newPubSubmit">提交</button>
                                                     <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetAddPubPanel">重置</button>
-                                                    <!--<button class="layui-btn layui-btn-primary" id="cancelEditPanel">取消</button>-->
                                                 </div>
                                             </div>
                                         </form>
@@ -965,12 +984,11 @@
                                 </div>
                                 <!--研究兴趣-->
                                 <div class="layui-form-item" id="addPerson-research_interest" style="display:auto">
-                                    <label class="layui-form-label" style="width:100px;margin-right:10px" >Authors</label>
+                                    <label class="layui-form-label" style="width:100px;margin-right:10px" >Research Interest</label>
                                     <div class="layui-input-block ">
                                         <input type="text" name="research_interest" placeholder="Research Interest" autocomplete="off" class="layui-input">
                                     </div>
                                 </div>
-
                                 <!--note-->
                                 <div class="layui-form-item" id="addPerson-note">
                                     <label class="layui-form-label" style="width:100px">Note</label>
@@ -982,7 +1000,7 @@
                                 <div class="layui-form-item">
                                     <div class="layui-input-block">
                                         <button class="layui-btn" lay-submit lay-filter="newPersonSubmit">提交</button>
-                                        <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetAddPubPanel">重置</button>
+                                        <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetAddPersonPanel">重置</button>
                                     </div>
                                 </div>
                             </form>
@@ -1004,6 +1022,13 @@
                                         <input type="text" name="abbr" placeholder="Abbr" autocomplete="off" class="layui-input" id="venue_abbr">
                                     </div>
                                 </div>
+                                <!--venue_type-->
+                                <div class="layui-form-item" id="addVenue-venue_type">
+                                    <label class="layui-form-label" style="width:100px">Venue Type</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="venue_type" placeholder="venue type" autocomplete="off" class="layui-input" id="venue_type">
+                                    </div>
+                                </div>
                                 <!--publisher-->
                                 <div class="layui-form-item" id="addVenue-publisher">
                                     <label class="layui-form-label" style="width:100px">Publisher</label>
@@ -1011,18 +1036,18 @@
                                         <input type="text" name="publisher" placeholder="Publisher" autocomplete="off" class="layui-input" id="venue_publisher">
                                     </div>
                                 </div>
+                                <!--address-->
+                                <div class="layui-form-item" id="addVenue-address">
+                                    <label class="layui-form-label" style="width:100px">Address</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="address" placeholder="Address" autocomplete="off" class="layui-input" id="venue_address">
+                                    </div>
+                                </div>
                                 <!--start_year-->
                                 <div class="layui-form-item" id="addVenue-start_year">
                                     <label class="layui-form-label" style="width:100px">Start Year</label>
                                     <div class="layui-input-block">
                                         <input type="text" name="start_year" placeholder="Start Year" autocomplete="off" class="layui-input" id="venue_start_year">
-                                    </div>
-                                </div>
-                                <!--venue_type-->
-                                <div class="layui-form-item" id="addVenue-venue_type">
-                                    <label class="layui-form-label" style="width:100px">Venue Type</label>
-                                    <div class="layui-input-block">
-                                        <input type="text" name="venue_type" placeholder="venue type" autocomplete="off" class="layui-input" id="venue_type">
                                     </div>
                                 </div>
                                 <!--Indexing-->
@@ -1060,7 +1085,7 @@
                                 <div class="layui-form-item">
                                     <label class="layui-form-label" style="width:100px">关系类型</label>
                                     <div class="layui-input-block">
-                                        <select name="relation_type" lay-filter="relation_type_select">
+                                        <select name="relation_type" lay-filter="relation_type_select" id="relation_type_select">
                                             <option value="">选择关系关系类型</option>
                                             <option value="0">Paper Published In Venue</option>
                                             <option value="1">Person Write Paper</option>
@@ -1079,15 +1104,21 @@
                                 <!--选择点信息展示-->
                                 <div class="layui-form-item collapse" id="addRelInfoDiv">
                                     <div class="layui-row">
-                                        <div class="layui-col-xs4 layui-col-sm12 layui-col-md4">
+                                        <div class="layui-col-xs4 layui-col-sm12 layui-col-md4" style="min-width:100px">
                                             <pre id="addRelSourceInfo"></pre>
                                         </div>
-                                        <div class="layui-col-xs4 layui-col-sm7 layui-col-md8">
+                                        <div class="layui-col-xs4 layui-col-sm7 layui-col-md8" style="min-width:100px">
                                             <pre id="addRelInfo"></pre>
                                         </div>
-                                        <div class="layui-col-xs4 layui-col-sm5 layui-col-md4">
+                                        <div class="layui-col-xs4 layui-col-sm5 layui-col-md4" style="min-width:100px">
                                             <pre id="addRelTargetInfo"></pre>
                                         </div>
+                                    </div>
+                                </div>
+                                <!--确认按钮-->
+                                <div class="layui-form-item collapse" id="addRelConfirm">
+                                    <div class="layui-input-block" style="position:relative;left:30%;">
+                                        <button id="relConfirm" class="layui-btn layui-btn-radius layui-btn-normal" lay-submit lay-filter="relConfirm">Confirm</button>
                                     </div>
                                 </div>
                             </form>
@@ -1136,14 +1167,14 @@
                 var collapseStateButton = $("#uploadBib").attr("class")
                     ,collapseStateForm = $("#addPub").attr("class");
                 if (this.checked) {//显示按钮
-                    if (collapseStateButton.indexOf("collapse in") == -1){//当前为隐藏
-                        $("#uploadBib").attr("class", collapseStateButton.replace('collapse', "collapse in"));
-                        $("#addPub").attr("class", collapseStateForm.replace('collapse in', "collapse"));
-                    }
-                }else{//显示输入表单
                     if (collapseStateForm.indexOf("collapse in") == -1){//当前为隐藏
                         $("#uploadBib").attr("class", collapseStateButton.replace('collapse in', "collapse"));
                         $("#addPub").attr("class", collapseStateForm.replace('collapse', "collapse in"));
+                    }
+                }else{//显示输入表单
+                    if (collapseStateButton.indexOf("collapse in") == -1){//当前为隐藏
+                        $("#uploadBib").attr("class", collapseStateButton.replace('collapse', "collapse in"));
+                        $("#addPub").attr("class", collapseStateForm.replace('collapse in', "collapse"));
                     }
                 }
             });
@@ -1177,10 +1208,15 @@
 
         var siteUrl = "http://127.0.0.1:8000"
             ,addPubService = "/add-pub/"
+            ,addPersonService = "/add-person/"
+            ,addVenueService = "/add-venue/"
+            ,addRelService = "/add-relation/"
             ,editPubService = "/edit-pub/"
             ,authService = "/verify/"
             ,uploadBib = '/upload-bib/'
             ,revisePubService = '/revise-pub/'
+            ,revisePersonService = '/revise-person/'
+            ,reviseVenueService = '/revise-venue/'
             ,searchPubService = '/search-pub/'
             ,searchPersonService = '/search-person/'
             ,searchVenueService = '/search-venue/'
@@ -1192,8 +1228,7 @@
                 ,layer = layui.layer
                 ,table = layui.table
                 ,$ = layui.$;
-
-            //按钮1：重置编辑面板------未检查
+            //按钮1-1：重置  -- 新增/编辑文献面板
             form.on('submit(resetAddPubPanel)', function(){
                 //文献类型自动重置了
                 toggleEditPanel(formSettings, contentStringName, 0, 'addPub');
@@ -1204,28 +1239,92 @@
                 toggleEditPanel(formSettings, contentStringName, 0, 'editPub');
                 form.render();
             });
-            //按钮2：提交文献信息
+            //按钮1-2：重置  -- 新增/编辑person面板
+            form.on('submit(resetAddPersonPanel)', function(){
+                form.render();
+            });
+            form.on('submit(resetEditPersonPanel)', function(){
+                form.render();
+            });
+            //按钮1-3：重置  -- 新增/编辑venue面板
+            form.on('submit(resetAddVenuePanel)', function(){
+                form.render();
+            });
+            form.on('submit(resetEditVenuePanel)', function(){
+                form.render();
+            });
+            //按钮2-1：提交文献信息
             form.on('submit(newPubSubmit)', function(data){
                 console.log("提交的表单数据：" + JSON.stringify(data.field));
-                msg = verifyPubInfo(data.field);
+                msg = verifyPubInfo(data.field, contentStringName, currentAuthors);
                 if (msg["status"]<1) {
                     layer.msg(msg["msg"]);
                     console.log("结束验证————失败，取消创建新文献");
                 }else{
                     console.log("结束验证————正确，写入数据库....");
-                    writePubToDatabase(siteUrl, addPubService, msg["processedData"]);
+                    writeToDatabase(siteUrl, addPubService, msg["processedData"], '');
                 }
                 return false;
             });
             form.on('submit(editPubSubmit)', function(data){
                 console.log("提交的表单数据：" + JSON.stringify(data.field));
-                msg = verifyPubInfo(data.field);
+                msg = verifyPubInfo(data.field, contentStringName, currentAuthors);
                 if (msg["status"]<1) {
                     layer.msg(msg["msg"]);
                     console.log("结束验证————失败，取消修改文献");
                 }else{
                     console.log("结束验证————正确，写入数据库....");
-                    writePubToDatabase(siteUrl, revisePubService, msg["processedData"]);
+                    writeToDatabase(siteUrl, revisePubService, msg["processedData"], "editPub");
+                }
+                return false;
+            });
+            //按钮2-2：提交人信息
+            form.on('submit(newPersonSubmit)', function(data){
+                console.log("提交的表单数据：" + JSON.stringify(data.field));
+                msg = verifyPersonInfo(data.field);
+                if (msg["status"]<1) {
+                    layer.msg(msg["msg"]);
+                    console.log("结束验证————失败，取消创建人节点");
+                }else{
+                    console.log("结束验证————正确，写入数据库....");
+                    writeToDatabase(siteUrl, addPersonService, msg["processedData"], "");
+                }
+                return false;
+            });
+            form.on('submit(editPersonSubmit)', function(data){
+                console.log("提交的表单数据：" + JSON.stringify(data.field));
+                msg = verifyPersonInfo(data.field);
+                if (msg["status"]<1) {
+                    layer.msg(msg["msg"]);
+                    console.log("结束验证————失败，取消修改人的信息");
+                }else{
+                    console.log("结束验证————正确，写入数据库....");
+                    writeToDatabase(siteUrl, revisePersonService, msg["processedData"], "editPerson");
+                }
+                return false;
+            });
+            //按钮2-3：提交venue信息
+            form.on('submit(newVenueSubmit)', function(data){
+                console.log("提交的表单数据：" + JSON.stringify(data.field));
+                msg = verifyVenueInfo(data.field);
+                if (msg["status"]<1) {
+                    layer.msg(msg["msg"]);
+                    console.log("结束验证————失败，取消创建新期刊/会议");
+                }else{
+                    console.log("结束验证————正确，写入数据库....");
+                    writeToDatabase(siteUrl, addVenueService, msg["processedData"], "");
+                }
+                return false;
+            });
+            form.on('submit(editVenueSubmit)', function(data){
+                console.log("提交的表单数据：" + JSON.stringify(data.field));
+                msg = verifyVenueInfo(data.field);
+                if (msg["status"]<1) {
+                    layer.msg(msg["msg"]);
+                    console.log("结束验证————失败，取消修改期刊/会议");
+                }else{
+                    console.log("结束验证————正确，写入数据库....");
+                    writeToDatabase(siteUrl, reviseVenueService, msg["processedData"], "editVenue");
                 }
                 return false;
             });
@@ -1263,7 +1362,91 @@
                 advanceSearchHandler('queriedPubsDivInPopUp', '', 'pubTableAfterSearchInPopUp', 'pubSearchTableContentInPopUpt', 'toolbarPopUpGetData', data, table, searchPubService);
                 return false;
             });
-
+            //按钮6：新增关系面板---确认按钮
+            form.on('submit(relConfirm)', function(data){
+                var sourceInfo = document.getElementById("addRelSourceInfo").innerText;
+                var targetInfo = document.getElementById("addRelTargetInfo").innerText;
+                if (sourceInfo == ""){
+                    layui.layer.msg("未选择起点！", {
+                        time: 5000, //5s后自动关闭
+                        btn: ['ok'],
+                        icon:5
+                    });
+                    return false;
+                }
+                if (targetInfo == ""){
+                    layui.layer.msg("未选择终点！", {
+                        time: 5000, //5s后自动关闭
+                        btn: ['ok'],
+                        icon:5
+                    });
+                    return false;
+                }
+                try{
+                    sourceInfo = JSON.parse(sourceInfo);
+                    targetInfo = JSON.parse(targetInfo);
+                    sourceInfo = sourceInfo["uuid"];
+                    targetInfo = targetInfo["uuid"];
+                }catch(e){
+                    layui.layer.msg("选择的数据不是JSON格式数据！", {
+                        time: 5000, //5s后自动关闭
+                        btn: ['ok'],
+                        icon:5
+                    });
+                    return false;
+                }
+                var sourceType = document.getElementById("relSource").innerHTML;
+                var targetType = document.getElementById("relTarget").innerHTML;
+                var relType = document.getElementById("relation_type_select").value;
+                if (relType == "0"){
+                    relType = "Publish_In".toUpperCase();
+                }else if (relType == "1"){
+                    relType = "Write".toUpperCase();
+                }else{
+                    relType = "Cite".toUpperCase();
+                }
+                var params = {sourceType: sourceType, targetType:targetType, sourceID:sourceInfo, targetID:targetInfo, relType:relType}; // ------------
+                var csrftoken = Cookies.get('csrftoken');
+                $.ajax({
+                    type: 'POST'
+                    ,url: siteUrl + addRelService
+                    ,data:  JSON.stringify(params)
+                    ,dataType : "json"
+                    ,headers: {'Content-Type': 'application/json',"X-CSRFToken":csrftoken}
+                    //,contentType: "application/json"
+                    ,success: function(result,status,xhr) {  //分配到相应的表单中
+                        console.log("数据传输成功");
+                        if (result.status < 1) {
+                            layui.layer.msg('请求错误，未建立关系<br>' + JSON.stringify(result.msg), {
+                                time: 20000, //20s后自动关闭
+                                btn: ['ok'],
+                                icon:1
+                            });
+                        }else{
+                            //成功，重置面板
+                            document.getElementById("addRelSourceInfo").innerText = "";
+                            document.getElementById("addRelTargetInfo").innerText = "";
+                        }
+                        layui.form.render();
+                        return false;
+                    }
+                    ,error: function(xhr,status,error){
+                        console.log("数据传输失败后：");
+                        //如果请求失败要运行的函数
+                        layui.layer.msg("与服务器断开连接，请稍后再试。", {
+                            time: 10000, //20s后自动关闭
+                            btn: ['ok'],
+                            icon:5
+                        });
+                        console.log(error);
+                    }
+                    ,complete: function(xhr,status){
+                        console.log("数据传输complete");
+                        //完成时的操作，success和error之后
+                    }
+                });
+                return false;
+            });
             //3）根据选择的文献类型，决定显示的字段都有哪些
             form.on('select(paperTypeAdd)', function(data){
                 var value = data.value;
@@ -1323,6 +1506,10 @@
                 if (divStatus.indexOf('collapse in') > -1){
                     $('#addRelSourcceTarget').attr('class', divStatus.replace('collapse in', 'collapse'));
                 }
+                divStatus = $('#addRelConfirm').attr('class');
+                if (divStatus.indexOf('collapse in') > -1){
+                    $('#addRelConfirm').attr('class', divStatus.replace('collapse in', 'collapse'));
+                }
                 resetNodeInfoDiv();
             }
             form.on('select(relation_type_select)', function(data){
@@ -1361,6 +1548,10 @@
                     console.log('未定义关系类型');
                     resetAddRelDivs();
                     return;
+                }
+                addRelSConfirmStatus = $('#addRelConfirm').attr('class');
+                if (addRelSConfirmStatus.indexOf('collapse in') == -1){
+                    $('#addRelConfirm').attr('class', addRelSConfirmStatus.replace('collapse', 'collapse in'));
                 }
                 //当不是第一次点击时，隐藏下面节点详细信息的div
                 if (currentSelectedRel != undefined & currentSelectedRel != value){
@@ -1640,513 +1831,6 @@
     </script>
 
     <script>
-        //函数列表：1）新增文献表单中作者信息格式验证；2）新增文献中其他字段内容格式验证；3）新增文献表单数据验证入口函数，调用了1）-2）
-        //1)新增文献表单函数1：验证作者信息格式是否正确
-            function verifyAuthor(){
-                msg = {"status": 1, "msg": "OK"};
-                if (currentAuthors.length==0) {
-                    msg["status"] = -1;
-                    msg["msg"] = "没有作者信息";
-                }else {
-                    for (var i=0;i<currentAuthors.length;i++) {
-                        if (currentAuthors[i]["firstName"]=="" || currentAuthors[i]["lastName"]=="" || currentAuthors[i]["ranking"]=="") {
-                            msg["status"] = -1;
-                            msg["msg"] = "第" + new Number(i).toString() + "作者信息不全";
-                            break;
-                        }
-                    }
-                }
-                return msg;
-            }
-        //2)判断表单中字段:0 字段空；-1 应为数字的字段值非数字；1正常;-2 字段名不存在
-            function verifyFieldValue(fieldName, valueInForm) {
-                if (fieldName == 'pages1' || fieldName == 'pages2' ) {
-                    fieldName = 'pages' ;
-                }
-                var index = contentStringName.indexOf(fieldName);
-                var numberFieldIndices = [3,4,5,6,7,13,17];
-                if (index<0) {// non-existing field
-                    return {"msg":"Unrecognized field name.", "status": -2};
-                }else if (numberFieldIndices.indexOf(index)>-1) { // number field
-                    var tmp = new Number(valueInForm);
-                    if (isNaN(tmp)) {//非数字
-                        return {"msg":"Field [" + fieldName + "] should be Number.", "status": -1};
-                    }else if (tmp==0) { //空字符或0
-                        if (valueInForm==""){
-                            return {"msg":"Empty string or number 0", "status": 0};
-                        }
-                    }
-                }else { // string field
-                    if (valueInForm == "") {
-                        return {"msg":"Field [" + fieldName + "] is empty", "status": 0};
-                    }
-                }
-                return {"msg":"OK.", "status": 1};
-            }
-        //3)新增文献表单验证入口函数:参数是name：value形式
-            function verifyPubInfo(data) {
-                var pubType = new Number(data["paperTypeEdit"])
-                    ,mandatory = formSettings[pubType]["mandatory"]
-                    ,others = formSettings[pubType]["others"];
-                var msg = {"status": 2, "msg":""};
-                var processedData = {};
-
-                for (indexI=0;indexI<contentStringName.length;indexI++) {
-                    var valueNames = [];
-                    if (indexI == 0) {//作者单独判断
-                        if (mandatory.indexOf(indexI) > -1 | others.indexOf(indexI) > -1) {//必填字段
-                            var tmpMsg = verifyAuthor();
-                            if (tmpMsg["status"]<0) {
-                                console.log("必/选填：作者验证失败");
-                                msg["status"] = tmpMsg["status"];
-                                msg["msg"] = tmpMsg["msg"];
-                                break;
-                            }else{
-                                console.log("必/选填：作者验证成功");
-                                processedData["author"] = currentAuthors;
-                                continue;
-                            }
-                        }else {//未分类字段，要抛出提示
-                            console.log(contentStringName[indexI] + "不是选填或必填字段！")
-                            break;
-                        }
-                    }else if (indexI==6) { //pages
-                        console.log("验证pages");
-                        valueNames = ["pages1","pages2"];
-                    }else {
-                        console.log("验证：" + contentStringName[indexI]);
-                        valueNames = [contentStringName[indexI]];
-                    }
-
-                    var validFlag = true;
-                    for (j=0;j<valueNames.length;j++) {
-                        console.log("开始验证字段：" + valueNames[j]);
-                        if (data.hasOwnProperty(valueNames[j])) {//判断表单中是否有字段
-                            console.log("开始验证表单内容：" + valueNames[j] + ",值：" + data[valueNames[j]]);
-                            msg = verifyFieldValue(valueNames[j], data[valueNames[j]]); // 判断是否为空及数字字段验证
-                            if (msg["status"] == -1 ) {//表单填写错误
-                                console.log("表单填写错误");
-                                validFlag = false;
-                                msg["status"] = -1;
-                                break;
-                            }else if (msg["status"]==0) {
-                                console.log("空字段：" + valueNames[j]);
-                                if (mandatory.indexOf(indexI) > -1){
-                                    msg["msg"] += "\n Field [" + valueNames[j] + "] 不存在";
-                                    validFlag = false;
-                                    break;
-                                }else{
-                                    console.log("此为选填");
-                                }
-                            }else if (msg["status"]==0){
-                                console.log("不存在字段：" + valueNames[j]);
-                                msg["msg"] += "\n Field [" + valueNames[j] + "] 不存在";
-                                validFlag = false;
-                                break;
-                            }else {//填写正确
-                                console.log("填写正确");
-                                processedData[valueNames[j]] = data[valueNames[j]];
-                            }
-                        }else {
-                            console.log("缺少此字段：" + valueNames[j]);
-                            msg = {"msg":"Missing field name[" + valueNames[j] + "]", "status": -1};
-                            validFlag = false;
-                            break;
-                        }
-                    }
-                    if (validFlag == false) {
-                        console.log("必填字段验证失败，退出验证（outer）");
-                        break;
-                    }
-                }
-                if (validFlag == false) {
-                    console.log("字段验证失败，退出验证");
-                    return msg;
-                }
-                processedData["ENTRYTYPE"] = data["paperTypeEdit"];
-                msg["processedData"] = processedData;
-
-                console.log("退出验证");
-                return msg;
-            }
-            //(4)解析英文名字的函数:
-            function analyzeNameEN(sourceID, targetIDs, form){
-                var $ = layui.$;
-                if (targetIDs.length != 3){
-                    console.log("目标节点数量不等于3！");
-                    return -1;
-                }
-                var name = $("#" + sourceID).val()
-                    ,params = {textTo:name, lang:"EN"}
-                    ,csrftoken = Cookies.get('csrftoken');
-                $.ajax({
-                    type: 'POST'
-                    ,url: siteUrl + splitNameService
-                    ,data:  JSON.stringify(params)
-                    ,dataType : "json"
-                    ,headers: {'Content-Type': 'application/json',"X-CSRFToken":csrftoken}
-                    //,contentType: "application/json"
-                    ,success: function(result,status,xhr) {  //分配到相应的表单中
-                        console.log("数据传输成功后：");
-                        if (result.status == -1) {
-                            layer.msg('解析人名失败，请手动填写！<br>' + JSON.stringify(result), {
-                                time: 20000, //20s后自动关闭
-                                btn: ['ok'],
-                                icon:1
-                            });
-                        }else{
-                            $('#' + targetIDs[0]).val(result.first_name);
-                            $('#' + targetIDs[1]).val(result.middle_name);
-                            $('#' + targetIDs[2]).val(result.last_name);
-                        }
-                        form.render();
-                        return false;
-                    }
-                    ,error: function(xhr,status,error){
-                        console.log("数据传输失败后：");
-                        //如果请求失败要运行的函数
-                        layer.msg("拆分人名失败，与服务器断开连接，请稍后再试。", {
-                            time: 10000, //20s后自动关闭
-                            btn: ['ok'],
-                            icon:5
-                        });
-                        console.log(error);
-                    }
-                    ,complete: function(xhr,status){
-                        console.log("数据传输complete后：");
-                        //完成时的操作，success和error之后
-                    }
-
-                });
-            }
-            //(5)解析中文名字的函数:
-            function analyzeNameCH(sourceID, targetIDs, form){
-                var $ = layui.$;
-                if (targetIDs.length != 2){
-                    console.log("目标节点数量不等于2！");
-                    return -1;
-                }
-                var name = $("#" + sourceID).val()
-                    ,params = {textTo:name, lang:"CH"};
-                var csrftoken = Cookies.get('csrftoken');
-                $.ajax({
-                    type: 'POST'
-                    ,url: siteUrl + splitNameService
-                    ,data:  JSON.stringify(params)
-                    ,dataType : "json"
-                    ,headers: {'Content-Type': 'application/json',"X-CSRFToken":csrftoken}
-                    //,contentType: "application/json"
-                    ,success: function(result,status,xhr) {  //分配到相应的表单中
-                        console.log("数据传输成功后：");
-                        if (result.status == -1) {
-                            layer.msg('解析人名失败，请手动填写！<br>' + JSON.stringify(result), {
-                                time: 20000, //20s后自动关闭
-                                btn: ['ok'],
-                                icon:1
-                            });
-                        }else{
-                            $('#' + targetIDs[0]).val(result.first_name);
-                            $('#' + targetIDs[1]).val(result.last_name);
-                        }
-                        form.render();
-                        return false;
-                    }
-                    ,error: function(xhr,status,error){
-                        console.log("数据传输失败后：");
-                        //如果请求失败要运行的函数
-                        layer.msg("拆分人名失败，与服务器断开连接，请稍后再试。", {
-                            time: 10000, //20s后自动关闭
-                            btn: ['ok'],
-                            icon:5
-                        });
-                        console.log(error);
-                    }
-                    ,complete: function(xhr,status){
-                        console.log("数据传输complete后：");
-                        //完成时的操作，success和error之后
-                    }
-                });
-            }
-            //（6）新增关系面板中，点击起讫点之后，向底下的显示框中增加节点信息--------searchPub.html&person中需要同步修改
-            function showRelNodeDetail(infoDicID, addedInfo){
-                var text = document.getElementById(infoDicID).innerText;
-                if (text==""){
-                    text = {};
-                }else{
-                    text = JSON.parse(text);
-                }
-
-                for (var tmpKey in addedInfo){
-                    text[tmpKey] = addedInfo[tmpKey];
-                }
-                text  = JSON.stringify(text, null, 2);
-                document.getElementById(infoDicID).innerText = text;
-                layui.code();
-                layui.form.render();
-            }
-            //(7)查看数据&新增关系面板中，高级搜索（文献）的div处理过程,--------searchPub.html中需要同步修改
-            //advSearchDivID:高级搜索框div，editPubDivID：编辑文献框div，resultTableFilter：搜索结果表格过滤器（定位）
-            //resultTableID：搜索结果表格ID，没用，toolbarID：搜索结果确认按钮ID， data：高级搜索传入的数据
-            function advanceSearchHandler(advSearchDivID, editPubDivID, resultTableFilter, resultTableID, toolbarID, data, table, searchPubService){
-                var $ = layui.$;
-                // todo 处理搜索条件
-                //parameters = {"title":data.field.title
-                    //, "startTime":data["startTime"]
-                    //, "endTime": data["endTime"]
-                //    , "paperType": data["paperType"]}
-                $('#' + advSearchDivID).attr("class", "collapse in");
-                if (editPubDivID != "") {
-                    $('#' + editPubDivID).attr("class", "collapse");
-                }
-                table.render(
-                    {
-                        elem: '#' + resultTableFilter
-                        ,id: resultTableID
-                        ,url: searchPubService
-                        ,toolbar: '#' + toolbarID
-                        ,method: 'post'
-                        ,where: {"title":data.field.title
-                            //, "startTime":data["startTime"]
-                            //, "endTime": data["endTime"]
-                            , "paperType": data.field.paperType}
-                        //,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
-                        ,page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
-                            layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'] //自定义分页布局
-                            //,curr: 5 //设定初始在第 5 页
-                            ,groups: 5 //只显示 1 个连续页码
-                            ,first: false //不显示首页
-                            ,last: false //不显示尾页
-                        }
-                        ,limit: 10
-                        ,cols: [[{type:'radio'}
-                            ,{field:"ID", width:60, title: 'ID', sort: true}
-                            ,{field:'title', width:300, title: '标题', sort: false}
-                            ,{field:'author', width:200, title: '作者', sort: false}
-                            ,{field:'journal', width:200, title: '期刊/会议'}
-                            ,{field:'year', title: '年', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
-                            ,{field:'month', title: '月', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
-                            ,{field:'paperTypeEdit', width: '100', title: '类型', sort: true}
-                            ,{field:'booktitle', width: '100', title: '书名', sort: false}
-                            ,{field:'editor', width: '100', title: '编辑', sort: false}
-                            ,{field:'edition', width: '100', title: '版本', sort: false}
-                            ,{field:'volume', width: '100', title: '卷', sort: false}
-                            ,{field:'number', width: '100', title: '期', sort: false}
-                            ,{field:'note', width: '100', title: '备注', sort: true}
-                            ,{field:'keywords', width: '100', title: '关键词', sort: false}
-                            ,{field:'pages', width: '100', title: '页码', sort: false}
-                        ]]
-                        ,done: function(res, curr, count){;
-                            console.log(res);
-                        }
-                    }
-                );
-                return false;
-            }
-            //(8)查看数据&新增关系面板中，高级搜索（人）的div处理过程,--------searchPerson.html中需要同步修改
-            //advSearchDivID:高级搜索框div，editPubDivID：编辑文献框div，resultTableFilter：搜索结果表格过滤器（定位）
-            //resultTableID：搜索结果表格ID，没用，toolbarID：搜索结果确认按钮ID， data：高级搜索传入的数据
-            function advanceSearchPersonHandler(advSearchDivID, editDivID, resultTableFilter, resultTableID, toolbarID, data, table, searchService){
-                var $ = layui.$;
-                // todo 处理搜索条件
-                //parameters = {"full_name":data.field.full_name
-                    //, "startTime":data["startTime"]
-                    //, "endTime": data["endTime"]
-                //    , "paperType": data["paperType"]}
-                $('#' + advSearchDivID).attr("class", "collapse in");
-                if (editDivID != "") {
-                    $('#' + editDivID).attr("class", "collapse");
-                }
-                table.render(
-                    {
-                        elem: '#' + resultTableFilter
-                        ,id: resultTableID
-                        ,url: searchService
-                        ,toolbar: '#' + toolbarID
-                        ,method: 'post'
-                        ,where: {"full_name":data.field.full_name}
-                        //,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
-                        ,page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
-                            layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'] //自定义分页布局
-                            //,curr: 5 //设定初始在第 5 页
-                            ,groups: 5 //只显示 1 个连续页码
-                            ,first: false //不显示首页
-                            ,last: false //不显示尾页
-                        }
-                        ,limit: 10
-                        ,cols: [[{type:'radio'}
-                            ,{field:"ID", width:60, title: 'ID', sort: true}
-                            ,{field:'full_name', width:200, title: 'Full Name', sort: false}
-                            ,{field:'first_name', width:200, title: 'First Name', sort: false}
-                            ,{field:'middle_name', width:200, title: 'Middle Name'}
-                            ,{field:'last_name', title: 'Last Name', width: '200', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
-                            ,{field:'name_ch', title: '中文名', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
-                            ,{field:'last_name_ch', width: '100', title: '姓', sort: true}
-                            ,{field:'first_name_ch', width: '100', title: '名', sort: false}
-                            ,{field:'institution', width: '100', title: 'Institution', sort: false}
-                            ,{field:'research_interest', width: '100', title: 'Research Interest', sort: false}
-                            ,{field:'note', width: '200', title: 'Note', sort: false}
-                        ]]
-                        ,done: function(res, curr, count){;
-                            console.log(res);
-                        }
-                    }
-                );
-                return false;
-            }
-            //(9)查看数据&新增关系面板中，高级搜索（venue）的div处理过程,--------searchVenue.html中需要同步修改
-            //advSearchDivID:高级搜索框div，editPubDivID：编辑文献框div，resultTableFilter：搜索结果表格过滤器（定位）
-            //resultTableID：搜索结果表格ID，没用，toolbarID：搜索结果确认按钮ID， data：高级搜索传入的数据
-            function advanceSearchVenueHandler(advSearchDivID, editDivID, resultTableFilter, resultTableID, toolbarID, data, table, searchService){
-                var $ = layui.$;
-                // todo 处理搜索条件
-                //parameters = {"venue_name":data.field.venue_name
-                    //, "startTime":data["startTime"]
-                    //, "endTime": data["endTime"]
-                //    , "paperType": data["paperType"]}
-                $('#' + advSearchDivID).attr("class", "collapse in");
-                if (editDivID != "") {
-                    $('#' + editDivID).attr("class", "collapse");
-                }
-                table.render(
-                    {
-                        elem: '#' + resultTableFilter
-                        ,id: resultTableID
-                        ,url: searchService
-                        ,toolbar: '#' + toolbarID
-                        ,method: 'post'
-                        ,where: {"venue_name":data.field.venue_name}
-                        //,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
-                        ,page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
-                            layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'] //自定义分页布局
-                            //,curr: 5 //设定初始在第 5 页
-                            ,groups: 5 //只显示 1 个连续页码
-                            ,first: false //不显示首页
-                            ,last: false //不显示尾页
-                        }
-                        ,limit: 10
-                        ,cols: [[{type:'radio'}
-                            ,{field:"ID", width:60, title: 'ID', sort: true}
-                            ,{field:'venue_name', width:200, title: 'Venue Name', sort: false}
-                            ,{field:'abbr', width:200, title: 'Abbr.', sort: false}
-                            ,{field:'publisher', width:200, title: 'Publisher'}
-                            ,{field:'start_year', title: 'Start Year', width: '200', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
-                            ,{field:'indexing', title: 'Indexing', width: '70', minWidth: 10} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
-                            ,{field:'venue_type', width: '100', title: 'Venue Type', sort: true}
-                            ,{field:'note', width: '200', title: 'Note', sort: false}
-                        ]]
-                        ,done: function(res, curr, count){;
-                            console.log(res);
-                        }
-                    }
-                );
-                return false;
-            }
-            //10)新增关系面板，点击按钮后，先显示弹出窗口，搜索节点
-        function processPopupWindow(buttonID, addRelInfoDiv){
-            var $ = layui.$;
-            var frameID;
-            var nodeType = $('#' + buttonID).text();
-            if (nodeType == undefined){
-                return -1;
-            }
-            var popupUrl;
-            if (nodeType == "Person"){
-                popupUrl = '/search-person-popup';
-            }else if (nodeType == "Venue"){
-                popupUrl = '/search-venue-popup';
-            }else if (nodeType == "Publication"){
-                popupUrl = '/search-pub-popup';
-            }else{
-                console.log("未知的文献类型");
-                return -1;
-            }
-            layer.open({
-                type: 2,
-                title: '节点选择确认',
-                maxmin: true,
-                area: '700px',
-                scrollbar: true,
-                fixed: false,
-                offset:'30px',
-                //btn:['确定','取消'],
-                //btnAlign: 'c',
-                //yes: function(){//按钮【确定】的回调
-                //    return false;
-                //},
-                //btn2: function(){//按钮【取消】的回调
-                //    return false;
-                //},
-                content:popupUrl,
-                success: function(layero, index){
-                    frameID = index;
-                    layer.iframeAuto(index);
-                }
-            });
-
-            //显示选择的节点信息：
-            var infoDivStatus = $('#' + addRelInfoDiv).attr('class');
-            if (infoDivStatus.indexOf('collapse in') == -1){
-                $('#' + addRelInfoDiv).attr('class', infoDivStatus.replace('collapse', 'collapse in'));
-            }
-            layui.form.render();
-            return false;
-        }
-    </script>
-
-    <script>
-        //ajax接口：1）将文献写入数据库
-        function writePubToDatabase(siteUrl, service, msg){
-            var $ = layui.$;
-            var csrftoken = Cookies.get('csrftoken');
-            $.ajax({
-                type: 'POST'
-                ,url: siteUrl + service
-                ,data:  JSON.stringify(msg)
-                ,dataType : "json"
-                ,headers: {'Content-Type': 'application/json',"X-CSRFToken":csrftoken}
-                //,contentType: "application/json"
-                ,beforeSend: function(){
-                    console.log("数据传输前：");
-                    console.log(msg);
-                }
-                ,success: function(result,status,xhr) {
-                    console.log("数据传输成功后：");
-                    //配置一个透明的询问框
-                    if (result.status != 1 ){
-                        layer.msg('失败！<br>' + JSON.stringify(result), {
-                            time: 20000, //20s后自动关闭
-                            btn: ['ok'],
-                            icon:1
-                        });
-                    }else{
-                        layer.msg('成功！<br>' + JSON.stringify(result), {
-                            time: 20000, //20s后自动关闭
-                            btn: ['ok'],
-                            icon:1
-                        });
-                    }
-                    console.log("ok" + result);
-                }
-                ,error: function(xhr,status,error){
-                    console.log("数据传输失败后：");
-                    //如果请求失败要运行的函数
-                    layer.msg("添加数据失败，与数据库服务器断开连接，请稍后再试。", {
-                        time: 20000, //20s后自动关闭
-                        btn: ['ok'],
-                        icon:5
-                    });
-                    console.log(error);
-                }
-                ,complete: function(xhr,status){
-                    console.log("数据传输complete后：");
-                    //完成时的操作，success和error之后
-                }
-
-            });
-        }
-    </script>
-
-    <script>
         //监听input输入、select选择
         //(1)中文名分拆
         layui.use(['layer','form'], function(){
@@ -2157,28 +1841,28 @@
                 //1）新增面板：英文名 
                 $("#full_name_en").keydown(function(event){  
                     if (event.keyCode == 13){  
-                        analyzeNameEN('full_name_en', ['first_en', 'mid_en', 'last_en'], form);
+                        analyzeNameEN('full_name_en', ['first_en', 'mid_en', 'last_en'], siteUrl, splitNameService);
                         return false;
                     }  
                 }); 
                 //2）新增面板：中文名
                 $("#full_name_ch").keydown(function(event){  
                     if (event.keyCode == 13) {  
-                    analyzeNameCH('full_name_ch', ['first_ch', 'last_ch'], form);
+                    analyzeNameCH('full_name_ch', ['first_ch', 'last_ch'], siteUrl, splitNameService);
                         return false;
                     }
                 }); 
                 //3）新增面板：英文名 
                 $("#full_name_edit").keydown(function(event){  
                     if (event.keyCode == 13){  
-                        analyzeNameEN('full_name_edit', ['first_name_edit', 'mid_name_edit', 'last_name_edit'], form);
+                        analyzeNameEN('full_name_edit', ['first_name_edit', 'mid_name_edit', 'last_name_edit'], siteUrl, splitNameService);
                         return false;
                     }  
                 }); 
                 //4）新增面板：中文名
                 $("#name_ch_edit").keydown(function(event){  
                     if (event.keyCode == 13) {  
-                    analyzeNameCH('name_ch_edit', ['first_name_ch_edit', 'last_name_ch_edit'], form);
+                    analyzeNameCH('name_ch_edit', ['first_name_ch_edit', 'last_name_ch_edit'], siteUrl, splitNameService);
                         return false;
                     }
                 });  

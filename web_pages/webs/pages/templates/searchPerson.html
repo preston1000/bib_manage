@@ -94,7 +94,7 @@
         window.onload = function(){
             var index = parent.layer.getFrameIndex(window.name);
             parent.layer.iframeAuto(index);//添加这行也不能自适应
-            layer.iframeAuto(index);//使用这行也不能自适应
+            //layer.iframeAuto(index);//使用这行也不能自适应
         }
     </script>
 
@@ -202,11 +202,11 @@
             //（6）新增关系面板中，点击起讫点之后，向底下的显示框中增加节点信息
             function showRelNodeDetail(infoDicID, addedInfo){
                 var text = window.parent.document.getElementById(infoDicID).innerText;
-                if (text==""){
+                //if (text==""){
                     text = {};
-                }else{
-                    text = JSON.parse(text);
-                }
+                //}else{
+                //    text = JSON.parse(text);
+                //}
 
                 for (var tmpKey in addedInfo){
                     text[tmpKey] = addedInfo[tmpKey];

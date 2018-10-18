@@ -62,6 +62,7 @@ function changeCollapseState(itemId, forceCollapse){
         }
     }
 }
+
 // "新增/编辑文献"表格--按钮（高级搜索）文字+展开/收起(givenHtml:指定要变换状态之前的内容)
 function toggleAdvanceSearch(givenHtml, forceCollapse){
     var currentState = -1; //点击后状态：-1：未定义；0：未展开；1：展开
@@ -78,6 +79,7 @@ function toggleAdvanceSearch(givenHtml, forceCollapse){
     changeCollapseState("operatePubs", forceCollapse);
     return currentState;
 }
+
 // "新增/编辑文献"表格--按钮（操作文献）文字+展开/收起
 function togglePubOperation(givenHtml, forceCollapse){
     var currentState = -1; //点击后状态：-1：未定义；0：未展开；1：展开
@@ -94,6 +96,7 @@ function togglePubOperation(givenHtml, forceCollapse){
     changeCollapseState("advanceSearch", forceCollapse);
     return currentState;
 }
+
 // "新增/编辑文献"表格--关闭文献编辑面板并重置
 function foldEditPanel() {
     var operatePub = document.getElementById("addOrEditPub");
@@ -104,6 +107,7 @@ function foldEditPanel() {
     //重置文献类型下拉框
     $("button[lay-filter='resetPubPanel']").trigger("click");
 }
+
 //"新增/编辑文献"表格--关闭/开启文献编辑面板中各Item
 function toggleEditPanel(formSettings, contentStringName, value, formPrefix) {
     var $ = layui.jquery
@@ -135,4 +139,21 @@ function toggleEditPanel(formSettings, contentStringName, value, formPrefix) {
         }
         currentPubType = value.valueOf();
     }
+}
+
+function resetEditPersonPanel(value, formPrefix) {
+    var $ = layui.jquery
+        ,fieldSurNames = ["full_name", "first_name", "last_name", "middle_name", "name_ch", "first_name_ch", "last_name_ch", "institution", "research_interest", "note"]
+        ,defaultValues = ["Full Name", "First Name", "Last Name", "Middle Name", "中文名", "名", "姓", "Institution", "Research Interest", "Note"];
+
+    for (var i=0;i<fieldSurNames.length;i++) {
+        var element = $("#" + formPrefix + "-" + fieldSurNames[i])
+            ,subInput = element.find('input');
+        if (subInput.length>0) {
+            for (j=0;j<subInput.length;j++) {
+                subInput[j].placeholder = defaultValues[i];
+            }
+        }
+    }
+    currentPubType = value.valueOf();
 }

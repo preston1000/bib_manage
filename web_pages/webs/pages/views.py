@@ -159,6 +159,86 @@ def add_publication(request):
         return HttpResponse(json.dumps({"msg": "not supported request form", "status": -2}))
 
 
+def add_person(request):
+    """
+    向cypher添加person
+    :param request:
+    :return: {"msg": "", "status": 0}, 0:缺少参数；-1：参数格式错误;-10:请求方式错误，-2~-5见create_or_match_persons方法
+    """
+    if request.is_ajax() and request.method == 'POST':
+        node_info = request.body  # 处理后是dict，直接传到后台写入数据库就可以了
+        if node_info is None or node_info == "":
+            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
+        try:
+            node_info = bytes.decode(node_info)
+            node_info = json.loads(node_info)
+        except:
+            return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
+        # 调方法写数据库
+        flag = neo4j_access.create_or_match_persons(node_info, mode=2)
+        if flag["code"] == 1:
+            return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
+        else:
+            return HttpResponse(json.dumps({"msg": "error when writing into database" + flag["msg"], "status": flag}))
+    else:
+        return HttpResponse(json.dumps({"msg": "not supported request form", "status": -10}))
+
+
+def add_venue(request):
+    """
+    向cypher添加venue
+    :param request:
+    :return: {"msg": "", "status": 0}, 0:缺少参数；-1：参数格式错误;-10:请求方式错误，-2~-5见create_or_match_persons方法
+    """
+    if request.is_ajax() and request.method == 'POST':
+        node_info = request.body  # 处理后是dict，直接传到后台写入数据库就可以了
+        if node_info is None or node_info == "":
+            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
+        try:
+            node_info = bytes.decode(node_info)
+            node_info = json.loads(node_info)
+        except:
+            return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
+        # 调方法写数据库
+        flag = neo4j_access.create_or_match_venues(node_info, mode=2)
+        if flag["code"] == 1:
+            return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
+        else:
+            return HttpResponse(json.dumps({"msg": "error when writing into database" + flag["msg"], "status": flag}))
+    else:
+        return HttpResponse(json.dumps({"msg": "not supported request form", "status": -10}))
+
+
+def add_relation(request):
+    """
+    向cypher添加relation
+    :param request:
+    :return: {"msg": "", "status": 0}, 0:缺少参数；-1：参数格式错误;-10:请求方式错误，-2~-5见create_or_match_persons方法
+    """
+    if request.is_ajax() and request.method == 'POST':
+        node_info = request.body  # 处理后是dict，直接传到后台写入数据库就可以了
+        if node_info is None or node_info == "":
+            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
+        try:
+            node_info = bytes.decode(node_info)
+            node_info = json.loads(node_info)
+        except:
+            return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
+        # 调方法写数据库
+        source_id = node_info["sourceID"]
+        source_type = node_info["sourceType"]
+        target_id = node_info["targetID"]
+        target_type = node_info["targetType"]
+        rel_type = node_info["relType"]
+        flag = neo4j_access.query_or_create_relation(None, source_type, source_id, target_type, target_id, rel_type)
+        if flag["status"] > 0:
+            return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
+        else:
+            return HttpResponse(json.dumps({"msg": "error when writing into database" + flag["msg"], "status": flag["status"]}))
+    else:
+        return HttpResponse(json.dumps({"msg": "not supported request form", "status": -10}))
+
+
 def revise_publication(request):
     """
     利用cypher修改pub
@@ -227,11 +307,61 @@ def revise_publication(request):
         return HttpResponse(json.dumps({"msg": "not supported request form", "status": -2}))
 
 
+def revise_person(request):
+    """
+    利用cypher修改person
+    :param request:
+    :return:{"msg": "no data is given", "status": 0} 0:无参数,-1:参数格式错误,
+    """
+    if request.is_ajax() and request.method == 'POST':
+        node_info = request.body
+        if node_info is None or node_info == "":
+            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
+        try:
+            node_info = bytes.decode(node_info)
+            node_info = json.loads(node_info)
+        except:
+            return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
+        # 调方法写数据库
+        flag = neo4j_access.revise_persons(node_info)
+        if flag == 1:
+            return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
+        else:
+            return HttpResponse(json.dumps({"msg": "error when writing into database", "status": flag*3}))
+    else:
+        return HttpResponse(json.dumps({"msg": "not supported request form", "status": -2}))
+
+
+def revise_venue(request):
+    """
+    利用cypher修改person
+    :param request:
+    :return:{"msg": "no data is given", "status": 0} 0:无参数,-1:参数格式错误,
+    """
+    if request.is_ajax() and request.method == 'POST':
+        node_info = request.body
+        if node_info is None or node_info == "":
+            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
+        try:
+            node_info = bytes.decode(node_info)
+            node_info = json.loads(node_info)
+        except:
+            return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
+        # 调方法写数据库
+        flag = neo4j_access.revise_venues(node_info)
+        if flag == 1:
+            return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
+        else:
+            return HttpResponse(json.dumps({"msg": "error when writing into database", "status": flag*3}))
+    else:
+        return HttpResponse(json.dumps({"msg": "not supported request form", "status": -2}))
+
+
 def search_publication(request):
     """
     在neo4j中搜索pub
     :param request:
-    :return:
+    :return:0:无参数，-1：请求方式错误，-2：缺少标题；
     """
     if request.method == 'POST':
         the_paras = request.POST
