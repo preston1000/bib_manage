@@ -38,36 +38,6 @@ function validRanking(ranking) {
     rankings = new Number(ranking);
     return rankings;
 }
-
-//4.作者表格中提取排名值
-function extractRankings(info) {
-    if (info!=undefined && info!=null) {
-        var rankings = [];
-        var counter = 0;
-        if (isArray(info)) {
-            info.forEach(function(item){
-                ranking = validRanking(item["ranking"]);
-                if (isNaN(ranking)) {
-                    console.log("当前输入的ranking值不是数字:" + JSON.stringify(item));
-                }else {
-                    rankings[counter] = ranking;
-                    counter++;
-                }
-            });
-        }else {
-            ranking = validRanking(info["ranking"]);
-            if (isNaN(ranking)) {
-                console.log("当前输入的ranking值不是数字:" + JSON.stringify(info));
-            }else {
-                rankings[counter] = ranking;
-                counter++;
-            }
-        }
-        return rankings;
-    }else {
-        return false;
-    }
-}
 // 5.判断arr是否为一个数组，返回一个bool值
 function isArray (arr) {
     return Object.prototype.toString.call(arr) === '[object Array]';

@@ -1,28 +1,31 @@
 class Publication:
-    author = None
-    editor = None
-    title = None
-    journal = None
-    year = None
-    volume = None
-    number = None
-    series = None
-    address = None
-    pages = None
-    month = None
-    note = None
-    publisher = None
-    edition = None
-    book_title = None
-    organization = None
-    chapter = None
-    school = None
-    type = None
-    how_published = None
-    keywords = None
-    institution = None
-    node_type = None
-    uuid = None
+    uuid = None  # uuid
+    node_type = None  # 文献类型
+    type = None  # 类型
+    title = None  # 标题
+    author = None  # 作者
+    editor = None  # 编辑
+    journal = None  # 所在期刊名
+    year = None  # 发表年
+    month = None  # 发表月
+    volume = None  # 期
+    number = None  # 卷
+    address = None  # 地址
+    pages = None  # 页码
+    note = None  # 笔记
+    publisher = None  # 出版公司
+    edition = None  # 书籍版号
+    book_title = None  # 所在书籍标题
+    series = None  # 系列
+    organization = None  # 组织
+    school = None  # 学校
+    institution = None  # 组织
+    chapter = None  # 章节
+    how_published = None  #
+    keywords = None  # 关键词
+    ei_index = None  # 是否EI检索
+    sci_index = None  # 是否SCI检索
+    ssci_index = None  # 是否SSCI检索
     added_by = None  # 节点创建人
     added_date = None  # 节点创建时间
 
@@ -30,7 +33,7 @@ class Publication:
                  volume=None, number=None, series=None, address=None, pages=None, month=None,
                  note=None, publisher=None, edition=None, book_title=None, organization=None,
                  chapter=None, school=None, type=None, how_published=None, keywords=None,
-                 institution=None, added_by=None, added_date=None):
+                 institution=None, added_by=None, added_date=None, sci_index=None, ei_index=None, ssci_index=None):
         self.uuid = uuid
         self.node_type = node_type
         self.author = author
@@ -57,6 +60,9 @@ class Publication:
         self.institution = institution
         self.added_date = added_date
         self.added_by = added_by
+        self.ei_index = ei_index
+        self.sci_index = sci_index
+        self.ssci_index = ssci_index
 
     def to_string(self):
         word = "{uuid:'" + ("" if self.uuid is None else self.uuid.hex) + "'," + \
@@ -84,6 +90,9 @@ class Publication:
                "keywords:'" + ("" if self.keywords is None else self.keywords) + "'," + \
                "added_date:'" + ("" if self.added_date is None else self.added_date) + "'," + \
                "added_by:'" + ("" if self.added_by is None else self.added_by) + "'," + \
+               "ei_index:'" + ("" if self.ei_index is None else self.ei_index) + "'," + \
+               "sci_index:'" + ("" if self.sci_index is None else self.sci_index) + "'," + \
+               "ssci_index:'" + ("" if self.ssci_index is None else self.ssci_index) + "'," + \
                "institution:'" + ("" if self.institution is None else self.institution) + "'}"
         return word
 

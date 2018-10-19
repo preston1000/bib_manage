@@ -45,7 +45,7 @@
     </style>
 </head>
 <body>
-<!--选择数据库-->
+    <!--选择数据库-->
     <div class="container-fluid row">
         <div class="col-sm-12 col-md-12">
             <form class="layui-form" action="">
@@ -66,17 +66,14 @@
                 </div>
             </form>
         </div>
-
-
     </div>
     <!--选项卡-->
-    <div class="layui-tab layui-tab-card">
+    <div class="layui-tab layui-tab-card" lay-filter="mainTab">
         <ul class="layui-tab-title">
-            <li class="layui-this">数据库详情</li>
-            <li>查看/修改数据</li>
-            <li>新增数据</li>
-            <li>数据显示</li>
-            <li></li>
+            <li class="layui-this" lay-id="数据库详情">数据库详情</li>
+            <li lay-id="查看/修改数据">查看/修改数据</li>
+            <li lay-id="新增数据">新增数据</li>
+            <li lay-id="数据显示">数据显示</li>
         </ul>
         <div class="layui-tab-content">
             <!--1。数据库详情-->
@@ -235,7 +232,6 @@
                                                 <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="addAuthorEdit" data-type="reload">新增</a>
                                                 <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delAuthorEdit">删除</a>
                                             </script>
-
                                             <table class="layui-hide" id="authorTableEdit" lay-filter="demoEdit" name="author"></table>
                                         </div>
                                     </div>
@@ -1126,7 +1122,7 @@
                     </div>
                 </div>
             </div>
-            <!--5。查询展示数据结果-->
+            <!--4。查询展示数据结果-->
             <div class="layui-tab-item">
                 <!--查询语句-->
                 <p>还未实现</p>
@@ -1181,6 +1177,44 @@
         });
     </script>
 
+    <script>
+        //监听选项卡切换，以加载不同的页面元素
+        layui.use(['element','table'], function(){
+            var element = layui.element
+                ,table = layui.table
+                ,$ = layui.$;
+            var currentIndex = -1;
+            element.on('tab(mainTab)', function(data){
+                if (data.index == 0){ //查看数据库
+                    //未实现，什么也不做
+                }else if (data.index == 1){// 查看/修改数据
+                    // 默认加载文献高级搜索表单，单击选项卡切换加载的表单
+
+
+                }else if (data.index == 2){ // 新增数据
+                    //表格1）新增文献表格中作者信息表格作者表格
+                    table.render({
+                        elem: '#authorTableAdd'
+                        ,url: '/demo/table/user/'
+                        ,cols: [[
+                          {field:'firstName', title:'名', width:100, edit: 'text'}
+                          ,{field:'middleName', title:'中间名', width:100, edit: 'text'}
+                          ,{field:'lastName', title:'姓', width:100, edit: 'text'}
+                          ,{field:'ranking', title:'排名', width:100, sort: true}
+                          ,{width:150, align:'center', toolbar: '#authorBarsAdd'}
+                        ]]
+                        ,id: 'authorTable'
+                        ,page: false
+                        ,done: function(res, curr, count){
+                            currentAuthors = deepClone(res["data"]);
+                        }
+                    });
+                }else if (data.index == 3){ // 数据可视化
+
+                }
+            });
+        });
+    </script>
     <script>
         //新增文献面板内的操作:1）按钮（提交、重置）；2）
         var formSettings = [{"field":"0", "mandatory":[0,1,2,3,22], "others":[4,5,6,7,8]}
@@ -1338,28 +1372,28 @@
             form.on('submit(searchPub)', function(data){
                 console.log("提交的表单数据：" + JSON.stringify(data.field));
                 console.log("查找数据库....");
-                advanceSearchHandler('queriedPubsDiv', 'editPub', 'pubTableAfterSearch', 'pubSearchTableContent', 'toolbarEditPubGetData', data, table, searchPubService);
+                advanceSearchHandler('queriedPubsDiv', 'editPub', 'pubTableAfterSearch', 'pubSearchTableContent', 'toolbarEditPubGetData', data, searchPubService);
                 return false;
             });
             //按钮4-2：高级搜索（人）
             form.on('submit(searchPerson)', function(data){
                 console.log("提交的表单数据：" + JSON.stringify(data.field));
                 console.log("查找数据库....");
-                advanceSearchPersonHandler('queriedPersonsDiv', 'editPerson', 'personTableAfterSearch', 'personSearchTableContent', 'toolbarEditPersonGetData', data, table, searchPersonService);
+                advanceSearchPersonHandler('queriedPersonsDiv', 'editPerson', 'personTableAfterSearch', 'personSearchTableContent', 'toolbarEditPersonGetData', data, searchPersonService);
                 return false;
             });
             //按钮4-3：高级搜索（venue）
             form.on('submit(searchVenue)', function(data){
                 console.log("提交的表单数据：" + JSON.stringify(data.field));
                 console.log("查找数据库....");
-                advanceSearchVenueHandler('queriedVenueDiv', 'editVenue', 'venueTableAfterSearch', 'venueSearchTableContent', 'toolbarEditVenueGetData', data, table, searchVenueService);
+                advanceSearchVenueHandler('queriedVenueDiv', 'editVenue', 'venueTableAfterSearch', 'venueSearchTableContent', 'toolbarEditVenueGetData', data, searchVenueService);
                 return false;
             });
             //按钮5：新增关系面板---选择文献按钮
             form.on('submit(searchPubInPopUp)', function(data){
                 console.log("提交的表单数据：" + JSON.stringify(data.field));
                 console.log("查找数据库....");
-                advanceSearchHandler('queriedPubsDivInPopUp', '', 'pubTableAfterSearchInPopUp', 'pubSearchTableContentInPopUpt', 'toolbarPopUpGetData', data, table, searchPubService);
+                advanceSearchHandler('queriedPubsDivInPopUp', '', 'pubTableAfterSearchInPopUp', 'pubSearchTableContentInPopUpt', 'toolbarPopUpGetData', data, searchPubService);
                 return false;
             });
             //按钮6：新增关系面板---确认按钮
@@ -1600,46 +1634,14 @@
 
             //监听作者表格中作者信息编辑
             table.on('edit(demo)', function(obj){
-                editAuthor(currentAuthors, 'authorTable', layui, obj);
+                currentAuthors = editAuthor(currentAuthors, 'authorTable', obj);
             });
             table.on('edit(demoEdit)', function(obj){
-                editAuthor(currentAuthors, 'authorTableEdit', layui, obj);
+                currentAuthors = editAuthor(currentAuthors, 'authorTableEdit', obj);
             });
 
-            //表格1）新增文献表格中作者信息表格作者表格
-            table.render({
-                elem: '#authorTableAdd'
-                ,url: '/demo/table/user/'
-                ,cols: [[
-                  {field:'firstName', title:'名', width:100, edit: 'text'}
-                  ,{field:'middleName', title:'中间名', width:100, edit: 'text'}
-                  ,{field:'lastName', title:'姓', width:100, edit: 'text'}
-                  ,{field:'ranking', title:'排名', width:100, sort: true, edit: 'text'}
-                  ,{width:150, align:'center', toolbar: '#authorBarsAdd'}
-                ]]
-                ,id: 'authorTable'
-                ,page: false
-                ,done: function(res, curr, count){
-                    currentAuthors = deepClone(res["data"]);
-                }
-            });
-            //表格2）编辑文献表格中作者信息表格
-            table.render({
-                elem: '#authorTableEdit'
-                ,url: '/demo/table/user/'
-                ,cols: [[
-                  {field:'firstName', title:'名', width:100, edit: 'text'}
-                  ,{field:'middleName', title:'中间名', width:100, edit: 'text'}
-                  ,{field:'lastName', title:'姓', width:100, edit: 'text'}
-                  ,{field:'ranking', title:'排名', width:100, sort: true, edit: 'text'}
-                  ,{width:150, align:'center', toolbar: '#authorBarsAdd'}
-                ]]
-                ,id: 'authorTableEdit'
-                ,page: false
-                ,done: function(res, curr, count){
-                    currentAuthors = deepClone(res["data"]);
-                }
-            });
+
+
             //按钮1：查看详情选项卡-----查询结果表格，文献编辑按钮
             table.on('toolbar(pubTableAfterSearch)', function(obj){
                 currentAuthors = setEditNodePanel(obj, "Publication", siteUrl, splitNameService, formSettings, contentStringName, enhanceForm);

@@ -15,6 +15,23 @@ function setEditNodePanel(obj, nodeType, siteUrl, splitNameService, formSettings
                 ,panelFormID = 'editPubForm'
                 ,authorTableID = 'authorTableEdit';
             $('#' + panelDivID).attr('class', 'collapse in');//显示 编辑节点信息的表单
+            //表格2）编辑文献表格中作者信息表格
+            layui.table.render({
+                elem: '#authorTableEdit'
+                ,url: '/demo/table/user/'
+                ,cols: [[
+                  {field:'firstName', title:'名', width:100, edit: 'text'}
+                  ,{field:'middleName', title:'中间名', width:100, edit: 'text'}
+                  ,{field:'lastName', title:'姓', width:100, edit: 'text'}
+                  ,{field:'ranking', title:'排名', width:100, sort: true}
+                  ,{width:150, align:'center', toolbar: '#authorBarsAdd'}
+                ]]
+                ,id: 'authorTableEdit'
+                ,page: false
+                ,done: function(res, curr, count){
+                    currentAuthors = deepClone(res["data"]);
+                }
+            });
             currentAuthors = processPubPanel(selectedInfo, formSettings, contentStringName, panelDivID, panelFormID, authorTableID, siteUrl, splitNameService, enhanceForm);
         }else if (nodeType == "Person"){
             var panelDivID = "editPerson"
@@ -30,7 +47,6 @@ function setEditNodePanel(obj, nodeType, siteUrl, splitNameService, formSettings
     }
     return currentAuthors;
 }
-
 function processPubPanel(selectedPubInfo, formSettings, contentStringName, panelDivID, panelFormID, authorTableID, siteUrl, splitNameService, enhanceForm){
     var $ = layui.$;
     //先决定显示的字段都有哪些
@@ -103,7 +119,7 @@ function processPubPanel(selectedPubInfo, formSettings, contentStringName, panel
               {field:'firstName', title:'名', width:100, edit: 'text'}
               ,{field:'middleName', title:'中间名', width:100, edit: 'text'}
               ,{field:'lastName', title:'姓', width:100, edit: 'text'}
-              ,{field:'ranking', title:'排名', width:100, sort: true, edit: 'text'}
+              ,{field:'ranking', title:'排名', width:100, sort: true}
               ,{width:150, align:'center', toolbar: '#authorBarsAdd'}
             ]]
             ,page: false

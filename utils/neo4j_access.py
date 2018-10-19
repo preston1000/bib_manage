@@ -984,9 +984,9 @@ def query_or_create_relation(tx, source_type, source_id, target_type, target_id,
 
 if __name__ == "__main__":
     # # 从文件中解析文献，并创建节点
-    # create_or_match_publications('E:/reference.bib')
+    create_or_match_publications('E:/reference.bib')
     # # 从网络中解析文献节点，并提取journal信息，创建venue节点、[wenxian]->[publication]
-    # build_network_of_venues(node_type="ARTICLE", publication_field="journal")
-    # build_network_of_venues(node_type="inproceedings".upper(), publication_field="book_title")
+    build_network_of_venues(node_type="ARTICLE", publication_field="journal")
+    build_network_of_venues(node_type="inproceedings".upper(), publication_field="book_title")
     # 从文献中解析author字段，创建Person节点、person->publication
     build_network_of_persons()
