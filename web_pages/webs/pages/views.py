@@ -297,6 +297,11 @@ def revise_publication(request):
             pub_info["ENTRYTYPE"] = "Unpublished"
         else:
             return HttpResponse(json.dumps({"msg": "unsupported paper type", "status": -3}))
+        # 特殊处理，pages
+        p1 = pub_info.get("pages1", None)
+        p2 = pub_info.get("pages2", None)
+        if p1 is not None and p2 is not None:
+            pub_info["pages"] = str(p1) + "-" + str(p2)
         # 调方法写数据库
         flag = neo4j_access.revise_publications(pub_info)
         if flag == 1:

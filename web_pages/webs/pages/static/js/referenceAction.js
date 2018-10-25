@@ -32,7 +32,8 @@ function setEditNodePanel(obj, nodeType, siteUrl, splitNameService, formSettings
                     currentAuthors = deepClone(res["data"]);
                 }
             });
-            currentAuthors = processPubPanel(selectedInfo, formSettings, contentStringName, panelDivID, panelFormID, authorTableID, siteUrl, splitNameService, enhanceForm);
+            var currentAuthors = processPubPanel(selectedInfo, formSettings, contentStringName, panelDivID, panelFormID, authorTableID, siteUrl, splitNameService, enhanceForm);
+            return currentAuthors;
         }else if (nodeType == "Person"){
             var panelDivID = "editPerson"
                 ,panelFormID = 'editPersonForm';
@@ -45,7 +46,6 @@ function setEditNodePanel(obj, nodeType, siteUrl, splitNameService, formSettings
             processVenuePanel(selectedInfo, panelFormID, enhanceForm);
         }
     }
-    return currentAuthors;
 }
 function processPubPanel(selectedPubInfo, formSettings, contentStringName, panelDivID, panelFormID, authorTableID, siteUrl, splitNameService, enhanceForm){
     var $ = layui.$;
@@ -102,7 +102,7 @@ function processPubPanel(selectedPubInfo, formSettings, contentStringName, panel
     enhance.filling(textContent);
     //处理作者表格
     var analyzedAuthors = [];
-    selectedPubInfo.author = $.trim(selectedPubInfo.author);
+    selectedPubInfo.author = $.trim(selectedPubInfo.author).toUpperCase();
     if (selectedPubInfo.author == "") {
         console.log("文章缺少作者信息");
     }else{
@@ -188,7 +188,7 @@ function processVenuePanel(selectedVenueInfo, panelFormID, enhanceForm){
     //indexing
     enhance.setSelectVal('indexing', 1, true);//设置文献索引,,是否触发选中事件)
     //文本填充
-    textContent = {venue_name:selectedVenueInfo.venue_name, abbr:selectedVenueInfo.abbr,  publisher:selectedVenueInfo.publisher,
+    var textContent = {venue_name:selectedVenueInfo.venue_name, abbr:selectedVenueInfo.abbr,  publisher:selectedVenueInfo.publisher,
                     start_year:selectedVenueInfo.start_year,
                     note:selectedVenueInfo.note, address:selectedVenueInfo.address};//赋值文本框
     enhance.filling(textContent);

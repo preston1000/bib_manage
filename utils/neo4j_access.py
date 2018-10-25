@@ -958,7 +958,7 @@ def query_or_create_relation(tx, source_type, source_id, target_type, target_id,
                                       IDt=target_id, rel=relation_type.upper())
     result = tx.run(cypher)
     result = result.data()
-    if len(result) > 1:
+    if len(result) > 0:
         print("查询到了关系：")
         message["status"] = 2
         message["msg"] = "关系已经存在"
@@ -969,7 +969,7 @@ def query_or_create_relation(tx, source_type, source_id, target_type, target_id,
                                       IDt=target_id, rel=relation_type.upper())
         result = tx.run(cypher)
         result = result.data()
-        if len(result) > 1:
+        if len(result) > 0:
             print("创建新关系：")
             message["status"] = 1
             message["msg"] = "关系已创建"
