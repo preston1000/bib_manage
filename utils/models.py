@@ -1,3 +1,8 @@
+"""
+此文件是定义Neo4j中节点类型的，包括publication、venue、person三类节点
+"""
+
+
 class Publication:
     uuid = None  # uuid
     node_type = None  # 文献类型
@@ -22,18 +27,25 @@ class Publication:
     institution = None  # 组织
     chapter = None  # 章节
     how_published = None  #
+
     keywords = None  # 关键词
+    abstract = None  # 摘要
+    note_id = None  # 笔记编号
+
     ei_index = None  # 是否EI检索
     sci_index = None  # 是否SCI检索
     ssci_index = None  # 是否SSCI检索
+
     added_by = None  # 节点创建人
+    modified_date = None  # 文献阅读时间
     added_date = None  # 节点创建时间
 
     def __init__(self, uuid, node_type, author=None, editor=None, title=None, journal=None, year=None,
                  volume=None, number=None, series=None, address=None, pages=None, month=None,
                  note=None, publisher=None, edition=None, book_title=None, organization=None,
-                 chapter=None, school=None, type=None, how_published=None, keywords=None,
-                 institution=None, added_by=None, added_date=None, sci_index=None, ei_index=None, ssci_index=None):
+                 chapter=None, school=None, type=None, how_published=None, keywords=None, abstract=None, note_id=None,
+                 institution=None, added_by=None, added_date=None, sci_index=None, ei_index=None, ssci_index=None,
+                 modified_date=None):
         self.uuid = uuid
         self.node_type = node_type
         self.author = author
@@ -57,12 +69,15 @@ class Publication:
         self.type = type
         self.how_published = how_published
         self.keywords = keywords
+        self.abstract = abstract
+        self.note_id = note_id
         self.institution = institution
         self.added_date = added_date
         self.added_by = added_by
         self.ei_index = ei_index
         self.sci_index = sci_index
         self.ssci_index = ssci_index
+        self.modified_date = modified_date
 
     def to_string(self):
         word = "{uuid:'" + ("" if self.uuid is None else self.uuid.hex) + "'," + \
@@ -88,7 +103,10 @@ class Publication:
                "type:'" + ("" if self.type is None else self.type) + "'," + \
                "how_published:'" + ("" if self.how_published is None else self.how_published) + "'," + \
                "keywords:'" + ("" if self.keywords is None else self.keywords) + "'," + \
+               "abstract:'" + ("" if self.abstract is None else self.abstract) + "'," + \
+               "note_id:'" + ("" if self.note_id is None else self.note_id) + "'," + \
                "added_date:'" + ("" if self.added_date is None else self.added_date) + "'," + \
+               "modified_date:'" + ("" if self.modified_date is None else self.modified_date) + "'," + \
                "added_by:'" + ("" if self.added_by is None else self.added_by) + "'," + \
                "ei_index:'" + ("" if self.ei_index is None else self.ei_index) + "'," + \
                "sci_index:'" + ("" if self.sci_index is None else self.sci_index) + "'," + \
