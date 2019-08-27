@@ -2,6 +2,8 @@
 此文件是定义Neo4j中节点类型的，包括publication、venue、person三类节点
 """
 
+from utils.operate_utils import key_2_upper
+
 
 class Publication:
     uuid = None  # uuid
@@ -367,3 +369,113 @@ class Person:
         cypher = cypher[:-1] + "}) set " + self.to_string_for_modification("node", field_value_revise) + " return node"
         return cypher
 
+
+class Pub:
+    entry_type = None  # 1.文献类型
+    title = None  # 标题
+    book_title = None  # 所在书籍标题
+    editor = None  # 编辑
+    keywords = None  # 关键词
+    edition = None  # 6.书籍版号
+    author = None  # 作者
+    year = None  # 发表年
+    month = None  # 发表月
+    journal = None  # 所在期刊名
+    volume = None  # 11.期
+    type = None  # 类型
+    chapter = None  # 章节
+    number = None  # 卷
+    pages = None  # 页码
+    publisher = None  # 16. 出版公司
+    organization = None  # 组织
+    institution = None  # 组织
+    school = None  # 学校
+    address = None  # 地址
+    series = None  # 21 系列
+    how_published = None  #
+    note = None  # 笔记
+
+    abstract = None  # 摘要
+    note_id = None  # 笔记编号
+    modified_date = None  # 26. 文献阅读时间
+
+    def create_node(self, info):
+        if info is None or not isinstance(info, dict):
+            return
+        info = key_2_upper(info)
+
+        self.entry_type = info.get(info["ENTRYTYPE"], None).upper()
+        title = info.get("author".upper(), None)
+        self.title = title.upper() if title is not None else None
+        book_title = info.get("book_title".upper(), None)
+        self.book_title = book_title.upper() if book_title is not None else None
+        editor = info.get("editor".upper(), None)
+        self.editor = editor.upper() if editor is not None else None
+        keywords = info.get("keywords".upper(), None)
+        self.keywords = keywords.upper() if keywords is not None else None
+        edition = info.get("edition".upper(), None)
+        self.edition = edition.upper() if edition is not None else None
+        author = info.get("author".upper(), None)
+        self.author = author.upper() if author is not None else None
+        year = info.get("year".upper(), None)
+        self.year = year.upper() if year is not None else None
+        month = info.get("month".upper(), None)
+        self.month = month.upper() if month is not None else None
+        journal = info.get("journal".upper(), None)
+        self.journal = journal.upper() if journal is not None else None
+        volume = info.get("volume".upper(), None)
+        self.volume = volume.upper() if volume is not None else None
+        type = info.get("type".upper(), None)
+        self.type = type.upper() if type is not None else None
+        chapter = info.get("chapter".upper(), None)
+        self.chapter = chapter.upper() if chapter is not None else None
+        number = info.get("number".upper(), None)
+        self.number = number.upper() if number is not None else None
+        pages = info.get("pages".upper(), None)
+        self.pages = pages.upper() if pages is not None else None
+        publisher = info.get("publisher".upper(), None)
+        self.publisher = publisher.upper() if publisher is not None else None
+        organization = info.get("organization".upper(), None)
+        self.organization = organization.upper() if organization is not None else None
+        institution = info.get("institution".upper(), None)
+        self.institution = institution.upper() if institution is not None else None
+        school = info.get("school".upper(), None)
+        self.school = school.upper() if school is not None else None
+        address = info.get("address".upper(), None)
+        self.address = address.upper() if address is not None else None
+        series = info.get("series".upper(), None)
+        self.series = series.upper() if series is not None else None
+        how_published = info.get("how_published".upper(), None)
+        self.how_published = how_published.upper() if how_published is not None else None
+        note = info.get("note".upper(), None)
+        self.note = note.upper() if note is not None else None
+
+    def to_dict(self):
+        mapping = {"entry_type", self.entry_type,
+                   "title", self.title,
+                   "book_title", self.book_title,
+                   "editor", self.editor,
+                   "keywords", self.keywords,
+                   "edition", self.edition,
+                   "author", self.author,
+                   "year", self.year,
+                   "month", self.month,
+                   "journal", self.journal,
+                   "volume", self.volume,
+                   "type", self.type,
+                   "chapter", self.chapter,
+                   "number", self.number,
+                   "pages", self.pages,
+                   "publisher", self.publisher,
+                   "organization", self.organization,
+                   "institution", self.institution,
+                   "school", self.school,
+                   "address", self.address,
+                   "series", self.series,
+                   "how_published", self.how_published,
+                   "note", self.note,
+
+                   "abstract", self.abstract,
+                   "note_id", self.note_id,
+                   "modified_date", self.modified_date}
+        return mapping
