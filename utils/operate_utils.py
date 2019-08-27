@@ -1,6 +1,3 @@
-import bibtexparser
-
-
 def is_valid_key(entry, key):
     value = entry.get(key)
     if value is None:
@@ -9,7 +6,7 @@ def is_valid_key(entry, key):
         return value
 
 
-def parse_bib_keys(entry):
+def key_2_upper(entry):
     """
     将每个文献中的字段名称转成大写，并对应其在entry中的key
     :param entry:
@@ -21,15 +18,9 @@ def parse_bib_keys(entry):
     return mapping
 
 
-def load_bib_file(file_name):
+def merge_person():
     """
-    从bib文件中解析出文献信息
-    :param file_name:
+    todo 这个是合并网络中的人节点（有可能出现多个节点表示一个人）
     :return:
     """
-    with open(file_name, encoding="utf-8") as bib_file:
-        bib_database = bibtexparser.load(bib_file)
-    if bib_database is None:
-        return None
-    else:
-        return bib_database
+    return

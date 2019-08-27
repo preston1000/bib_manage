@@ -6,7 +6,8 @@ import time
 
 from utils.models import Publication, Venue, Person
 from utils.text_utils import string_util, process_person_names, process_special_character
-from utils.operate_utils import is_valid_key, parse_bib_keys, load_bib_file
+from utils.operate_utils import is_valid_key, key_2_upper
+from utils.data_extraction import parse_bib
 from configparser import ConfigParser
 
 
@@ -28,7 +29,7 @@ def create_or_match_publications(data_source='bibtex.bib', mode=1, is_list=False
     :return: -1:读取/解析文献信息错误；1：处理成功；-2：提取文献信息失败；-3：写入数据库失败（可能全失败或部分失败）
     """
     if mode == 1:
-        bib_data = load_bib_file(data_source)
+        bib_data = parse_bib(data_source)
         bib_data = bib_data.entries
     else:
         if is_list:
@@ -462,7 +463,7 @@ def revise_node(tx, node, field_value_revise):
 
 
 def extract_publication(entry):
-    entry_parsed_keys = parse_bib_keys(entry)
+    entry_parsed_keys = key_2_upper(entry)
     entry_type = entry.get(entry_parsed_keys["ENTRYTYPE"], None).upper()
 
     if entry_type is None:
@@ -791,7 +792,7 @@ def extract_venue(entry):
     :param entry:
     :return:
     """
-    entry_parsed_keys = parse_bib_keys(entry)
+    entry_parsed_keys = key_2_upper(entry)
     # venue name
     venue_name = is_valid_key(entry_parsed_keys, "venue_name".upper())
     venue_name = "" if venue_name is None else entry.get(venue_name, None)
@@ -846,7 +847,7 @@ def extract_person(entry):
     :param entry:
     :return:
     """
-    entry_parsed_keys = parse_bib_keys(entry)
+    entry_parsed_keys = key_2_upper(entry)
     # full name
     full_name = is_valid_key(entry_parsed_keys, "full_name".upper())
     full_name = "" if full_name is None else entry.get(full_name, None)
