@@ -3,6 +3,8 @@ from neo4j.v1 import GraphDatabase
 import neo4j.v1
 import json
 
+from utils.util_text_operation import null_string, split_name
+
 cf = ConfigParser()
 cf.read("./neo4j.conf", encoding="utf-8")
 
@@ -281,33 +283,6 @@ def query_by_multiple_field(node_info, node_type):
         msg["count"] = len(records)
         msg["data"] = records
     return msg
-
-
-def null_string(string):
-    if string is None or string.strip() == "" or string == "null":
-        return ""
-    else:
-        return string.strip()
-
-
-def split_name(name, authors):
-    if name is None or name == "" or name == "null":
-        return None
-    else:
-        index = authors.index(name)
-        name = [item.strip() for item in name.split(" ")]
-        result = {}
-        if len(name) < 1:
-            print("姓名解析错误:" + name)
-            return None
-        elif len(name) == 1:
-            result = {"firstName": "", "middleName": "", "lastName": name[0], "ranking": index}
-        elif len(name) == 2:
-            result = {"firstName": name[0], "middleName": "", "lastName": name[0], "ranking": index}
-        else:
-            result = {"firstName": name[0], "middleName": " ".join(name[1:len(name)-1]), "lastName": name[-1],
-                      "ranking": index}
-        return result
 
 
 def query_vis_data():

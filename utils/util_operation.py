@@ -1,5 +1,5 @@
 from configparser import ConfigParser
-
+from utils.models import Venue, Person
 
 def get_value_by_key(entry, key):
     value = entry.get(key)
@@ -43,3 +43,34 @@ def ini_neo4j(config_path="/Volumes/Transcend/web/web_pages/webs/neo4j.conf"):
     pwd = cf.get("neo4j", "pwd")
     database_info = {"uri":uri, "username":username, "pwd":pwd}
     return database_info
+
+
+def wrap_info_to_model(info, parameters=None):
+    if not isinstance(info, dict):
+        return None
+    new_type = info.get("type", None)
+    if new_type is None:
+        return None
+    names = info.get("name", None)
+    if names is None:
+        return None
+    if new_type == "Venue":
+        nodes = []
+        if parameters is not None:
+            try:
+                venue_type = parameters.get("node_type", "")
+            except TypeError:
+                venue_type = ""
+        else:
+            venue_type = ""
+        for name in names:
+            venue = Venue(uuid="", venue_type=venue_type, venue_name=name)
+            nodes.append(venue)
+    elif new_type == "Person":
+        nodes = []
+        for name in names:
+            person = Person(uuid="", full_name=name)  # TODO 人名的解析
+            nodes.append(person)
+    else:
+        return None
+    return nodes

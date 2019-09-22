@@ -9,7 +9,7 @@ import xlrd
 from datetime import date, datetime
 from utils.models import Pub, Publication
 from utils.util_operation import upperize_dict_keys, get_value_by_key
-from utils.util_text_operation import check_special, check_number, check_ordinary
+from utils.util_text_operation import check_special, check_number, check_ordinary,check_special2
 
 
 def do_extract(file, ext=None, parameters=None):
@@ -142,13 +142,13 @@ def extract_publication(entry):
     id = get_value_by_key(entries, "id".upper())
     id = "" if id is None else id.upper()
 
-    author = check_special(entries, "author".upper())
-    editor = check_special(entries, "editor".upper())
-    title = check_special(entries, "title".upper())
+    author = check_special2(entries, "author".upper())
+    editor = check_special2(entries, "editor".upper())
+    title = check_special2(entries, "title".upper())
     journal = check_special(entries, "journal".upper())
     publisher = check_special(entries, "publisher".upper())
-    year = check_number(entries, "year".upper())
-    volume = check_number(entries, "volume".upper())
+    year = check_ordinary(entries, "year".upper())
+    volume = check_ordinary(entries, "volume".upper())
     number = check_ordinary(entries, "number".upper())
     pages = check_ordinary(entries, "pages".upper())
     month = check_ordinary(entries, "month".upper())

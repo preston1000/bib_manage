@@ -8,7 +8,7 @@ from utils.util_text_operation import process_special_character
 
 def extract_venue(entry):
     """
-    从节点信息中，提取出venue节点
+    从节点信息中，提取出venue节点 todo 还没改
     :param entry:
     :return:
     """
@@ -63,7 +63,7 @@ def extract_venue(entry):
 
 def extract_person(entry):
     """
-    从节点信息中，提取出person节点
+    从节点信息中，提取出person节点 todo 还没改
     :param entry:
     :return:
     """

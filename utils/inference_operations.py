@@ -1,111 +1,9 @@
 """
 这个是根据数据库中节点，进行推断并建立节点或关系的操作
 """
-import time
-import uuid
-
-import neo4j
-from neo4j import GraphDatabase
 
 from utils.tmp_db import create_or_match_nodes
 from utils.util_text_operation import string_util, process_person_names
-
-
-def build_network_of_venues(session, source_node_type="Publication", node_type="ARTICLE", publication_field='journal',
-                            target_node_type="Venue", rel_type="PUBLISH_IN"):
-    """
-    从数据库的publication节点中查询，对entry_type属于article 和conference的节点，解析journal字段，创建venue节点，并建立PUBLISH_IN关系
-    :param rel_type:
-    :param target_node_type:
-    :param source_node_type:
-    :param node_type:
-    :param publication_field:
-    :return:code:-6:创建节点时，venue name和uuid关系提取失败；-7:现在只能处理article和conference；-8：未查询到有效的venue name;
-                  -9：原始数据、处理后name、uuid对应失败,-10创建关系失败;1:成功
-             data:
-             msg:
-    """
-    result = {"code": 0, "msg": "", "data": ""}
-    # 查询指定venue_type字段的source_node_type
-    cypher = "match (node:{NODE}) where node.node_type='{TYPE}' return node".format(NODE=source_node_type,
-                                                                                    TYPE=node_type)
-
-    nodes = session.run(cypher)
-    data = {}  # key: source_node_type的uuid， value：venue的name
-    for record in nodes:
-        print("提取{NODE}与{NODE2}之间关系过程：查询到节点：".format(NODE=source_node_type, NODE2=target_node_type)
-              + str(record["node"]['title']))
-        if not string_util(record["node"][publication_field]):
-            print("{ID} has empty {FIELD} field".format(ID=record["node"]['title'], FIELD=publication_field))
-        else:
-            data[record["node"]['uuid']] = record["node"][publication_field]
-    if data == {}:
-        print("提取{NODE}与{NODE2}之间关系过程：未查询到{NODE}.{TYPE}中的节点".format(NODE=source_node_type,
-                                                                    TYPE=node_type, NODE2=target_node_type))
-        result["code"] = -8
-        result["msg"] = "提取{NODE}与{NODE2}之间关系过程：未查询到{NODE}.{TYPE}中的节点".format(NODE=source_node_type,
-                                                                              TYPE=node_type,
-                                                                              NODE2=target_node_type)
-        return result
-    # 创建Venue节点
-    if not (node_type == "ARTICLE" or node_type == "CONFERENCE" or node_type == "INPROCEEDINGS"):
-        print("现在不能处理【" + node_type + "】类型的venue")
-        result["code"] = -7
-        result["msg"] = "现在不能处理【" + node_type + "】类型的venue"
-        return result
-    venue_info = []
-    venue_names = list(set(data.values()))
-    for venue in venue_names:
-        info = {"venue_name": venue, "venue_type": node_type}
-        venue_info.append(info)
-    create_result = create_or_match_nodes(venue_info, mode=2)
-    if create_result["code"] < 0:
-        result["code"] = create_result["code"]
-        result["msg"] = create_result["msg"] + "\n 停止创建关系"
-        return result
-    # 提取Venue和Publication关系
-    rel_mapping_name_uuid = create_result["data"]  # 这是venue name 和uuid之间的mapping关系
-    name_mappings = create_result["names"]
-    if rel_mapping_name_uuid is None or not isinstance(rel_mapping_name_uuid, dict) or \
-            not isinstance(name_mappings, dict):
-        result["code"] = -6
-        result["msg"] = create_result["msg"] + "\n 停止创建关系"
-        return result
-    for source_id, target_name in data.items():
-        processed_name = name_mappings.get(target_name, None)
-        if processed_name is None:
-            result["code"] = min(-9, result["code"])
-            result["msg"] += ",提取处理后venue name失败：" + target_name
-            print("提取处理后venue name失败：" + target_name)
-            continue
-        venue_id = rel_mapping_name_uuid.get(processed_name, None)
-        if venue_id is None:
-            result["code"] = min(-9, result["code"])
-            result["msg"] += ",提取venue的uuid失败： " + processed_name
-            print("提取venue的uuid失败： " + processed_name)
-            continue
-        match_cypher = "MATCH  (pub:" + source_node_type + " {uuid:'" + source_id + "'}) -[:" + rel_type + \
-                       "]-> (ven:" + target_node_type + " {uuid:'" + venue_id + "'})  return pub, ven"
-        query_result = session.run(match_cypher)
-        query_result = query_result.data()
-        if len(query_result) > 0:
-            print("关系已存在(" + rel_type + "):" + source_id + "->" + venue_id)
-            continue
-        create_cypher = "MATCH  (pub:" + source_node_type + " {uuid:'" + source_id + "'}) , (ven:" + \
-                        target_node_type + " {uuid:'" + venue_id + "'})  CREATE (pub) -[:" + rel_type + \
-                        "]-> (ven) return pub, ven"
-        query_result = session.run(create_cypher)
-        query_result = query_result.data()
-        if len(query_result) > 0:
-            print("，创建关系成功(" + rel_type + "):" + source_id + "->" + venue_id)
-        else:
-            result["code"] = min(-10, result["code"])
-            result["msg"] += "，创建关系失败(" + rel_type + "):" + source_id + "->" + venue_id
-            print("，创建关系失败(" + rel_type + "):" + source_id + "->" + venue_id)
-    if result["code"] == 0:
-        result["msg"] = "成功"
-        result["code"] = 1
-    return result
 
 
 def build_network_of_persons(session, source_node_type="Publication", publication_field='author', target_node_type="Person",
@@ -193,37 +91,6 @@ def build_network_of_persons(session, source_node_type="Publication", publicatio
         result["msg"] = "成功"
         result["code"] = 1
     return result
-
-
-def query_or_create_node(tx, node, to_create=True, match_field=None):
-    """
-    先查询节点是否存在，若存在，直接返回节点id，否则，创建节点并返回id。-1表示出错
-    :param tx:
-    :param node:
-    :param to_create:
-    :param match_field:
-    :return:
-    """
-    if node is None:
-        return None
-    if match_field is None:
-        cypher = node.get_match_cypher()
-    else:
-        cypher = node.get_match_cypher(match_field)
-    node_id = tx.run(cypher)
-    for record in node_id:
-        print("查询到了节点：" + str(record["node"]['uuid']))
-        return record["node"]['uuid']
-    if to_create:
-        node.uuid = uuid.uuid1()
-        node.added_date = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-        create_cypher = node.get_create_cypher()
-        node_id = tx.run(create_cypher)
-        for record in node_id:
-            print("创建新节点：" + str(record["node"]['uuid']))
-            return record["node"]['uuid']
-        return None
-    return None
 
 
 def query_or_create_relation(tx, source_type, source_id, target_type, target_id, relation_type, to_create=True):

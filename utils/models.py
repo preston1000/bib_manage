@@ -84,7 +84,7 @@ class Publication:
         self.modified_date = modified_date
 
     def to_string(self):
-        word = "{uuid:'" + ("" if self.uuid is None else self.uuid.hex) + "'," + \
+        word = "{uuid:'" + ("" if self.uuid is None or self.uuid == "" else self.uuid.hex) + "'," + \
                "node_type:'" + ("" if self.node_type is None else self.node_type) + "'," + \
                "id:'" + ("" if self.id is None else self.id) + "'," + \
                "author:'" + ("" if self.author is None else self.author) + "'," + \

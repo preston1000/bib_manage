@@ -5,7 +5,7 @@ import os
 import time
 
 from utils.models import Publication, Venue, Person
-from utils.util_text_operation import string_util, process_person_names, process_special_character
+from utils.util_text_operation import string_util, process_special_character
 from utils.util_operation import get_value_by_key, upperize_dict_keys
 from utils.d_extraction import parse_bib
 from configparser import ConfigParser
@@ -279,95 +279,6 @@ def build_network_of_venues(source_node_type="Publication", node_type="ARTICLE",
                 result["code"] = min(-10, result["code"])
                 result["msg"] += "，创建关系失败(" + rel_type + "):" + source_id + "->" + venue_id
                 print("，创建关系失败(" + rel_type + "):" + source_id + "->" + venue_id)
-        if result["code"] == 0:
-            result["msg"] = "成功"
-            result["code"] = 1
-    return result
-
-
-def build_network_of_persons(source_node_type="Publication", publication_field='author', target_node_type="Person",
-                             rel_type="WRITE"):
-    # 查询所有articles of publication
-    result = {"code": 0, "msg": "", "data": ""}
-    cypher = "match (node:{NODE}) return node".format(NODE=source_node_type)
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
-    with driver.session() as session:
-        nodes = session.run(cypher)
-        data = {}
-        for record in nodes:
-            print("提取{NODE}与{NODE2}之间关系过程：查询到节点：".format(NODE=source_node_type, NODE2=target_node_type)
-                  + str(record["node"]['uuid']))
-            if not string_util(record["node"][publication_field]):
-                print("{ID} has empty {FIELD} field".format(ID=record["node"]['uuid'], FIELD=publication_field))
-            else:
-                data[record["node"]['uuid']] = record["node"][publication_field]  # value是bib的name，要拆分处理成list of string
-        if data is {}:
-            print("提取{NODE}与{NODE2}之间关系过程：未查询到{NODE}.{TYPE}中的节点".format(NODE=source_node_type,
-                                                                        TYPE=publication_field, NODE2=target_node_type))
-            return
-    # 处理多个作者的情况
-    person_names = []
-    for key, names in data.items():
-        names = process_person_names([names])  # 这里拆分成了多个，返回值：dict, original authors: list of dict of authors
-        for _, separate_names in names.items():
-            for separate_name in separate_names:
-                person_names.append(separate_name["name"])
-        data[key] = names
-    # 创建Person节点
-    person_info = []  # 组装数据，for 生成person节点
-    person_names = list(set(person_names))  # 去重
-    for person in person_names:
-        info = {"full_name": person}
-        person_info.append(info)
-    create_result = create_or_match_persons(person_info, mode=2)
-    if create_result["code"] < 0:
-        result["code"] = create_result["code"]
-        result["msg"] = create_result["msg"] + "\n 停止创建关系"
-        return result
-    # 提取person和Publication关系
-    rel_mapping_name_uuid = create_result["data"]  # 这是处理后person name 和uuid之间的mapping关系
-    name_mappings = create_result["names"]  # 这是原始和处理后name的mapping
-    if rel_mapping_name_uuid is None or not isinstance(rel_mapping_name_uuid, dict):
-        result["code"] = -6
-        result["msg"] = create_result["msg"] + "\n 停止创建关系"
-        return result
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
-    with driver.session() as session:
-        for source_id, target_names in data.items():  # target_names is a list
-            for _, value in target_names.items():
-                target_names = value
-                break
-            for target_name in target_names:
-                target_name = target_name["name"]
-                processed_name = name_mappings.get(target_name, None)
-                if processed_name is None:
-                    result["code"] = min(-9, result["code"])
-                    result["msg"] += ",提取处理后person name失败：" + target_name
-                    print("提取处理后person name失败：" + target_name)
-                    continue
-                target_id = rel_mapping_name_uuid.get(processed_name, None)
-                if target_id is None:
-                    result["code"] = min(-9, result["code"])
-                    result["msg"] += ",提取person的uuid失败： " + processed_name
-                    print("提取person的uuid失败： " + processed_name)
-                    continue
-                match_cypher = "MATCH  (m:" + source_node_type + " {uuid:'" + source_id + "'}) -[:" + rel_type + \
-                               "]-> (n:" + target_node_type + " {uuid:'" + target_id + "'})  return m, n"
-                query_result = session.run(match_cypher)
-                query_result = query_result.data()
-                if len(query_result) > 0:
-                    print("关系已存在(PUBLISH_IN):" + source_id + "->" + target_id)
-                    continue
-                create_cypher = "MATCH  (m:" + source_node_type + " {uuid:'" + source_id + "'}) , (n:" + target_node_type +\
-                                " {uuid:'" + target_id + "'}) " " CREATE (n) -[:" + rel_type + "]-> (m) return m, n"
-                query_result = session.run(create_cypher)
-                query_result = query_result.data()
-                if len(query_result) > 0:
-                    print("，创建关系成功(" + target_node_type + "):" + source_id + "->" + target_id)
-                else:
-                    result["code"] = min(-10, result["code"])
-                    result["msg"] += "，创建关系失败(" + target_node_type + "):" + source_id + "->" + target_id
-                    print("，创建关系失败(" + target_node_type + "):" + source_id + "->" + target_id)
         if result["code"] == 0:
             result["msg"] = "成功"
             result["code"] = 1
@@ -996,4 +907,4 @@ if __name__ == "__main__":
     build_network_of_venues(node_type="ARTICLE", publication_field="journal")
     build_network_of_venues(node_type="inproceedings".upper(), publication_field="book_title")
     # 从文献中解析author字段，创建Person节点、person->publication
-    build_network_of_persons()
+    # build_network_of_persons()

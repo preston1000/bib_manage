@@ -52,6 +52,13 @@ def check_special(entries, field):
     return txt
 
 
+def check_special2(entries, field):
+    txt = get_value_by_key(entries, field.upper())
+    txt = "" if txt is None else txt
+    txt = process_special_character(txt)
+    return txt
+
+
 def check_number(entries, field):
     txt = get_value_by_key(entries, field)
     txt = "" if txt is None else int(txt)
@@ -66,13 +73,15 @@ def check_ordinary(entries, field):
 
 def process_special_character(word):
     """
-    处理了特殊转义字符、全部转成大写，去掉中间多余的空格
+    处理了特殊转义字符、全部转成大写，去掉中间多余的空格 todo: 题目中的公式怎么搞？大小写变换时有点复杂
     :param word:
     :return:
     """
     if word is None or word == "":
         return ""
     # 转换latex特殊字符
+    if word.find("\\URL")>=0:
+        print("rul")
     mappings = {"\\`{a}": 'à',
                 "\\'{a}": 'á',
                 "\^{a}": 'â',
@@ -118,7 +127,7 @@ def process_special_character(word):
                 "{\\l}": "ł",
                 "\\url": "url",
                 "\\a{a}": "å",
-                "\\infty": "infty"}
+                "\\infty": "infty"}  # 带上下标的字母
     for (special, replace) in mappings.items():
         try:
             word = word.replace(special, replace)
@@ -128,6 +137,10 @@ def process_special_character(word):
     word = word.replace("'", '\\\'')
     # 转&
     word = word.replace("\&", '&')
+    # 转$
+    # word = word.replace("$", '\$')
+    # 转url
+    word = word.replace("\\URL", '\\\\URL')
     # 转希腊字母
     greek_letters = {
         "{\\aa}": "å",
@@ -277,3 +290,30 @@ def analyze_person_name(params):
     processed_name["status"] = 1
     processed_name["msg"] = "success"
     return processed_name
+
+
+def null_string(string):
+    if string is None or string.strip() == "" or string == "null":
+        return ""
+    else:
+        return string.strip()
+
+
+def split_name(name, authors):
+    if name is None or name == "" or name == "null":
+        return None
+    else:
+        index = authors.index(name)
+        name = [item.strip() for item in name.split(" ")]
+        result = {}
+        if len(name) < 1:
+            print("姓名解析错误:" + name)
+            return None
+        elif len(name) == 1:
+            result = {"firstName": "", "middleName": "", "lastName": name[0], "ranking": index}
+        elif len(name) == 2:
+            result = {"firstName": name[0], "middleName": "", "lastName": name[0], "ranking": index}
+        else:
+            result = {"firstName": name[0], "middleName": " ".join(name[1:len(name)-1]), "lastName": name[-1],
+                      "ranking": index}
+        return result
