@@ -2,12 +2,13 @@
 此文件是定义Neo4j中节点类型的，包括publication、venue、person三类节点
 """
 
-from utils.operate_utils import key_2_upper
+from utils.util_operation import upperize_dict_keys
 
 
 class Publication:
     uuid = None  # uuid
     node_type = None  # 文献类型
+    id = None
     type = None  # 类型
     title = None  # 标题
     author = None  # 作者
@@ -47,8 +48,9 @@ class Publication:
                  note=None, publisher=None, edition=None, book_title=None, organization=None,
                  chapter=None, school=None, type=None, how_published=None, keywords=None, abstract=None, note_id=None,
                  institution=None, added_by=None, added_date=None, sci_index=None, ei_index=None, ssci_index=None,
-                 modified_date=None):
+                 modified_date=None, id = None):
         self.uuid = uuid
+        self.id = id
         self.node_type = node_type
         self.author = author
         self.editor = editor
@@ -84,6 +86,7 @@ class Publication:
     def to_string(self):
         word = "{uuid:'" + ("" if self.uuid is None else self.uuid.hex) + "'," + \
                "node_type:'" + ("" if self.node_type is None else self.node_type) + "'," + \
+               "id:'" + ("" if self.id is None else self.id) + "'," + \
                "author:'" + ("" if self.author is None else self.author) + "'," + \
                "editor:'" + ("" if self.editor is None else self.editor) + "'," + \
                "title:'" + ("" if self.title is None else self.title) + "'," + \
@@ -402,10 +405,11 @@ class Pub:
     def create_node(self, info):
         if info is None or not isinstance(info, dict):
             return
-        info = key_2_upper(info)
+        info = upperize_dict_keys(info)
 
-        self.entry_type = info.get(info["ENTRYTYPE"], None).upper()
-        title = info.get("author".upper(), None)
+        entry_type = info.get("ENTRYTYPE", None)
+        self.entry_type = entry_type.upper() if entry_type is not None else None
+        title = info.get("title".upper(), None)
         self.title = title.upper() if title is not None else None
         book_title = info.get("book_title".upper(), None)
         self.book_title = book_title.upper() if book_title is not None else None

@@ -1,5 +1,5 @@
 import re
-
+from utils.util_operation import get_value_by_key
 
 def string_util(string):
     if string is None or string is "":
@@ -43,6 +43,25 @@ def process_person_names(names):
 
         names_mapping[name] = tmp_list
     return names_mapping
+
+
+def check_special(entries, field):
+    txt = get_value_by_key(entries, field.upper())
+    txt = "" if txt is None else txt.upper()
+    txt = process_special_character(txt)
+    return txt
+
+
+def check_number(entries, field):
+    txt = get_value_by_key(entries, field)
+    txt = "" if txt is None else int(txt)
+    return txt
+
+
+def check_ordinary(entries, field):
+    txt = get_value_by_key(entries, field)
+    txt = "" if txt is None else txt
+    return txt
 
 
 def process_special_character(word):
