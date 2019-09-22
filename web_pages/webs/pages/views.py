@@ -6,7 +6,7 @@ from configparser import ConfigParser
 import datetime
 import os
 
-import utils.text_utils
+import utils.util_text_operation
 
 config_file = "./pages.conf"
 cf = ConfigParser()
@@ -14,7 +14,7 @@ cf.read(os.path.abspath(config_file), encoding="utf-8")
 address = cf.get("moduleAddress", "address1")
 sys.path.append(address)
 
-from utils import query_data, neo4j_access
+from utils import query_data, db_operation
 
 
 def index(request):
@@ -150,7 +150,7 @@ def add_publication(request):
         else:
             return HttpResponse(json.dumps({"msg": "unsupported paper type", "status": -3}))
         # 调方法写数据库
-        flag = neo4j_access.create_or_match_publications(pub_info, mode=2, is_list=False)
+        flag = db_operation.create_or_match_publications(pub_info, mode=2, is_list=False)
         if flag == 1:
             return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
         else:
@@ -175,7 +175,7 @@ def add_person(request):
         except:
             return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
         # 调方法写数据库
-        flag = neo4j_access.create_or_match_persons(node_info, mode=2)
+        flag = db_operation.create_or_match_persons(node_info, mode=2)
         if flag["code"] == 1:
             return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
         else:
@@ -200,7 +200,7 @@ def add_venue(request):
         except:
             return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
         # 调方法写数据库
-        flag = neo4j_access.create_or_match_venues(node_info, mode=2)
+        flag = db_operation.create_or_match_venues(node_info, mode=2)
         if flag["code"] == 1:
             return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
         else:
@@ -230,7 +230,7 @@ def add_relation(request):
         target_id = node_info["targetID"]
         target_type = node_info["targetType"]
         rel_type = node_info["relType"]
-        flag = neo4j_access.query_or_create_relation(None, source_type, source_id, target_type, target_id, rel_type)
+        flag = db_operation.query_or_create_relation(None, source_type, source_id, target_type, target_id, rel_type)
         if flag["status"] > 0:
             return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
         else:
@@ -303,7 +303,7 @@ def revise_publication(request):
         if p1 is not None and p2 is not None:
             pub_info["pages"] = str(p1) + "-" + str(p2)
         # 调方法写数据库
-        flag = neo4j_access.revise_publications(pub_info)
+        flag = db_operation.revise_publications(pub_info)
         if flag == 1:
             return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
         else:
@@ -328,7 +328,7 @@ def revise_person(request):
         except:
             return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
         # 调方法写数据库
-        flag = neo4j_access.revise_persons(node_info)
+        flag = db_operation.revise_persons(node_info)
         if flag == 1:
             return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
         else:
@@ -353,7 +353,7 @@ def revise_venue(request):
         except:
             return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
         # 调方法写数据库
-        flag = neo4j_access.revise_venues(node_info)
+        flag = db_operation.revise_venues(node_info)
         if flag == 1:
             return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
         else:
@@ -535,7 +535,7 @@ def search_venue_popup(request):
 def upload_bib_add_record(request):
     for file in request.FILES.getlist('file'):
         file_path = handle_uploaded_file(file)  # 处理上传来的文件
-        flag = neo4j_access.create_or_match_publications(file_path, mode=1)
+        flag = db_operation.create_or_match_publications(file_path, mode=1)
         os.remove(file_path)
         if flag == 1:
             return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
@@ -564,6 +564,6 @@ def split_name(request):
     if name is None or name == {}:
         return HttpResponse(json.dumps({"first_name": '', "middle_name": "", "last_name": "", "status": -1,
                                         "msg": "no given name"}))
-    result = utils.text_utils.analyze_person_name(name)
+    result = utils.util_text_operation.analyze_person_name(name)
     return HttpResponse(json.dumps(result))
 
