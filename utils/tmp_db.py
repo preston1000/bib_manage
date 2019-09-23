@@ -3,12 +3,9 @@
 """
 import time
 import uuid
-
 from neo4j import GraphDatabase
 import neo4j
-
 from utils.d_extraction import parse_bib
-
 from utils.util_operation import ini_neo4j
 
 
@@ -86,20 +83,6 @@ def revise_node(tx, node, field_value_revise):
     if node_revised is None:
         return None
     return 1
-
-
-if __name__ == "__main__":
-    # 从文件中解析文献，
-    # flag, msg, info = parse_bib("bibtex.bib")
-    flag, msg, info = parse_bib("/Users/X/Downloads/reference.bib")
-    # 并创建节点
-    database_info = ini_neo4j("/Volumes/Transcend/web/web_pages/webs/neo4j.conf")
-    create_or_match_nodes(info)
-    # # 从网络中解析文献节点，并提取journal信息，创建venue节点、[wenxian]->[publication]
-    # build_network_of_venues(node_type="ARTICLE", publication_field="journal")
-    # build_network_of_venues(node_type="inproceedings".upper(), publication_field="book_title")
-    # # 从文献中解析author字段，创建Person节点、person->publication
-    # build_network_of_persons()
 
 
 def query_or_create_node(tx, node, to_create=True, match_field=None):
@@ -207,4 +190,17 @@ def query_or_create_relation(tx, source_type, source_id, target_type, target_id,
         result["msg"] = "数据库无记录，已选择不创建新节点"
         return result
 
+
+if __name__ == "__main__":
+    # 从文件中解析文献，
+    # flag, msg, info = parse_bib("bibtex.bib")
+    flag, msg, info = parse_bib("/Users/X/Downloads/reference.bib")
+    # 并创建节点
+    database_info = ini_neo4j("/Volumes/Transcend/web/web_pages/webs/neo4j.conf")
+    create_or_match_nodes(info)
+    # # 从网络中解析文献节点，并提取journal信息，创建venue节点、[wenxian]->[publication]
+    # build_network_of_venues(node_type="ARTICLE", publication_field="journal")
+    # build_network_of_venues(node_type="inproceedings".upper(), publication_field="book_title")
+    # # 从文献中解析author字段，创建Person节点、person->publication
+    # build_network_of_persons()
 

@@ -9,7 +9,7 @@ from utils.util_text_operation import process_special_character
 
 def extract_venue(entry):
     """
-    从节点信息中，提取出venue节点 todo 还没改
+    从节点信息中，提取出venue节点 todo 这个只能从其他数据中进行分析了
     :param entry:
     :return:
     """
