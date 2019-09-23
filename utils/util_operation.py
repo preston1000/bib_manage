@@ -1,5 +1,6 @@
 from configparser import ConfigParser
-from utils.models import Venue, Person
+from utils.models import Venue, Person, Publication
+
 
 def get_value_by_key(entry, key):
     value = entry.get(key)
@@ -9,16 +10,29 @@ def get_value_by_key(entry, key):
         return value
 
 
-def upperize_dict_keys(entry):
+def judge_type(data):
+    if isinstance(data, Publication):
+        tt = 1
+    elif isinstance(data, Venue):
+        tt = 2
+    elif isinstance(data, Person):
+        tt = 3
+    else:
+        tt = -1
+    return tt
+
+def reverse_map_key_value(data):
     """
-    将每个文献中的字段名称转成大写，并对应其在entry中的key
-    :param entry:
+    将data中的key和value互换位置，可能重复，用list表示
+    :param data:
     :return:
     """
-    mapping = {}
-    for (key, value) in entry.items():
-        mapping[key.upper()] = value
-    return mapping
+    tmp = {}
+    for (key, value) in data.items():
+        tt = tmp.get(value, [])
+        tt.append(key)
+        tmp[value] = tt
+    return tmp
 
 
 def merge_person():
@@ -46,6 +60,12 @@ def ini_neo4j(config_path="/Volumes/Transcend/web/web_pages/webs/neo4j.conf"):
 
 
 def wrap_info_to_model(info, parameters=None):
+    """
+    将只有名称信息的数据封装成models.py中类
+    :param info: dict,field包括type：节点类型，name：节点字段
+    :param parameters:
+    :return:
+    """
     if not isinstance(info, dict):
         return None
     new_type = info.get("type", None)

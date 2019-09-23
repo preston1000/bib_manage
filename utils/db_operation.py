@@ -6,7 +6,8 @@ import time
 
 from utils.models import Publication, Venue, Person
 from utils.util_text_operation import string_util, process_special_character
-from utils.util_operation import get_value_by_key, upperize_dict_keys
+from utils.util_operation import get_value_by_key
+from utils.util_operation_2 import upperize_dict_keys
 from utils.d_extraction import parse_bib
 from configparser import ConfigParser
 

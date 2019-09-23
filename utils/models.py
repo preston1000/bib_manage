@@ -2,7 +2,7 @@
 此文件是定义Neo4j中节点类型的，包括publication、venue、person三类节点
 """
 
-from utils.util_operation import upperize_dict_keys
+from utils.util_operation_2 import upperize_dict_keys
 
 
 class Publication:
@@ -202,6 +202,7 @@ class Publication:
 
 
 class Venue:
+    # todo Venue和Person类还要加一个类似Publication的id的属性
     uuid = None
     venue_type = None  # 会议、期刊
     venue_name = None  # 名称

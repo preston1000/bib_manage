@@ -10,8 +10,8 @@ def string_util(string):
 def process_person_names(names):
     """
     将文献字段中的author，映射为处理过的author list，list中每个是一个字典，name&index
-    :param names:
-    :return:
+    :param names:list of strings
+    :return:dict, key是原author字段，value是list of dict，每个dict={"name", "index"}
     """
     if names is None:
         return None
@@ -22,7 +22,7 @@ def process_person_names(names):
         #  去掉重复空格
         tmp = " ".join(tmp.split())
         # 转换单引号
-        tmp = tmp.replace("'", '\\\'')
+        # tmp = tmp.replace("'", '\\\'')
         # 转换特殊字符
         tmp = process_special_character(tmp)
         # 分开多个作者
@@ -79,8 +79,10 @@ def process_special_character(word):
     """
     if word is None or word == "":
         return ""
+    if word.find("AMICO") >= 0:
+        print(word)
     # 转换latex特殊字符
-    if word.find("\\URL")>=0:
+    if word.find("\\URL") >= 0:
         print("rul")
     mappings = {"\\`{a}": 'à',
                 "\\'{a}": 'á',
