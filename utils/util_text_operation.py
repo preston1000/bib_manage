@@ -301,6 +301,12 @@ def null_string(string):
         return string.strip()
 
 
+def null_int(value):
+    if value is None:
+        return 0
+    else:
+        return value
+
 def split_name(name, authors):
     if name is None or name == "" or name == "null":
         return None

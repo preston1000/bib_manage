@@ -14,7 +14,7 @@ class Publication:
     author = None  # 作者
     editor = None  # 编辑
     journal = None  # 所在期刊名
-    year = None  # 发表年
+    year = None  # 发表年 todo 要改成数值
     month = None  # 发表月
     volume = None  # 期
     number = None  # 卷

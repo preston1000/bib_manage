@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--<head>-->
+    <!--{% load static %}-->
+    <!--<meta charset="UTF-8">-->
+    <!--<title>Title</title>-->
+    <!--<link src="{% static 'bootstrap-4.1.1-vis/css/bootstrap.css' %}">-->
+    <!--<script src="{% static 'bootstrap-4.1.1-vis/js/bootstrap.js' %}"></script>-->
+<!--</head>-->
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    {% load static %}
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{% static 'images/favicon.ico'%}">
+
+    <title>向明学术</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.bootcss.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+
+    <![endif]-->
+    <script src="{% static 'layui2/layui.js'%}" charset="utf-8"></script>
+    <script src="{% static 'js/search_home_f.js'%}"></script>
+    <!-- Custom styles for this template -->
+    <link href="{% static 'bootstrap-4.1.1-dist/css/carousel.css'%}" rel="stylesheet">
+
+    <link href="{% static 'layui2/css/layui.css'%}" rel="stylesheet">
+
+    <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="{% static 'bootstrap-4.1.1-dist/js/vendor/holder.min.js'%}"></script>
+    <script src="{% static 'bootstrap-4.1.1-dist/js/ie10-viewport-bug-workaround.js'%}"></script>
+<!--    latex支持-->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500" preserveAspectRatio="none" style="display: none; visibility: hidden; position: absolute; top: -100%; left: -100%;"><defs><style type="text/css"></style></defs><text x="0" y="25" style="font-weight:bold;font-size:25pt;font-family:Arial, Helvetica, Open Sans, sans-serif">500x500</text></svg>
+  </head>
+
+<body class="layui-layout-body">
+
+    <div class="container pull-center">
+<!--        导航栏-->
+        <div class="col-sm-12 col-md-12">
+            <nav class="navbar navbar-inverse navbar-fixed-top">
+              <div class="container-fluid">
+                <div class="navbar-header">
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </button>
+                  <a class="navbar-brand" href="#">放标志图</a>
+                </div>
+                <div id="navbar" class="navbar-collapse collapse">
+                  <ul class="nav navbar-nav navbar-right">
+                    <li><a href="http://127.0.0.1:8000/">首页</a></li>
+                    <li id="collapse1-1-title" class="active"><a href="http://www.baidu.com">关于</a></li>
+                    <li id="collapse2-1-title"><a href="http://www.baidu.com">登陆/注册</a></li>
+                    <li id="collapse3-1-title"><a href="http://www.baidu.com">管理</a></li>
+                    <li><a href="#">联系我们</a></li>
+                  </ul>
+                </div>
+              </div>
+            </nav>
+        </div>
+<!--搜索结果部分-->
+        <div class="col-sm-12 col-md-12  main">
+            <div style="height:auto;">
+                <br><br><br><br>
+            </div>
+<!--        搜索条件框-->
+            <form id="search_form_result"  class="layui-form">
+                <div class="layui-form-item" id="normal_search">
+                    <div class="layui-input-block" style="margin-left:0px;">
+<!--                                    搜索栏-->
+                        <input type="text" id="search_content" name="search_content_in_result" lay-verify="search_content" class="layui-input-inline" style="height:38px; width:500px;" maxlength="2048" autocapitalize="off" autocomplete="off">
+<!--                                    搜索按钮-->
+                        <button type="submit" id="search_btn_result"     name="btnG_in_result"     lay-filter="search_btn_in_result"     class="layui-btn"         style="margin-left:0;height:38px; width:100px;" lay-submit="">
+                            <span style="text-align:center;">搜索</span>
+                        </button>
+<!--                                    高级搜索按钮-->
+                        <button type="button" id="adv_search_btn_result" name="adv_btnG_in_result" lay-filter="adv_search_btn_in_result" class="layui-btn-primary" style="margin-left:0;height:20px; width:80px;">
+                            <span style="text-align:center;">高级搜索</span>
+                        </button>
+                    </div>
+                </div>
+
+<!--        高级搜索框-->
+                <!--关键词-->
+                <div class="layui-form-item" id="keyword_adv" style="display:none;">
+                    <label class="layui-form-label" style="width:100px">关键词</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="title" placeholder="请输入关键字，以逗号分隔" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <!--时间范围-->
+                <div class="layui-form-item" id="year_adv" style="display:none;">
+                    <label class="layui-form-label" style="width:100px">时间范围\(\mathbb{R}^2\)</label>
+                    <div class="layui-input-inline" style="margin-left:10px">
+                        <input id="startTime1" type="text" name="startTime1"  placeholder="From" autocomplete="off" class="layui-input">
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">-</div>
+                    <div class="layui-input-inline">
+                        <input id="endTime1" type="text" name="endTime1" placeholder="To" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <!--包括作者-->
+                <div class="layui-form-item" id="author_adv" style="display:none;">
+                    <label class="layui-form-label" style="width:100px">作者</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="author" placeholder="请输入作者，（姓，名）并以分号隔开" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <!--文章索引-->
+                <div class="layui-form-item" id="index_adv" style="display:none;">
+                    <label class="layui-form-label" style="width:100px">文章索引</label>
+                    <div class="layui-input-block">
+                        <select name="paperIndexing1" lay-verify="required" multiple>
+                            <option value="">全选</option>
+                            <option value="0">EI</option>
+                            <option value="1">SCI</option>
+                            <option value="2">SSCI</option>
+                        </select>
+                    </div>
+                </div>
+                <!--文章类型-->
+                <div class="layui-form-item" id="paper_type_adv" style="display:none;">
+                    <label class="layui-form-label" style="width:100px">文章类型</label>
+                    <div class="layui-input-block">
+                        <select name="node_type" multiple>
+                            <option value="" selected>全选</option>
+                            <option value="Article">Article</option>
+                            <option value="Book">Book</option>
+                            <option value="Booklet">Booklet</option>
+                            <option value="Conference">Conference</option>
+                            <option value="InBook">InBook</option>
+                            <option value="InCollection">InCollection</option>
+                            <option value="InProceedings">InProceedings</option>
+                            <option value="Manual">Manual</option>
+                            <option value="MastersThesis">MastersThesis</option>
+                            <option value="Misc">Misc</option>
+                            <option value="PhDThesis">PhDThesis</option>
+                            <option value="Proceedings">Proceedings</option>
+                            <option value="TechReport">TechReport</option>
+                            <option value="Unpublished">Unpublished</option>
+                        </select>
+                    </div>
+                </div>
+                <!--按钮建-->
+                <div class="layui-form-item" id="btn_adv" style="display:none;">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="adv_search_btn">搜索</button>
+                        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                        <button type="button" class="layui-btn layui-btn-primary" id="search_simple">简单搜索</button>
+                    </div>
+                </div>
+            </form>
+<!--搜索结果表格-->
+            <div id="collapse3-1-content" >
+                <!--成果列表-->
+                <div>
+                    <table class="layui-hide" id="search_result_table" lay-filter="search_result_table"></table>
+                </div>
+            </div>
+
+
+
+
+            </div>
+
+          <!-- FOOTER -->
+      <div class="layui-footer">
+        <p class="pull-right"><a href="#">Back to top</a></p>
+        <p>© 2018 Research Group · <a href="#">Privacy</a> · <a href="#">Terms</a></p>
+      </div>
+    </div>
+
+    <script type="text/html" id="toolbarSearchResult">
+<!--        搜索结果页面中，表格上方工具栏-->
+        <div class="layui-btn-container">
+            <button class="layui-btn layui-btn-sm" lay-event="addCart">加入购物车</button>
+            <button class="layui-btn layui-btn-sm" lay-event="exportBibs" onmouseover="showBibTips(this)" id="exportBibs">Export bibs</button>
+        </div>
+    </script>
+    <script type="text/html" id="bar_search_result">
+<!--        搜索结果表格每项操作按钮-->
+        <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="details">Details</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="Bib">Bib</a>
+        <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="View">View</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="Archive">Archive</a>
+    </script>
+
+    <style>
+        .box_pic{
+<!--        居中显示-->
+            margin: auto;
+            display: table;
+        }
+<!--        数据表格单元格样式-->
+        .layui-table-cell{
+            height:auto!important;
+            line-height:auto!important;
+
+            overflow:visible;
+            text-overflow:inherit;
+            word-break: break-all;
+            white-space:normal;
+        }
+    </style>
+    <style>
+        /* 下拉多选样式 需要引用*/
+        select[multiple]+.layui-form-select>.layui-select-title>input.layui-input{ border-bottom: 0}
+        select[multiple]+.layui-form-select dd{ padding:0;}
+        select[multiple]+.layui-form-select .layui-form-checkbox[lay-skin=primary]{ margin:0 !important; display:block; line-height:36px !important; position:relative; padding-left:26px;}
+        select[multiple]+.layui-form-select .layui-form-checkbox[lay-skin=primary] span{line-height:36px !important; float:none;}
+        select[multiple]+.layui-form-select .layui-form-checkbox[lay-skin=primary] i{ position:absolute; left:10px; top:0; margin-top:9px;}
+        .multiSelect{ line-height:normal; height:auto; padding:4px 10px; overflow:hidden;min-height:38px; margin-top:-38px; left:0; z-index:99;position:relative;background:none;}
+        .multiSelect a{ padding:2px 5px; background:#908e8e; border-radius:2px; color:#fff; display:block; line-height:20px; height:20px; margin:2px 5px 2px 0; float:left;}
+        .multiSelect a span{ float:left;}
+        .multiSelect a i {float:left;display:block;margin:2px 0 0 2px;border-radius:2px;width:8px;height:8px;padding:4px;position:relative;-webkit-transition:all .3s;transition:all .3s}
+        .multiSelect a i:before, .multiSelect a i:after {position:absolute;left:8px;top:2px;content:'';height:12px;width:1px;background-color:#fff}
+        .multiSelect a i:before {-webkit-transform:rotate(45deg);transform:rotate(45deg)}
+        .multiSelect a i:after {-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}
+        .multiSelect a i:hover{ background-color:#545556;}
+
+        /* 下面是页面内样式，无需引用 */
+        .layui-block {
+            margin-bottom: 10px;
+        }
+
+        .layui-form-label {
+            width: 180px;
+        }
+        .code {
+            color: gray;
+            margin-left: 10px;
+        }
+        .unshow>#result {
+            display: none;
+        }
+        pre { padding: 5px; margin: 5px; }
+        .string { color: green; }
+        .number { color: darkorange; }
+        .boolean { color: blue; }
+        .null { color: magenta; }
+        .key { color: red; }
+    </style>
+</body>
+</html>

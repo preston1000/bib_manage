@@ -44,4 +44,11 @@ urlpatterns = [
     path('search-pub-popup/', views.search_pub_popup, name='search-pub-popup'),
     path('search-person-popup/', views.search_person_popup, name='search-person-popup'),
     path('search-venue-popup/', views.search_venue_popup, name='search-venue-popup'),
+
+    path('home/', views.search_home, name="search-home"),
+    path('search/', views.search_result, name="search"),
+    path('search/result/', views.search_publication_new, name="search-result"),
+    path('search/search-count/', views.search_publication_count, name="search-result-count"),
+    path('search/view-pdf/', views.view_pdf, name="search-view-pdf"),
+    path('search/show-pdf/', views.show_pdf, name="search-show-pdf")
 ]

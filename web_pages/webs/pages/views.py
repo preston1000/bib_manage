@@ -17,6 +17,136 @@ sys.path.append(address)
 from utils import query_data, db_operation
 
 
+def search_home(request):
+    return render(request, 'search_home.html')
+
+
+def search_result(request):
+    return render(request, 'search_result.html')
+
+
+def search_publication_new(request):
+    """
+    这个实现的是在搜索结果界面的功能，包括高级搜索、查询和搜索数据的返回等
+    :param request:
+    :return:
+    """
+    if request.method == 'POST':
+        # # 解析传递参数，
+        # 高级搜索的条件
+        the_paras = request.POST
+        pub_info = the_paras.get("param", None)
+        if pub_info is None:
+            return HttpResponse(json.dumps({"msg": "no valid info is provided for search", "status": 0}))
+        pub_info = json.loads(pub_info)
+        parameters = process_search_condition(pub_info) # 封装数据为后台数据库能够接收的格式
+        # 分页条件
+        page = the_paras.get("page", None)
+        limit = the_paras.get("limit", None)
+        page_para = None
+        if page is not None and limit is not None:
+            try:
+                page_para = {"page": int(page), "limit": int(limit)}
+            except ValueError:
+                page_para = None
+        # 查询
+        query_result = query_data.query_pub_by_multiple_field(parameters, page_para)
+        query_result = json.loads(query_result)
+        if query_result["code"] < 1:
+            return HttpResponse(query_result)
+        # 处理返回的数据
+        count = 1
+        pubs = []
+        for pub in query_result["data"]:
+            pub["ID"] = count
+            if pub["pages1"] == "" or pub["pages2"] == "":
+                pub["pages"] = ""
+            else:
+                pub["pages"] = str(pub["pages1"]) + "-" + str(pub["pages2"])
+            pub.pop("pages1")
+            pub.pop("pages2")
+            count += 1
+            pubs.append(pub)
+        result = {"data": pubs, "code": 0, "count": pub_info["count"], "msg": "done!"}
+        return HttpResponse(json.dumps(result))
+    else:
+        return HttpResponse(json.dumps({"code": -1, "msg": "not support request method, should be post", "count": 0, "data": ""}))
+
+
+def search_publication_count(request):
+    """
+    根据搜索条件，计算有多少条数据满足条件
+    :param request:
+    :return:
+    """
+    if request.is_ajax() and request.method == 'POST':
+        pub_info = request.body
+        if pub_info is None or pub_info == "":
+            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
+        try:
+            pub_info = bytes.decode(pub_info)
+            pub_info = json.loads(pub_info)
+        except:
+            return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
+
+        if pub_info is None:
+            return HttpResponse(json.dumps({"msg": "no valid info is provided for search", "status": 0}))
+
+        # 封装数据为后台数据库能够接收的格式
+        parameters = process_search_condition(pub_info)
+        if parameters is None:
+            return HttpResponse(json.dumps({"code": -1, "msg": "搜索条件解析失败，请重试", "count": 0, "data": ""}))
+        query_result = query_data.query_by_multiple_field_count(parameters, "Publication")  # -1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
+        query_result["status"] = query_result["code"]
+        return HttpResponse(json.dumps(query_result))
+    else:
+        return HttpResponse(json.dumps({"status": -1, "msg": "not support request method, should be post", "count": 0, "data": ""}))
+
+
+def process_search_condition(pub_info):
+    parameters = {}
+    # 标题关键字
+    title = pub_info.get("title", None)
+    if not(title is None or title == ""):
+        parameters["title"] = title
+    # 起止时间
+    start_time = pub_info.get("startTime", None)
+    end_time = pub_info.get("endTime", None)
+    if not (start_time is None or start_time == ""):
+        parameters["startTime"] = start_time
+    if not (end_time is None or end_time == ""):
+        parameters["endTime"] = end_time
+    # 作者
+    author = pub_info.get("author", None)
+    if not (author is None or author == ""):
+        parameters["author"] = author
+    # 文章索引
+    paper_index = pub_info.get("paperIndex", None)
+    if not (paper_index is None or paper_index == ""):
+        parameters["paperIndex"] = paper_index
+    # 文献类型
+    node_type = pub_info.get("node_type", None)
+    if node_type is not None and node_type != "":
+        parameters["node_type"] = node_type.upper()
+    # 检查是否有效条件
+    if parameters == {}:
+        parameters = None
+    return parameters
+
+
+def view_pdf(request):
+    return render(request, 'view_pdf.html')
+
+
+def show_pdf(request):
+
+    return  render(request)
+
+
+# 以上是新网页
+######################################################################################
+
+
 def index(request):
     # return HttpResponse('welcome to the front page')
     return render(request, 'index.html')
