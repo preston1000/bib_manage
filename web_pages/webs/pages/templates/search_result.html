@@ -48,41 +48,29 @@
 
 <body class="layui-layout-body">
 
-    <div class="container pull-center">
+    <div class="layui-layout layui-layout-admin">
 <!--        导航栏-->
-        <div class="col-sm-12 col-md-12">
-            <nav class="navbar navbar-inverse navbar-fixed-top">
-              <div class="container-fluid">
-                <div class="navbar-header">
-                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                  </button>
-                  <a class="navbar-brand" href="#">放标志图</a>
-                </div>
-                <div id="navbar" class="navbar-collapse collapse">
-                  <ul class="nav navbar-nav navbar-right">
-                    <li><a href="http://127.0.0.1:8000/">首页</a></li>
-                    <li id="collapse1-1-title" class="active"><a href="http://www.baidu.com">关于</a></li>
-                    <li id="collapse2-1-title"><a href="http://www.baidu.com">登陆/注册</a></li>
-                    <li id="collapse3-1-title"><a href="http://www.baidu.com">管理</a></li>
-                    <li><a href="#">联系我们</a></li>
-                  </ul>
-                </div>
-              </div>
-            </nav>
+        <div class="layui-header">
+            <div class="layui-logo">标志图</div>
+<!--            头部区域-->
+            <ul class="layui-nav layui-layout-left">
+                <li class="layui-nav-item"><a href="http://127.0.0.1:8000/search/">首页</a></li>
+                <li id="about-top" class="layui-nav-item"><a href="http://www.baidu.com">关于</a></li>
+                <li class="layui-nav-item"><a href="javascript:;">联系我们</a></li>
+            </ul>
+            <ul class="layui-nav layui-layout-right">
+                <li id="collapse2-1-title" class="layui-nav-item"><a href="">登陆/注册</a></li>
+            </ul>
         </div>
-<!--搜索结果部分-->
-        <div class="col-sm-12 col-md-12  main">
+<!--    搜索结果部分-->
+        <div class="layui-body" style="left:0;">
             <div style="height:auto;">
                 <br><br><br><br>
             </div>
 <!--        搜索条件框-->
             <form id="search_form_result"  class="layui-form">
                 <div class="layui-form-item" id="normal_search">
-                    <div class="layui-input-block" style="margin-left:0px;">
+                    <div class="layui-input-block" style="margin-left:200px;">
 <!--                                    搜索栏-->
                         <input type="text" id="search_content" name="search_content_in_result" lay-verify="search_content" class="layui-input-inline" style="height:38px; width:500px;" maxlength="2048" autocapitalize="off" autocomplete="off">
 <!--                                    搜索按钮-->
@@ -166,7 +154,7 @@
                     </div>
                 </div>
             </form>
-<!--搜索结果表格-->
+<!--    搜索结果表格-->
             <div id="collapse3-1-content" >
                 <!--成果列表-->
                 <div>
@@ -179,13 +167,14 @@
 
             </div>
 
-          <!-- FOOTER -->
+<!-- FOOTER -->
       <div class="layui-footer">
         <p class="pull-right"><a href="#">Back to top</a></p>
         <p>© 2018 Research Group · <a href="#">Privacy</a> · <a href="#">Terms</a></p>
       </div>
     </div>
 
+<!--脚本-->
     <script type="text/html" id="toolbarSearchResult">
 <!--        搜索结果页面中，表格上方工具栏-->
         <div class="layui-btn-container">
@@ -200,7 +189,7 @@
         <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="View">View</a>
         <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="Archive">Archive</a>
     </script>
-
+<!--样式-->
     <style>
         .box_pic{
 <!--        居中显示-->
