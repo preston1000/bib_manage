@@ -51,15 +51,25 @@
     <div class="layui-layout layui-layout-admin">
 <!--        导航栏-->
         <div class="layui-header">
-            <div class="layui-logo">标志图</div>
+            <div class="layui-logo"><img src="{% static 'images/logo_hitsz.png'%}" width="150px;"></div>
 <!--            头部区域-->
             <ul class="layui-nav layui-layout-left">
-                <li class="layui-nav-item"><a href="http://127.0.0.1:8000/search/">首页</a></li>
-                <li id="about-top" class="layui-nav-item"><a href="http://www.baidu.com">关于</a></li>
-                <li class="layui-nav-item"><a href="javascript:;">联系我们</a></li>
+                <li id="homepage" class="layui-nav-item"><a href="http://127.0.0.1:8000/home/">首页</a></li>
+                <li id="about-top" class="layui-nav-item"><a href="javascript:void(0);">关于</a></li>
+                <li id="contact-us" class="layui-nav-item"><a href="javascript:void(0);">联系我们</a></li>
             </ul>
             <ul class="layui-nav layui-layout-right">
-                <li id="collapse2-1-title" class="layui-nav-item"><a href="">登陆/注册</a></li>
+<!--                <li id="shopping-cart" class="layui-nav-item">-->
+<!--                    <a href="" class="layui-icon layui-icon-cart" style="font-size:40px;">-->
+<!--                        <span class="layui-badge">1</span>-->
+<!--                    </a>-->
+<!--                </li>-->
+                <li id="manage" class="layui-nav-item" style="visibility:hidden;"><a href="/manage/">管理</a></li>
+                <li id="logout" class="layui-nav-item" style="visibility:hidden;"><a href="javascript:void(0);">退出</a></li>
+<!--                <li id="log-in" class="layui-nav-item" style="display:auto;"><a href="javascript:void(0);">登陆/注册</a></li>-->
+<!--                <li id="manage" class="layui-nav-item" style="display:none;"><a href="javascript:void(0);">管理</a></li>-->
+<!--                <li id="logout" class="layui-nav-item" style="display:none;"><a href="javascript:void(0);">退出</a></li>-->
+                <li id="log-in" class="layui-nav-item" style="display:auto;"><a href="javascript:void(0);">登陆/注册</a></li>
             </ul>
         </div>
 <!--    搜索结果部分-->

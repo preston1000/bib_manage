@@ -50,5 +50,6 @@ urlpatterns = [
     path('search/result/', views.search_publication_new, name="search-result"),
     path('search/search-count/', views.search_publication_count, name="search-result-count"),
     path('search/view-pdf/', views.view_pdf, name="search-view-pdf"),
-    path('search/show-pdf/', views.show_pdf, name="search-show-pdf")
+    path('search/show-pdf/', views.show_pdf, name="search-show-pdf"),
+    path('manage/', views.manage, name="manage")
 ]

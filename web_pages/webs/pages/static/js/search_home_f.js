@@ -476,3 +476,27 @@ function wrapToBib(data){
     return bib;
 
 }
+
+    // todo 添加购物车，要写数据库和个人信息关联，存储paper的id
+function addCart(data){
+
+}
+
+    // 登陆操作 todo 现在只是界面变化，还没实现登陆过程
+layui.use(['layer'], function(){
+    var $ = layui.$;
+    // 登陆条件判断
+    $('#log-in').click(function(){
+        document.getElementById('manage').style.visibility = 'visible';
+        document.getElementById('logout').style.visibility = 'visible';
+//        document.getElementById('log-in').style.visibility = 'hidden';
+//        document.getElementById('manage').style.display = 'auto';
+//        document.getElementById('logout').style.display = 'auto';
+        document.getElementById('log-in').style.display = 'none';
+    });
+    $('#logout').click(function(){
+        document.getElementById('manage').style.visibility = 'hidden';
+        document.getElementById('logout').style.visibility = 'hidden';
+        document.getElementById('log-in').style.display = '';
+    });
+});

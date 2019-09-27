@@ -139,10 +139,13 @@ def view_pdf(request):
 
 
 def show_pdf(request):
-
+    # todo 实现文件存储
     return  render(request)
 
 
+def manage(request):
+
+    return render(request, 'manage.html')
 # 以上是新网页
 ######################################################################################
 
@@ -193,25 +196,33 @@ def get_author_table_data(request):
     :return:
     """
     current_data = request.GET.get("currentData", None)
+    mode = request.GET.get("mode", 1)
+    mode = int(mode)
     if current_data is None:
         data = [{"firstName": "", "middleName": "", "lastName": "", "ranking": "1"}]
     else:
         try:
             data = json.loads(current_data)
             try:
-                data1 = []
-                for item in data:
-                    item.pop("LAY_TABLE_INDEX")
-                    data1.append(item)
-                data = data1
-                current_numbers = [int(item["ranking"]) for item in data]
-                ranges = range(1, len(current_numbers)+2)
-                new_number = [number for number in ranges if number not in current_numbers]
-                if new_number is None:
-                    new_number = len(current_numbers)+1
+                if mode == 1:
+                    data1 = []
+                    for item in data:
+                        item.pop("LAY_TABLE_INDEX")
+                        data1.append(item)
+                    data = data1
+                    current_numbers = [int(item["ranking"]) for item in data]
+                    ranges = range(1, len(current_numbers)+2)
+                    new_number = [number for number in ranges if number not in current_numbers]
+                    if new_number is None:
+                        new_number = len(current_numbers)+1
+                    else:
+                        new_number = new_number[0]
+                    data.append({"firstName": "", "middleName": "", "lastName": "", "ranking": str(new_number)})
+                elif mode == 2:
+                    data = data
                 else:
-                    new_number = new_number[0]
-                data.append({"firstName": "", "middleName": "", "lastName": "", "ranking": str(new_number)})
+                    data = [{"firstName": "", "middleName": "", "lastName": "", "ranking": "1"}]
+                    print("未能识别的mode")
             except:
                 print("解析失败")
         except:

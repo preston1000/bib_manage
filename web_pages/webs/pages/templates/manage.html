@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--<head>-->
+    <!--{% load static %}-->
+    <!--<meta charset="UTF-8">-->
+    <!--<title>Title</title>-->
+    <!--<link src="{% static 'bootstrap-4.1.1-vis/css/bootstrap.css' %}">-->
+    <!--<script src="{% static 'bootstrap-4.1.1-vis/js/bootstrap.js' %}"></script>-->
+<!--</head>-->
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    {% load static %}
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{% static 'images/favicon.ico'%}">
+
+    <title>向明学术</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.bootcss.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+
+    <![endif]-->
+    <script src="{% static 'layui2/layui.js'%}" charset="utf-8"></script>
+    <script src="{% static 'js/manage_f.js'%}"></script>
+    <!-- Custom styles for this template -->
+    <link href="{% static 'bootstrap-4.1.1-dist/css/carousel.css'%}" rel="stylesheet">
+
+    <link href="{% static 'layui2/css/layui.css'%}" rel="stylesheet">
+
+    <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="{% static 'bootstrap-4.1.1-dist/js/vendor/holder.min.js'%}"></script>
+    <script src="{% static 'bootstrap-4.1.1-dist/js/ie10-viewport-bug-workaround.js'%}"></script>
+<!--    latex支持-->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500" preserveAspectRatio="none" style="display: none; visibility: hidden; position: absolute; top: -100%; left: -100%;"><defs><style type="text/css"></style></defs><text x="0" y="25" style="font-weight:bold;font-size:25pt;font-family:Arial, Helvetica, Open Sans, sans-serif">500x500</text></svg>
+  </head>
+
+<body class="layui-layout-body">
+
+    <div class="layui-layout layui-layout-admin">
+<!--        导航栏-->
+        <div class="layui-header">
+            <div class="layui-logo"><img src="{% static 'images/logo_hitsz.png'%}" width="150px;"></div>
+<!--            头部区域-->
+            <ul class="layui-nav layui-layout-left">
+                <li id="homepage" class="layui-nav-item"><a href="http://127.0.0.1:8000/home/">首页</a></li>
+                <li id="about-top" class="layui-nav-item"><a href="javascript:void(0);">关于</a></li>
+                <li id="contact-us" class="layui-nav-item"><a href="javascript:void(0);">联系我们</a></li>
+            </ul>
+            <ul class="layui-nav layui-layout-right">
+<!--                <li id="shopping-cart" class="layui-nav-item">-->
+<!--                    <a href="" class="layui-icon layui-icon-cart" style="font-size:40px;">-->
+<!--                        <span class="layui-badge">1</span>-->
+<!--                    </a>-->
+<!--                </li>-->
+                <li id="manage" class="layui-nav-item selected" style="visibility:visible;"><a href="javascript:void(0);">管理</a></li>
+                <li id="logout" class="layui-nav-item" style="visibility:visible;"><a href="/search/">退出</a></li>
+<!--                <li id="log-in" class="layui-nav-item" style="display:auto;"><a href="javascript:void(0);">登陆/注册</a></li>-->
+<!--                <li id="manage" class="layui-nav-item" style="display:none;"><a href="javascript:void(0);">管理</a></li>-->
+<!--                <li id="logout" class="layui-nav-item" style="display:none;"><a href="javascript:void(0);">退出</a></li>-->
+                <li id="log-in" class="layui-nav-item" style="display:none;"><a href="javascript:void(0);">登陆/注册</a></li>
+            </ul>
+        </div>
+<!--    主体部分-->
+        <div class="layui-body" style="left:0;">
+<!--            新建类型：节点or关系-->
+            <div class="layui-tab" lay-filter="tab-type">
+                <ul class="layui-tab-title">
+                    <li class="layui-this" id="tab-node">节点</li>
+                    <li id="tab-rel">关系</li>
+                </ul>
+                <div class="layui-tab-content">
+                    <div class="layui-tab-item layui-show"></div>
+                    <div class="layui-tab-item"></div>
+                </div>
+                <style>
+                    .layui-tab-title .layui-this{
+                        background-color:#5FB878;
+                        color:#fff;
+                        width:200px;
+                    }
+                </style>
+            </div>
+<!--        详细信息表格1*3-->
+            <div class=" layui-row " style="text-align:center;">
+                <button type="button" class="layui-btn layui-btn-normal layui-btn-lg layui-btn-radius ">提交</button>
+            </div>
+            <div class="layui-row">
+<!--                起点列-->
+                <div id="node_info_1" class="layui-col-xs5 layui-col-sm5 layui-col-md3" style="border:2px solid black;">
+                    <form class="layui-form" action="" lay-filter="addOrEditPubPanel1">
+                        <!--文献类型-->
+                        <div class="layui-form-item" id="addOrEditPub1-pubType">
+                            <label class="layui-form-label" style="width:50px;">paper type</label>
+                            <div class="layui-input-block">
+                                <select name="paperTypeEdit" lay-filter="paperTypeEdit1" lay-verify="required">
+                                    <option value="0" selected>Article</option>
+                                    <option value="1">Book</option>
+                                    <option value="2">Booklet</option>
+                                    <option value="3">Conference</option>
+                                    <option value="4">InBook</option>
+                                    <option value="5">InCollection</option>
+                                    <option value="6">InProceedings</option>
+                                    <option value="7">Manual</option>
+                                    <option value="8">MastersThesis</option>
+                                    <option value="9">Misc</option>
+                                    <option value="10">PhDThesis</option>
+                                    <option value="11">Proceedings</option>
+                                    <option value="12">TechReport</option>
+                                    <option value="13">Unpublished</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!--标题-->
+                        <div class="layui-form-item" id="addOrEditPub1-title" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Title</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="title" placeholder="Title" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--book标题-->
+                        <div class="layui-form-item" id="addOrEditPub1-booktitle" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Book Title</label>
+                            <div  class="layui-input-block" >
+                                <input type="text" name="booktitle" placeholder="Book Title" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--editor-->
+                        <div class="layui-form-item" id="addOrEditPub1-editor" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Editor</label>
+                            <div  class="layui-input-block" >
+                                <input type="text" name="editor" placeholder="Editor" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--keywords-->
+                        <div class="layui-form-item" id="addOrEditPub1-keywords" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Keywords</label>
+                            <div  class="layui-input-block" >
+                                <input type="text" name="keywords" placeholder="Keywords" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--edition-->
+                        <div class="layui-form-item" id="addOrEditPub1-edition" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Edition</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="edition" placeholder="Edition" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--作者(表格)-->
+                        <div class="layui-form-item" id="addOrEditPub1-author" style="display:auto">
+                            <label class="layui-form-label" style="width:60px;margin-left:0px;" >Authors</label>
+                            <div class="layui-input-block">
+                                <script type="text/html" id="barDemo">
+                                    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="addAuthor" data-type="reload">新增</a>
+                                    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delAuthor">删除</a>
+                                </script>
+
+                                <table class="layui-hide" id="idTest" lay-filter="demo" name="author"></table>
+                            </div>
+                        </div>
+                        <!--year-->
+                        <div class="layui-form-item" id="addOrEditPub1-year" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Year</label>
+                            <div class="layui-input-block">
+                                <input id="pubYear" type="text" name="year" lay-veryfy="date"  placeholder="Year" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--month-->
+                        <div class="layui-form-item" id="addOrEditPub1-month" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Month</label>
+                            <div  class="layui-input-block">
+                                <select name="pubMonth" lay-filter="pubMonth">
+                                    <option value="" selected>（可选）</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                    <option value="11">11</option>
+                                    <option value="12">12</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!--venue title-->
+                        <div class="layui-form-item" id="addOrEditPub1-journal" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Journal</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="journal" placeholder="Journal" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--volume-->
+                        <div class="layui-form-item" id="addOrEditPub1-volume" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Volume</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="volume" placeholder="Volume" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--type-->
+                        <div class="layui-form-item" id="addOrEditPub1-type" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Type</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="type" placeholder="Type" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--chapter-->
+                        <div class="layui-form-item" id="addOrEditPub1-chapter" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Chapter</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="chapter" placeholder="Chapter" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--number-->
+                        <div class="layui-form-item" id="addOrEditPub1-number" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Number</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="number" placeholder="Number" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--pages-->
+                        <div class="layui-form-item" id="addOrEditPub1-pages" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Pages</label>
+                            <div class="layui-input-block">
+                                <div class="layui-input-inline" style="width:60px;">
+                                    <input type="text" name="pages1" placeholder="From" autocomplete="off" class="layui-input">
+                                </div>
+                                <div class="layui-form-mid" style="width:20px;margin-left:10px;">
+                                    -
+                                </div>
+                                <div class="layui-input-inline" style="width:60px;">
+                                    <input type="text" name="pages2" placeholder="To" autocomplete="off" class="layui-input">
+                                </div>
+                            </div>
+                        </div>
+                        <!--publisher-->
+                        <div class="layui-form-item" id="addOrEditPub1-publisher" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Publisher</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="publisher" placeholder="Publisher" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--organization-->
+                        <div class="layui-form-item" id="addOrEditPub1-organization" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Organization</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="organization" placeholder="Organization" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--institution-->
+                        <div class="layui-form-item" id="addOrEditPub1-institution" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Institution</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="institution" placeholder="Institution" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--school-->
+                        <div class="layui-form-item" id="addOrEditPub1-school" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">School</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="school" placeholder="School" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--publisher addr-->
+                        <div class="layui-form-item" id="addOrEditPub1-address" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Publisher's Address</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="address" placeholder="Address" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--series-->
+                        <div class="layui-form-item" id="addOrEditPub1-series" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Series</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="series" placeholder="Series" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--howpublished-->
+                        <div class="layui-form-item" id="addOrEditPub1-howpublished" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">How Published</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="howpublished" placeholder="How Published" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--文章索引-->
+                        <div class="layui-form-item" id="addOrEditPub1-indexed" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Indexing</label>
+                            <div  class="layui-input-block">
+                                <select name="indexing" >
+                                    <option value="">必填</option>
+                                    <option value="0">EI</option>
+                                    <option value="1">SCI</option>
+                                    <option value="2">SSCI</option>
+                                    <option value="3">其他</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!--note-->
+                        <div class="layui-form-item" id="addOrEditPub1-note" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Note</label>
+                            <div  class="layui-input-block">
+                                <textarea  name="note" placeholder="Note" autocomplete="off" class="layui-textarea"></textarea>
+                            </div>
+                        </div>
+                        <!--按钮建-->
+                        <div class="layui-form-item">
+                            <div  class="layui-input-block">
+                                <button class="layui-btn" lay-submit lay-filter="checkPaper1">check</button>
+                                <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetPubPanel1">重置</button>
+                                <!--<button class="layui-btn layui-btn-primary" id="cancelEditPanel">取消</button>-->
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+<!--                边信息列-->
+                <div id="edge_info" class="layui-col-xs5 layui-col-xs-offset1 layui-col-sm5 layui-col-sm-offset1 layui-col-md3 layui-col-md-offset1" style="border:2px solid black;display:none;">
+                    <form class="layui-form" action="" lay-filter="addOrEditPubPanel">
+                        <!--边类型-->
+                        <div class="layui-form-item" id="edge-type">
+                            <label class="layui-form-label" style="width:50px;">边类型</label>
+                            <div  class="layui-input-block">
+                                <select name="edge-type" lay-filter="paperTypeEdit" lay-verify="required">
+                                    <option value="">请选择</option>
+                                    <option value="1" selected>Publish In</option>
+                                    <option value="2">Cite</option>
+                                    <option value="3">Author</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!--修改日期-->
+                        <div class="layui-form-item" id="modify-date" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">修改日期</label>
+                            <div class="layui-input-block">
+                                <input id="modifyDate" type="text" name="modifyDate" lay-veryfy="date"  placeholder="Date" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--修改人  todo 后面可以直接由登陆账号确定-->
+                        <div class="layui-form-item" id="modify-person" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">修改人</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="person" placeholder="修改人" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--note-->
+                        <div class="layui-form-item" id="edge-note" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Note</label>
+                            <div  class="layui-input-block">
+                                <textarea  name="note" placeholder="Note" autocomplete="off" class="layui-textarea"></textarea>
+                            </div>
+                        </div>
+                        <!--按钮建-->
+                        <div class="layui-form-item">
+                            <div  class="layui-input-block">
+                                <button class="layui-btn" lay-submit lay-filter="editFormSubmit">Check</button>
+                                <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetRelPanel">重置</button>
+                                <!--<button class="layui-btn layui-btn-primary" id="cancelEditPanel">取消</button>-->
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+<!--                终点列-->
+                <div id="node_info_2" class="layui-col-xs5 layui-col-xs-offset1 layui-col-sm5 layui-col-sm-offset1 layui-col-md3 layui-col-md-offset1" style="border:2px solid black;display:none;">
+                    <form class="layui-form" action="" lay-filter="addOrEditPubPanel" id="target-node-form">
+                        <!--文献类型-->
+                        <div class="layui-form-item" id="addOrEditPub2-pubType">
+                            <label class="layui-form-label" style="width:50px;">文献类型</label>
+                            <div  class="layui-input-block">
+                                <select name="paperTypeEdit" lay-filter="paperTypeEdit2" lay-verify="required">
+                                    <option value="0" selected>Article</option>
+                                    <option value="1">Book</option>
+                                    <option value="2">Booklet</option>
+                                    <option value="3">Conference</option>
+                                    <option value="4">InBook</option>
+                                    <option value="5">InCollection</option>
+                                    <option value="6">InProceedings</option>
+                                    <option value="7">Manual</option>
+                                    <option value="8">MastersThesis</option>
+                                    <option value="9">Misc</option>
+                                    <option value="10">PhDThesis</option>
+                                    <option value="11">Proceedings</option>
+                                    <option value="12">TechReport</option>
+                                    <option value="13">Unpublished</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!--标题-->
+                        <div class="layui-form-item" id="addOrEditPub2-title" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Title</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="title" placeholder="Title" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--book标题-->
+                        <div class="layui-form-item" id="addOrEditPub2-booktitle" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Book Title</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="booktitle" placeholder="Book Title" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--editor-->
+                        <div class="layui-form-item" id="addOrEditPub2-editor" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Editor</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="editor" placeholder="Editor" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--keywords-->
+                        <div class="layui-form-item" id="addOrEditPub2-keywords" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Keywords</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="keywords" placeholder="Keywords" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--edition-->
+                        <div class="layui-form-item" id="addOrEditPub2-edition" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Edition</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="edition" placeholder="Edition" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--作者(表格)-->
+                        <div class="layui-form-item" id="addOrEditPub2-author" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;" style="width:100px;margin-right:10px" >Authors</label>
+                            <div class="layui-input-block ">
+                                <script type="text/html" id="barDemo2">
+                                    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="addAuthor" data-type="reload">新增</a>
+                                    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delAuthor">删除</a>
+                                </script>
+
+                                <table class="layui-hide" id="idTest2" lay-filter="demo2" name="author"></table>
+                            </div>
+                        </div>
+                        <!--year-->
+                        <div class="layui-form-item" id="addOrEditPub2-year" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Year</label>
+                            <div class="layui-input-block">
+                                <input id="pubYear2" type="text" name="year" lay-veryfy="date"  placeholder="Year" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--month-->
+                        <div class="layui-form-item" id="addOrEditPub2-month" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Month</label>
+                            <div  class="layui-input-block">
+                                <select name="pubMonth" lay-filter="pubMonth2">
+                                    <option value="" selected>（可选）</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                    <option value="11">11</option>
+                                    <option value="12">12</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!--venue title-->
+                        <div class="layui-form-item" id="addOrEditPub2-journal" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Journal</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="journal" placeholder="Journal" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--volume-->
+                        <div class="layui-form-item" id="addOrEditPub2-volume" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Volume</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="volume" placeholder="Volume" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--type-->
+                        <div class="layui-form-item" id="addOrEditPub2-type" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Type</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="type" placeholder="Type" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--chapter-->
+                        <div class="layui-form-item" id="addOrEditPub2-chapter" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Chapter</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="chapter" placeholder="Chapter" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--number-->
+                        <div class="layui-form-item" id="addOrEditPub2-number" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Number</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="number" placeholder="Number" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--pages-->
+                        <div class="layui-form-item" id="addOrEditPub2-pages" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Pages</label>
+                            <div class="layui-input-block">
+                                <div class="layui-input-inline" style="width:60px;">
+                                    <input type="text" name="pages1" placeholder="From" autocomplete="off" class="layui-input">
+                                </div>
+                                <div class="layui-form-mid" style="width:20px;margin-left:10px;">
+                                    -
+                                </div>
+                                <div class="layui-input-inline" style="width:60px;">
+                                    <input type="text" name="pages2" placeholder="To" autocomplete="off" class="layui-input">
+                                </div>
+                            </div>
+                        </div>
+                        <!--publisher-->
+                        <div class="layui-form-item" id="addOrEditPub2-publisher" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Publisher</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="publisher" placeholder="Publisher" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--organization-->
+                        <div class="layui-form-item" id="addOrEditPub2-organization" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Organization</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="organization" placeholder="Organization" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--institution-->
+                        <div class="layui-form-item" id="addOrEditPub2-institution" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Institution</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="institution" placeholder="Institution" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--school-->
+                        <div class="layui-form-item" id="addOrEditPub2-school" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">School</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="school" placeholder="School" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--publisher addr-->
+                        <div class="layui-form-item" id="addOrEditPub2-address" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Publisher's Address</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="address" placeholder="Address" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--series-->
+                        <div class="layui-form-item" id="addOrEditPub2-series" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">Series</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="series" placeholder="Series" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--howpublished-->
+                        <div class="layui-form-item" id="addOrEditPub2-howpublished" style="display:none">
+                            <label class="layui-form-label" style="width:50px;">How Published</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="howpublished" placeholder="How Published" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--文章索引-->
+                        <div class="layui-form-item" id="addOrEditPub2-indexed" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Indexing</label>
+                            <div  class="layui-input-block">
+                                <select name="indexing" >
+                                    <option value="">必填</option>
+                                    <option value="0">EI</option>
+                                    <option value="1">SCI</option>
+                                    <option value="2">SSCI</option>
+                                    <option value="3">其他</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!--note-->
+                        <div class="layui-form-item" id="addOrEditPub2-note" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Note</label>
+                            <div  class="layui-input-block">
+                                <textarea  name="note" placeholder="Note" autocomplete="off" class="layui-textarea"></textarea>
+                            </div>
+                        </div>
+                        <!--按钮建-->
+                        <div class="layui-form-item">
+                            <div  class="layui-input-block">
+                                <button class="layui-btn" lay-submit lay-filter="paperCheck2">check</button>
+                                <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetPubPanel2">重置</button>
+                                <!--<button class="layui-btn layui-btn-primary" id="cancelEditPanel">取消</button>-->
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+
+
+
+
+            </div>
+
+<!--    FOOTER -->
+      <div class="layui-footer">
+        <p class="pull-right"><a href="#">Back to top</a></p>
+        <p>© 2018 Research Group · <a href="#">Privacy</a> · <a href="#">Terms</a></p>
+      </div>
+    </div>
+
+<!--样式-->
+    <style>
+        .box_pic{
+<!--        居中显示-->
+            margin: auto;
+            display: table;
+        }
+<!--        数据表格单元格样式-->
+        .layui-table-cell{
+            height:auto!important;
+            line-height:auto!important;
+
+            overflow:visible;
+            text-overflow:inherit;
+            word-break: break-all;
+            white-space:normal;
+        }
+<!--        l表单行间距-->
+        .layui-form-item{
+            margin-bottom: 0px;
+            clear: both;
+        }
+<!--    修改select弹出框的高度-->
+        .layui-form-select dl{
+            max-height:200px;
+        }
+        .layui-form-label{
+            font-size: x-small;
+<!--            width: 20px;-->
+            text-align:left;
+            padding:9px 9px;
+        }
+        .layui-table-cell{
+            font-size: x-small;
+        }
+        .layui-input-block{
+            width:240px;
+            margin-left:70px;
+        }
+    </style>
+    <style>
+        /* 下拉多选样式 需要引用*/
+        select[multiple]+.layui-form-select>.layui-select-title>input.layui-input{ border-bottom: 0}
+        select[multiple]+.layui-form-select dd{ padding:0;}
+        select[multiple]+.layui-form-select .layui-form-checkbox[lay-skin=primary]{ margin:0 !important; display:block; line-height:36px !important; position:relative; padding-left:26px;}
+        select[multiple]+.layui-form-select .layui-form-checkbox[lay-skin=primary] span{line-height:36px !important; float:none;}
+        select[multiple]+.layui-form-select .layui-form-checkbox[lay-skin=primary] i{ position:absolute; left:10px; top:0; margin-top:9px;}
+        .multiSelect{ line-height:normal; height:auto; padding:4px 10px; overflow:hidden;min-height:38px; margin-top:-38px; left:0; z-index:99;position:relative;background:none;}
+        .multiSelect a{ padding:2px 5px; background:#908e8e; border-radius:2px; color:#fff; display:block; line-height:20px; height:20px; margin:2px 5px 2px 0; float:left;}
+        .multiSelect a span{ float:left;}
+        .multiSelect a i {float:left;display:block;margin:2px 0 0 2px;border-radius:2px;width:8px;height:8px;padding:4px;position:relative;-webkit-transition:all .3s;transition:all .3s}
+        .multiSelect a i:before, .multiSelect a i:after {position:absolute;left:8px;top:2px;content:'';height:12px;width:1px;background-color:#fff}
+        .multiSelect a i:before {-webkit-transform:rotate(45deg);transform:rotate(45deg)}
+        .multiSelect a i:after {-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}
+        .multiSelect a i:hover{ background-color:#545556;}
+
+        /* 下面是页面内样式，无需引用 */
+        .layui-block {
+            margin-bottom: 10px;
+        }
+
+        .layui-form-label {
+            width: 180px;
+        }
+        .code {
+            color: gray;
+            margin-left: 10px;
+        }
+        .unshow>#result {
+            display: none;
+        }
+        pre { padding: 5px; margin: 5px; }
+        .string { color: green; }
+        .number { color: darkorange; }
+        .boolean { color: blue; }
+        .null { color: magenta; }
+        .key { color: red; }
+    </style>
+</body>
+</html>
