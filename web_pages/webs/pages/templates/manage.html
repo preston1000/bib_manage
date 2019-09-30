@@ -31,6 +31,7 @@
     <![endif]-->
     <script src="{% static 'layui2/layui.js'%}" charset="utf-8"></script>
     <script src="{% static 'js/manage_f.js'%}"></script>
+    <script src="{% static 'js/commonFunction.js'%}"></script>
     <!-- Custom styles for this template -->
     <link href="{% static 'bootstrap-4.1.1-dist/css/carousel.css'%}" rel="stylesheet">
 
@@ -92,10 +93,11 @@
                     }
                 </style>
             </div>
-<!--        详细信息表格1*3-->
+<!--            提交按钮-->
             <div class=" layui-row " style="text-align:center;">
-                <button type="button" class="layui-btn layui-btn-normal layui-btn-lg layui-btn-radius ">提交</button>
+                <button id="submit-info" type="button" class="layui-btn layui-btn-normal layui-btn-lg layui-btn-radius ">提交</button>
             </div>
+<!--        详细信息表格1*3-->
             <div class="layui-row">
 <!--                起点列-->
                 <div id="node_info_1" class="layui-col-xs5 layui-col-sm5 layui-col-md3" style="border:2px solid black;">
@@ -120,6 +122,13 @@
                                     <option value="12">TechReport</option>
                                     <option value="13">Unpublished</option>
                                 </select>
+                            </div>
+                        </div>
+                        <!--id-->
+                        <div class="layui-form-item" id="addOrEditPub1-id" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Identifier</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="id" placeholder="必填" layui-verify="required" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--标题-->
@@ -319,9 +328,9 @@
                         <!--按钮建-->
                         <div class="layui-form-item">
                             <div  class="layui-input-block">
-                                <button class="layui-btn" lay-submit lay-filter="checkPaper1">check</button>
+                                <button class="layui-btn" lay-submit lay-filter="checkPaper1" data-type="rl">check</button>
                                 <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetPubPanel1">重置</button>
-                                <!--<button class="layui-btn layui-btn-primary" id="cancelEditPanel">取消</button>-->
+                                <button type="submit" class="layui-btn layui-btn-primary" id="submitDataHiddenSource"style="display:none;" lay-submit lay-filter="submitDataHiddenSource">隐藏按钮</button>
                             </div>
                         </div>
                     </form>
@@ -334,11 +343,11 @@
                         <div class="layui-form-item" id="edge-type">
                             <label class="layui-form-label" style="width:50px;">边类型</label>
                             <div  class="layui-input-block">
-                                <select name="edge-type" lay-filter="paperTypeEdit" lay-verify="required">
-                                    <option value="">请选择</option>
-                                    <option value="1" selected>Publish In</option>
+                                <select name="edge-type" lay-filter="edgeTypeEdit" lay-verify="required">
+                                    <option value="" selected>请选择</option>
+                                    <option value="1">Published In</option>
                                     <option value="2">Cite</option>
-                                    <option value="3">Author</option>
+                                    <option value="3">Authored by</option>
                                 </select>
                             </div>
                         </div>
@@ -346,14 +355,14 @@
                         <div class="layui-form-item" id="modify-date" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">修改日期</label>
                             <div class="layui-input-block">
-                                <input id="modifyDate" type="text" name="modifyDate" lay-veryfy="date"  placeholder="Date" autocomplete="off" class="layui-input">
+                                <input id="modifyDate" type="text" name="modifyDate" lay-verify="date|required"  placeholder="Date" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--修改人  todo 后面可以直接由登陆账号确定-->
                         <div class="layui-form-item" id="modify-person" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">修改人</label>
                             <div  class="layui-input-block">
-                                <input type="text" name="person" placeholder="修改人" autocomplete="off" class="layui-input">
+                                <input type="text" name="person" placeholder="修改人"  lay-verify="required" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--note-->
@@ -368,15 +377,15 @@
                             <div  class="layui-input-block">
                                 <button class="layui-btn" lay-submit lay-filter="editFormSubmit">Check</button>
                                 <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetRelPanel">重置</button>
-                                <!--<button class="layui-btn layui-btn-primary" id="cancelEditPanel">取消</button>-->
+                                <button class="layui-btn layui-btn-primary" id="edgePanelSubmit" lay-submit lay-filter="edgePanelSubmit" style="display:none;">隐藏按钮</button>
                             </div>
                         </div>
                     </form>
                 </div>
 
-<!--                终点列-->
+<!--                终点列1---文献-->
                 <div id="node_info_2" class="layui-col-xs5 layui-col-xs-offset1 layui-col-sm5 layui-col-sm-offset1 layui-col-md3 layui-col-md-offset1" style="border:2px solid black;display:none;">
-                    <form class="layui-form" action="" lay-filter="addOrEditPubPanel" id="target-node-form">
+                    <form class="layui-form" action="" lay-filter="addOrEditPubPanel2" id="target-node-form">
                         <!--文献类型-->
                         <div class="layui-form-item" id="addOrEditPub2-pubType">
                             <label class="layui-form-label" style="width:50px;">文献类型</label>
@@ -397,6 +406,13 @@
                                     <option value="12">TechReport</option>
                                     <option value="13">Unpublished</option>
                                 </select>
+                            </div>
+                        </div>
+                        <!--ID-->
+                        <div class="layui-form-item" id="addOrEditPub2-id" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Identifier</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="id" placeholder="必填" layui-verify="required" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--标题-->
@@ -596,9 +612,159 @@
                         <!--按钮建-->
                         <div class="layui-form-item">
                             <div  class="layui-input-block">
-                                <button class="layui-btn" lay-submit lay-filter="paperCheck2">check</button>
+                                <button class="layui-btn" lay-submit lay-filter="checkPaper2">check</button>
                                 <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetPubPanel2">重置</button>
-                                <!--<button class="layui-btn layui-btn-primary" id="cancelEditPanel">取消</button>-->
+                                <button class="layui-btn layui-btn-primary" id="targetPanelSubmitPub" lay-submit lay-filter="targetPanelSubmitPub" style="display:none;">隐藏按钮</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+<!--                终点列2--作者-->
+                <div id="node_info_3" class="layui-col-xs5 layui-col-xs-offset1 layui-col-sm5 layui-col-sm-offset1 layui-col-md3 layui-col-md-offset1" style="border:2px solid black;display:none;">
+                    <form class="layui-form" action="" lay-filter="addOrEditPersonPanel" id="target-node-form-person">
+                        <!--姓-->
+                        <div class="layui-form-item" id="addOrEditPerson-lastName-en" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Last Name</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="lastName-en" placeholder="必填（英文）" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--中间名-->
+                        <div class="layui-form-item" id="addOrEditPerson-middleName-en" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Middle Name</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="middleName-en" placeholder="选填，缩写不需要标点" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--名-->
+                        <div class="layui-form-item" id="addOrEditPerson-firstName-en" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">First Name</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="firstName-en" placeholder="必填（英文）" layui-verify="required" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+
+                        <!--中文姓-->
+                        <div class="layui-form-item" id="addOrEditPerson-lastName-cn" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">中文姓</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="lastName-cn" placeholder="选填" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--中文名-->
+                        <div class="layui-form-item" id="addOrEditPerson-firstName-cn" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">中文名</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="firstName-cn" placeholder="选填" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--institution-->
+                        <div class="layui-form-item" id="addOrEditPerson-institution" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Current Institution</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="institution-current" layui-verify="required" placeholder="必填" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--research interest-->
+                        <div class="layui-form-item" id="addOrEditPerson-interest" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Research Insterest</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="interest" placeholder="选填，以英文分号分隔关键词" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+
+                        <!--note-->
+                        <div class="layui-form-item" id="addOrEditPerson-note" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Note</label>
+                            <div  class="layui-input-block">
+                                <textarea  name="note" placeholder="选填" autocomplete="off" class="layui-textarea"></textarea>
+                            </div>
+                        </div>
+                        <!--按钮建-->
+                        <div class="layui-form-item">
+                            <div  class="layui-input-block">
+                                <button class="layui-btn" lay-submit lay-filter="checkPerson">check</button>
+                                <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetPersonPanel">重置</button>
+                                <button class="layui-btn layui-btn-primary" id="targetPanelSubmitPerson" lay-submit lay-filter="targetPanelSubmitPerson" style="display:none;">隐藏按钮</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+<!--                终点列3--期刊-->
+                <div id="node_info_4" class="layui-col-xs5 layui-col-xs-offset1 layui-col-sm5 layui-col-sm-offset1 layui-col-md3 layui-col-md-offset1" style="border:2px solid black;display:none;">
+                    <form class="layui-form" action="" lay-filter="addOrEditVenuePanel" id="target-node-form-venue">
+                        <!--期刊名-->
+                        <div class="layui-form-item" id="addOrEditVenue-name" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Name</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="name" lay-verify="required" placeholder="Name" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--文献类型-->
+                        <div class="layui-form-item" id="addOrEditVenue-type">
+                            <label class="layui-form-label" style="width:50px;">文献类型</label>
+                            <div  class="layui-input-block">
+                                <select name="type" lay-filter="venueType" lay-verify="required">
+                                    <option value="" selected>请选择</option>
+                                    <option value="0">Journal</option>
+                                    <option value="1">Book</option>
+                                    <option value="2">Booklet</option>
+                                    <option value="3">Conference</option>
+                                    <option value="4">Manual</option>
+                                    <option value="5">其他</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!--publisher-->
+                        <div class="layui-form-item" id="addOrEditVenue-publisher" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Publisher</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="publisher"  lay-verify="required" placeholder="必填" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--address-->
+                        <div class="layui-form-item" id="addOrEditVenue-address" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Address</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="address" lay-verify="required" placeholder="必填" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+
+                        <!--Scope-->
+                        <div class="layui-form-item" id="addOrEditVenue-scope" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Scope</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="scope" placeholder="选填" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--startYear-->
+                        <div class="layui-form-item" id="addOrEditVenue-startYear" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Start Year</label>
+                            <div  class="layui-input-block">
+                                <input id="venue-start-year" type="text" lay-verify="required|date" name="startYear" placeholder="创刊年/会议年（必填）" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <!--website-->
+                        <div class="layui-form-item" id="addOrEditVenue-website" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Website</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="website" lay-verify="required|url" placeholder="必填" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+
+                        <!--note-->
+                        <div class="layui-form-item" id="addOrEditVenue-note" style="display:auto">
+                            <label class="layui-form-label" style="width:50px;">Note</label>
+                            <div  class="layui-input-block">
+                                <textarea  name="note" placeholder="选填" autocomplete="off" class="layui-textarea"></textarea>
+                            </div>
+                        </div>
+                        <!--按钮建-->
+                        <div class="layui-form-item">
+                            <div  class="layui-input-block">
+                                <button class="layui-btn" lay-submit lay-filter="checkVenue">check</button>
+                                <button type="reset" class="layui-btn layui-btn-primary" lay-submit lay-filter="resetVenuePanel">重置</button>
+                                <button class="layui-btn layui-btn-primary" id="targetPanelSubmitVenue" lay-submit lay-filter="targetPanelSubmitVenue" style="display:none;">隐藏按钮</button>
                             </div>
                         </div>
                     </form>
@@ -617,7 +783,21 @@
         <p>© 2018 Research Group · <a href="#">Privacy</a> · <a href="#">Terms</a></p>
       </div>
     </div>
-
+    <script type="text/html" id="popup">
+        <div class="layui-btn-container">
+            <button class="layui-btn layui-btn-sm" lay-event="getCheckData" style="visibility:hidden;" id="checkData1">获取选中行数据</button>
+        </div>
+    </script>
+    <script type="text/html" id="popupTerminal">
+        <div class="layui-btn-container">
+            <button class="layui-btn layui-btn-sm" lay-event="getCheckData" style="visibility:hidden;" id="checkDataTerminalPub">获取选中行数据</button>
+        </div>
+    </script>
+    <script type="text/html" id="popupTerminalVenue">
+        <div class="layui-btn-container">
+            <button class="layui-btn layui-btn-sm" lay-event="getCheckData" style="visibility:hidden;" id="checkDataTerminalVenue">获取选中行数据</button>
+        </div>
+    </script>
 <!--样式-->
     <style>
         .box_pic{

@@ -21,6 +21,7 @@ def judge_type(data):
         tt = -1
     return tt
 
+
 def reverse_map_key_value(data):
     """
     将data中的key和value互换位置，可能重复，用list表示
@@ -55,7 +56,7 @@ def ini_neo4j(config_path="/Volumes/Transcend/web/web_pages/webs/neo4j.conf"):
     uri = cf.get("neo4j", "uri")
     username = cf.get("neo4j", "username")
     pwd = cf.get("neo4j", "pwd")
-    database_info = {"uri":uri, "username":username, "pwd":pwd}
+    database_info = {"uri": uri, "username": username, "pwd": pwd}
     return database_info
 
 
@@ -74,7 +75,7 @@ def wrap_info_to_model(info, parameters=None):
     names = info.get("name", None)
     if names is None:
         return None
-    if new_type == "Venue":
+    if new_type == "VENUE":
         nodes = []
         if parameters is not None:
             try:
@@ -86,7 +87,7 @@ def wrap_info_to_model(info, parameters=None):
         for name in names:
             venue = Venue(uuid="", venue_type=venue_type, venue_name=name)
             nodes.append(venue)
-    elif new_type == "Person":
+    elif new_type == "PERSON":
         nodes = []
         for name in names:
             person = Person(uuid="", full_name=name)  # TODO 人名的解析

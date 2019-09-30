@@ -6,41 +6,43 @@ from utils.util_operation_2 import upperize_dict_keys
 
 
 class Publication:
-    uuid = None  # uuid
+    # 共24个，从文献信息中提取出
     node_type = None  # 文献类型
     id = None
-    type = None  # 类型
-    title = None  # 标题
     author = None  # 作者
     editor = None  # 编辑
+    title = None  # 标题
     journal = None  # 所在期刊名
-    year = None  # 发表年 todo 要改成数值
-    month = None  # 发表月
+    publisher = None  # 出版公司
+    year = None  # 发表年  数值
     volume = None  # 期
     number = None  # 卷
-    address = None  # 地址
     pages = None  # 页码
+    month = None  # 发表月
     note = None  # 笔记
-    publisher = None  # 出版公司
-    edition = None  # 书籍版号
-    book_title = None  # 所在书籍标题
     series = None  # 系列
-    organization = None  # 组织
-    school = None  # 学校
-    institution = None  # 组织
+    address = None  # 地址
+    edition = None  # 书籍版号
     chapter = None  # 章节
+    book_title = None  # 所在书籍标题
+    organization = None  # 组织
     how_published = None  #
-
+    school = None  # 学校
     keywords = None  # 关键词
+    type = None  # 类型
+    institution = None  # 组织
+
+    # 7个需要用户指定的新字段
     abstract = None  # 摘要
     note_id = None  # 笔记编号
-
     ei_index = None  # 是否EI检索
     sci_index = None  # 是否SCI检索
     ssci_index = None  # 是否SSCI检索
-
     added_by = None  # 节点创建人
     modified_date = None  # 文献阅读时间
+
+    # 2个系统自动生成字段
+    uuid = None  # uuid
     added_date = None  # 节点创建时间
 
     def __init__(self, uuid, node_type, author=None, editor=None, title=None, journal=None, year=None,
@@ -56,6 +58,8 @@ class Publication:
         self.editor = editor
         self.title = title
         self.journal = journal
+        if not isinstance(year, int):
+            year = int(year)
         self.year = year
         self.volume = volume
         self.number = number
@@ -91,7 +95,7 @@ class Publication:
                "editor:'" + ("" if self.editor is None else self.editor) + "'," + \
                "title:'" + ("" if self.title is None else self.title) + "'," + \
                "journal:'" + ("" if self.journal is None else self.journal) + "'," + \
-               "year:'" + ("" if self.year is None else self.year) + "'," + \
+               "year:" + ("" if self.year is None else str(self.year)) + "," + \
                "volume:'" + ("" if self.volume is None else self.volume) + "'," + \
                "number:'" + ("" if self.number is None else self.number) + "'," + \
                "series:'" + ("" if self.series is None else self.series) + "'," + \
@@ -137,51 +141,41 @@ class Publication:
         return word
 
     def get_create_cypher(self):
-        cypher = "CREATE (node:Publication " + self.to_string() + ") return node"
+        cypher = "CREATE (node:PUBLICATION " + self.to_string() + ") return node"
         return cypher
 
     def get_match_cypher(self):
-        cypher = "MATCH (node:Publication {"
+        cypher = "MATCH (node:PUBLICATION {id:'" + self.id + "', "
         try:
             if self.node_type is None:
                 print("unrecognized entry (type):" + self.to_string())
                 return None
             elif self.node_type == "ARTICLE":
                 cypher += "title:'" + self.title + \
-                         "', journal:'" + self.journal + "', year:'" + self.year + "'})"
+                         "', journal:'" + self.journal + "', year:" + str(self.year) + "})"
             elif self.node_type == "BOOK":
                 cypher += "title:'" + self.title + \
-                         "',publisher:'" + self.publisher + "', year:'" + self.year + "'})"
+                         "',publisher:'" + self.publisher + "', year:" + str(self.year) + "})"
             elif self.node_type == "INBOOK":
-                cypher += "title:'" + self.title + \
-                          "', year:'" + self.year
-                if self.chapter is not None:
-                    cypher += "', chapter:'" + self.chapter + "'})"
-                elif self.pages is not None:
-                    cypher += "', pages:'" + self.pages + "'})"
-                else:
-                    return None
+                cypher += "year:" + str(self.year) + ", title:'" + self.title + \
+                          "', chapter:'" + self.chapter + "', pages:'" + self.pages + "'})"
             elif self.node_type == "INPROCEEDINGS" or self.node_type == "CONFERENCE":
                 cypher += "title:'" + self.title + \
-                         "', book_title:'" + self.book_title + "', year:'" + self.year + "'})"
+                         "', book_title:'" + self.book_title + "', year:" + str(self.year) + "})"
             elif self.node_type == "INCOLLECTION":
-                cypher += "title:'" + self.title + \
-                         "', book_title:'" + self.book_title + "', year:'" + self.year + "', publisher:'" + \
-                          self.publisher + "'})"
+                cypher += "title:'" + self.title + "', book_title:'" + self.book_title + \
+                          "', year:" + str(self.year) + ", publisher:'" + self.publisher + "'})"
             elif self.node_type == "MISC":
-                if self.title is not None:
-                    cypher += "title:'" + self.title + "'})"
-                else:
-                    return -1
+                cypher += "title:'" + self.title + "'})"
             elif self.node_type == "PHDTHESIS":
                 cypher += "author:'" + self.author + "', title:'" + self.title + \
-                         "', school:'" + self.school + "', year:'" + self.year + "'})"
+                         "', school:'" + self.school + "', year:" + str(self.year) + "})"
             elif self.node_type == "MASTERSTHESIS":
                 cypher += "author:'" + self.author + "', title:'" + self.title + \
-                         "', school:'" + self.school + "', year:'" + self.year + "'})"
+                         "', school:'" + self.school + "', year:" + str(self.year) + "})"
             elif self.node_type == "TECHREPORT":
                 cypher += "author:'" + self.author + "', title:'" + self.title + \
-                         "', institution:'" + self.institution + "', year:'" + self.year + "'})"
+                         "', institution:'" + self.institution + "', year:" + str(self.year) + "})"
             else:
                 print("unsupported entry (type):" + self.to_string())
                 return None
@@ -194,7 +188,7 @@ class Publication:
     def get_revise_cypher(self, field_value_revise, field_value_match):
         if field_value_match is None or not isinstance(field_value_match, dict) or not isinstance(field_value_revise, dict):
             return ""
-        cypher = "MATCH (node:Publication {"
+        cypher = "MATCH (node:PUBLICATION {"
         for field, value in field_value_match.items():
             cypher += field + ":'" + str(value) + "',"
         cypher = cypher[:-1] + "}) set " + self.to_string_for_modification("node", field_value_revise) + " return node"
@@ -239,7 +233,7 @@ class Venue:
                "venue_name:'" + ("" if self.venue_name is None else self.venue_name) + "'," + \
                "abbr:'" + ("" if self.abbr is None else self.abbr) + "'," + \
                "start_year:'" + ("" if self.start_year is None else self.start_year) + "'," + \
-               "year:'" + ("" if self.year is None else self.year) + "'," + \
+               "year:'" + ("" if self.year is None else str(self.year)) + "'," + \
                "address:'" + ("" if self.address is None else self.address) + "'," + \
                "note:'" + ("" if self.note is None else self.note) + "'," + \
                "publisher:'" + ("" if self.publisher is None else self.publisher) + "'," + \
@@ -268,17 +262,17 @@ class Venue:
         return word
 
     def get_create_cypher(self):
-        cypher = "CREATE (node:Venue " + self.to_string() + ") return node"
+        cypher = "CREATE (node:VENUE " + self.to_string() + ") return node"
         return cypher
 
     def get_match_cypher(self):
-        cypher = "MATCH (node:Venue { venue_name:'" + self.venue_name + "'})  return node"
+        cypher = "MATCH (node:VENUE { venue_name:'" + self.venue_name + "'})  return node"
         return cypher
 
     def get_revise_cypher(self, field_value_revise, field_value_match):
         if field_value_match is None or not isinstance(field_value_match, dict) or not isinstance(field_value_revise, dict):
             return ""
-        cypher = "MATCH (node:Venue {"
+        cypher = "MATCH (node:VENUE {"
         for field, value in field_value_match.items():
             cypher += field + ":'" + str(value) + "',"
         cypher = cypher[:-1] + "}) set " + self.to_string_for_modification("node", field_value_revise) + " return node"
@@ -354,20 +348,20 @@ class Person:
         return word
 
     def get_create_cypher(self):
-        cypher = "CREATE (node:Person " + self.to_string() + ") return node"
+        cypher = "CREATE (node:PERSON " + self.to_string() + ") return node"
         return cypher
 
     def get_match_cypher(self, field="full_name"):
         if field == "full_name":
-            cypher = "MATCH (node:Person {" + field + ":'" + self.full_name + "'}) return node"
+            cypher = "MATCH (node:PERSON {" + field + ":'" + self.full_name + "'}) return node"
         elif field == "name_ch":
-            cypher = "MATCH (node:Person {" + field + ":'" + self.name_ch + "'}) return node"
+            cypher = "MATCH (node:PERSON {" + field + ":'" + self.name_ch + "'}) return node"
         return cypher
 
     def get_revise_cypher(self, field_value_revise, field_value_match):
         if field_value_match is None or not isinstance(field_value_match, dict) or not isinstance(field_value_revise, dict):
             return ""
-        cypher = "MATCH (node:Person {"
+        cypher = "MATCH (node:PERSON {"
         for field, value in field_value_match.items():
             cypher += field + ":'" + str(value) + "',"
         cypher = cypher[:-1] + "}) set " + self.to_string_for_modification("node", field_value_revise) + " return node"
@@ -422,8 +416,7 @@ class Pub:
         self.edition = edition.upper() if edition is not None else None
         author = info.get("author".upper(), None)
         self.author = author.upper() if author is not None else None
-        year = info.get("year".upper(), None)
-        self.year = year.upper() if year is not None else None
+        self.year = info.get("year", None)
         month = info.get("month".upper(), None)
         self.month = month.upper() if month is not None else None
         journal = info.get("journal".upper(), None)

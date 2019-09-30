@@ -51,5 +51,6 @@ urlpatterns = [
     path('search/search-count/', views.search_publication_count, name="search-result-count"),
     path('search/view-pdf/', views.view_pdf, name="search-view-pdf"),
     path('search/show-pdf/', views.show_pdf, name="search-show-pdf"),
-    path('manage/', views.manage, name="manage")
+    path('manage/', views.manage, name="manage"),
+    # path('manage/match-pub', views.manage_match_pub, name="manage-match-pub")
 ]

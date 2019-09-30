@@ -8,7 +8,7 @@ from utils.models import Publication, Venue, Person
 from utils.util_text_operation import string_util, process_special_character
 from utils.util_operation import get_value_by_key
 from utils.util_operation_2 import upperize_dict_keys
-from utils.d_extraction import parse_bib
+from utils.d_extraction import parse_bib_file
 from configparser import ConfigParser
 
 
@@ -35,7 +35,7 @@ def create_or_match_publications(data_source='bibtex.bib', mode=1, is_list=False
     :return: -1:读取/解析文献信息错误；1：处理成功；-2：提取文献信息失败；-3：写入数据库失败（可能全失败或部分失败）
     """
     if mode == 1:
-        parse_flag, msg, bib_data = parse_bib(data_source)
+        parse_flag, msg, bib_data = parse_bib_file(data_source)
         bib_data = bib_data.entries
     else:
         if is_list:

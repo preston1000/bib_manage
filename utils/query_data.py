@@ -177,10 +177,11 @@ def query_pub_by_multiple_field(pub_info, parameters=None):
     :return:-1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录，result={"data":, "code":}
     """
     # 根据提供的文献信息，查询数据库，并整理结果
-    result = {"code": -1, "data": {}}
-    tmp = query_by_multiple_field(pub_info, "Publication", parameters)
+    result = {"code": -1, "data": {}, "msg":""}
+    tmp = query_by_multiple_field(pub_info, "PUBLICATION", parameters)
     result["code"] = tmp.get("code", -1)
     result["data"] = tmp.get("data", None)
+    result["msg"] = tmp.get("msg", "")
     if result["code"] < 1:  # 没有搜索到数据或没有传入数据
         return json.dumps(result)
     pubs = []
@@ -234,12 +235,16 @@ def query_person_or_venue_by_multiple_field(person_info, node_type):
     :return:-1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
     """
     # 根据提供的文献信息，查询数据库，并整理结果
-    result = query_by_multiple_field(person_info, node_type)
+    result = {"code": -1, "data": {}}
+    tmp = query_by_multiple_field(person_info, node_type)
+    result["code"] = tmp.get("code", -1)
+    result["data"] = tmp.get("data", None)
     if result["code"] < 1:  # 没有搜索到数据或没有传入数据
         return json.dumps(result)
     nodes = []
     for record in result["data"]:
         record = record["m"]
+        # nodes.append(record)
         node = {}
         for field, value in record.items():
             node[field] = value
@@ -257,15 +262,12 @@ def query_by_multiple_field(node_info, node_type, parameter=None):
     :return:返回的是dict，其中code：-1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
     """
     # 输入数据检测
-    msg = {"code": -1,
-           "msg": "",
-           "count": 0,
-           "data": ""}
+    msg = {"code": -1, "msg": "", "count": 0, "data": ""}
     if node_info is None or not isinstance(node_info, dict):
         msg["msg"] = "search conditions are not given"
         return msg
     # 查询条件
-    cond = generate_cypher_for_multi_field_condition(node_info, 'm')
+    cond = generate_cypher_for_multi_field_condition(node_info, node_type, 'm')
     paging = ""
     if not (parameter is None or not isinstance(parameter, dict)):
         page = parameter.get("page", None)
@@ -337,14 +339,23 @@ def query_by_multiple_field_count(node_info, node_type, parameter=None):
     return msg
 
 
-def generate_cypher_for_multi_field_condition(node_info, node_identifier):
+def generate_cypher_for_multi_field_condition(node_info, node_type, node_identifier):
     """
     根据节点的多个属性，设置查询条件
     :param node_info: dict，节点属性条件
+    :param node_type: 节点类型，对不同的节点配置不同的可用参数以供查询
     :param node_identifier: str，查询语句中节点的标识符
     :return:
     """
-    currently_supported_fields = ["title", "node_type"]
+    if node_type == 'VENUE':
+        currently_supported_fields = ["venue_name"]
+    elif node_type == 'PERSON':
+        currently_supported_fields = []
+    elif node_type == "PUBLICATION":
+        currently_supported_fields = ["title", "node_type"]
+    else:
+        currently_supported_fields = []
+
     tmp = list(set(node_info.keys()).intersection(set(currently_supported_fields)))
 
     if tmp is None or len(tmp) == 0:
@@ -352,16 +363,28 @@ def generate_cypher_for_multi_field_condition(node_info, node_identifier):
         print("no supported fields for search are given")
     else:
         cypher = "where "
-        for key, value in node_info.items():  # todo 目前只支持paperIndex和author还没加
+        key_flag = 0
+        for key, value in node_info.items():  # todo 对Publication：目前paperIndex和author还没加，venue：只有venue_name
             if key == "title":
                 cypher += node_identifier + "." + key + " =~ '(?i).*" + value + ".*' and "
+                key_flag += 1
             elif key == "node_type":
                 cypher += node_identifier + "." + key + " = '" + value + "' and "
+                key_flag += 1
             elif key == "startTime":
                 cypher += node_identifier + ". year >= " + str(value) + " and "
+                key_flag += 1
             elif key == "endTime":
                 cypher += node_identifier + ". year <= " + str(value) + " and "
-        cypher = cypher[:-4]
+                key_flag += 1
+            elif key == 'venue_name':
+                cypher += node_identifier + "." + key + " =~ '(?i).*" + value + ".*' and "
+                key_flag += 1
+        if key_flag > 0:
+            cypher = cypher[:-4]
+        else:
+            cypher = ""
+            print("没有有效的key来查询{NODE}".format(NODE=node_type))
     return cypher
 
 

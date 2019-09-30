@@ -7,12 +7,21 @@ import datetime
 import os
 
 import utils.util_text_operation
+from utils.tmp_db import create_or_match_nodes_dict
 
 config_file = "./pages.conf"
 cf = ConfigParser()
 cf.read(os.path.abspath(config_file), encoding="utf-8")
 address = cf.get("moduleAddress", "address1")
 sys.path.append(address)
+
+cf = ConfigParser()
+cf.read("./neo4j.conf", encoding="utf-8")
+uri = cf.get("neo4j", "uri")
+username = cf.get("neo4j", "username")
+pwd = cf.get("neo4j", "pwd")
+database_info = {"uri": uri, "username": username, "pwd": pwd}
+
 
 from utils import query_data, db_operation
 
@@ -27,22 +36,40 @@ def search_result(request):
 
 def search_publication_new(request):
     """
-    这个实现的是在搜索结果界面的功能，包括高级搜索、查询和搜索数据的返回等
+    这个实现的是在搜索结果界面的功能，包括高级搜索、查询和搜索数据的返回等，只查询，不创建
     :param request:
     :return:
     """
+    result = {"msg": "", "code": 0, "data":"", "count": 0}
     if request.method == 'POST':
-        # # 解析传递参数，
-        # 高级搜索的条件
-        the_paras = request.POST
-        pub_info = the_paras.get("param", None)
-        if pub_info is None:
-            return HttpResponse(json.dumps({"msg": "no valid info is provided for search", "status": 0}))
-        pub_info = json.loads(pub_info)
+        # 解析传递参数，高级搜索的条件
+        if request.is_ajax():
+            the_paras = request.body
+            if the_paras is None:
+                result["msg"] = "no data is given"
+                result["code"] = -3
+                return HttpResponse(json.dumps(result))
+            try:
+                pub_info = bytes.decode(the_paras)
+                pub_info = json.loads(pub_info)
+            except:
+                result["msg"] = "given data is not a json string"
+                result["code"] = -2
+                return HttpResponse(json.dumps(result))
+            page = None
+            limit = None
+        else:
+            the_paras = request.POST
+            pub_info = the_paras.get("param", None)
+            if pub_info is None:
+                result["msg"] = "no valid info is provided for searchn"
+                result["code"] = -3
+                return HttpResponse(json.dumps(result))
+            pub_info = json.loads(pub_info)
+            page = the_paras.get("page", None)
+            limit = the_paras.get("limit", None)
         parameters = process_search_condition(pub_info) # 封装数据为后台数据库能够接收的格式
         # 分页条件
-        page = the_paras.get("page", None)
-        limit = the_paras.get("limit", None)
         page_para = None
         if page is not None and limit is not None:
             try:
@@ -52,8 +79,8 @@ def search_publication_new(request):
         # 查询
         query_result = query_data.query_pub_by_multiple_field(parameters, page_para)
         query_result = json.loads(query_result)
-        if query_result["code"] < 1:
-            return HttpResponse(query_result)
+        if query_result["code"] < 0:  # 返回的code有1，2，0，-1共四中
+            return HttpResponse(json.dumps(query_result))
         # 处理返回的数据
         count = 1
         pubs = []
@@ -63,14 +90,25 @@ def search_publication_new(request):
                 pub["pages"] = ""
             else:
                 pub["pages"] = str(pub["pages1"]) + "-" + str(pub["pages2"])
-            pub.pop("pages1")
-            pub.pop("pages2")
+            # pub.pop("pages1")
+            # pub.pop("pages2")
             count += 1
             pubs.append(pub)
-        result = {"data": pubs, "code": 0, "count": pub_info["count"], "msg": "done!"}
+        if request.is_ajax():
+            result["msg"] = "done"
+            result["count"] = len(pubs)  # todo 检查是否正确？
+            result["code"] = query_result["code"]
+            result["data"] = pubs
+        else:
+            result["msg"] = "done"
+            result["count"] = pub_info["count"]
+            result["code"] = query_result["code"]
+            result["data"] = pubs
         return HttpResponse(json.dumps(result))
     else:
-        return HttpResponse(json.dumps({"code": -1, "msg": "not support request method, should be post", "count": 0, "data": ""}))
+        result["msg"] = "not support request method, should be post"
+        result["code"] = -4
+        return HttpResponse(json.dumps(result))
 
 
 def search_publication_count(request):
@@ -146,8 +184,102 @@ def show_pdf(request):
 def manage(request):
 
     return render(request, 'manage.html')
+
+
 # 以上是新网页
 ######################################################################################
+
+
+def add_publication(request):
+    """
+    向cypher添加pub ---- 已改
+    :param request:
+    :return:
+    """
+    result = {"msg": "", "code": 0, "data":"", "count": 0}
+    if request.method == 'POST':
+        if request.is_ajax():
+            pub_info = request.body
+            if pub_info is None:
+                result["msg"] = "no data is given"
+                result["code"] = -3
+                return HttpResponse(json.dumps(result))
+            try:
+                pub_info = bytes.decode(pub_info)
+                pub_info = json.loads(pub_info)
+            except:
+                result["msg"] = "given data is not a json string"
+                result["code"] = -4
+                return HttpResponse(json.dumps(result))
+        else:
+            pub_info = request.POST
+            if pub_info is None:
+                result["msg"] = "no data is given"
+                result["code"] = -3
+                return HttpResponse(json.dumps(result))
+        # 参数提取
+        to_create = pub_info.get("to_create", False)
+        return_type = pub_info.get("return_type", 'dict')
+        # 特殊字段的处理：作者
+        authors = pub_info.get("author", None)
+        if authors is None:
+            pub_info["author"] = ""
+        elif isinstance(authors, list):
+            tmp, num, counter = ["", len(authors), 0]
+            for author in authors:
+                tmp += author["lastName"] + ", " + author["firstName"] + " " + author["middleName"]
+                counter += 1
+                if counter < num:
+                    tmp += " and "
+            pub_info["author"] = tmp
+        # 特殊字段的处理：文章类型
+        if pub_info["ENTRYTYPE"] == "0":
+            pub_info["ENTRYTYPE"] = "ARTICLE"
+        elif pub_info["ENTRYTYPE"] == "1":
+            pub_info["ENTRYTYPE"] = "BOOK"
+        elif pub_info["ENTRYTYPE"] == "2":
+            pub_info["ENTRYTYPE"] = "BOOKLET"
+        elif pub_info["ENTRYTYPE"] == "3":
+            pub_info["ENTRYTYPE"] = "CONFERENCE"
+        elif pub_info["ENTRYTYPE"] == "4":
+            pub_info["ENTRYTYPE"] = "INBOOK"
+        elif pub_info["ENTRYTYPE"] == "5":
+            pub_info["ENTRYTYPE"] = "INCOLLECTION"
+        elif pub_info["ENTRYTYPE"] == "6":
+            pub_info["ENTRYTYPE"] = "INPROCEEDINGS"
+        elif pub_info["ENTRYTYPE"] == "7":
+            pub_info["ENTRYTYPE"] = "MANUAL"
+        elif pub_info["ENTRYTYPE"] == "8":
+            pub_info["ENTRYTYPE"] = "MASTERSTHESIS"
+        elif pub_info["ENTRYTYPE"] == "9":
+            pub_info["ENTRYTYPE"] = "MISC"
+        elif pub_info["ENTRYTYPE"] == "10":
+            pub_info["ENTRYTYPE"] = "PHDTHESIS"
+        elif pub_info["ENTRYTYPE"] == "11":
+            pub_info["ENTRYTYPE"] = "PROCEEDINGS"
+        elif pub_info["ENTRYTYPE"] == "12":
+            pub_info["ENTRYTYPE"] = "TECHREPORT"
+        elif pub_info["ENTRYTYPE"] == "13":
+            pub_info["ENTRYTYPE"] = "UNPUBLISHED"
+        else:
+            result["msg"] = "unsupported paper type"
+            result["code"] = -5
+            return HttpResponse(json.dumps(result))
+        # 调方法写数据库
+        query_result = create_or_match_nodes_dict(pub_info, "PUBLICATION", database_info, return_type=return_type, to_create=to_create)
+
+        result["msg"] = query_result.get("msg", "查询数据接口无返回值")
+        result["code"] = query_result.get("code", -6)
+        result["data"] = query_result.get("data", [])
+        try:
+            result["count"] = len(result["data"])
+        except:
+            result["count"] = 0
+        return HttpResponse(json.dumps(result))
+    else:
+        result["msg"] = "请求方式应为post"
+        result["code"] = -7
+        return HttpResponse(json.dumps(result))
 
 
 def index(request):
@@ -230,74 +362,6 @@ def get_author_table_data(request):
 
     json_str = {"code": 0, "msg": "successfully queried data", "count": 1, "data": data}
     return HttpResponse(json.dumps(json_str))
-
-
-def add_publication(request):
-    """
-    向cypher添加pub
-    :param request:
-    :return:
-    """
-    if request.is_ajax() and request.method == 'POST':
-        pub_info = request.body
-        if pub_info is None or pub_info == "":
-            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
-        try:
-            pub_info = bytes.decode(pub_info)
-            pub_info = json.loads(pub_info)
-        except:
-            return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
-        # 特殊字段的处理：作者
-        authors = pub_info.get("author", None)
-        if authors is None:
-            pub_info["author"] = ""
-        elif isinstance(authors, list):
-            tmp, num, counter = ["", len(authors), 0]
-            for author in authors:
-                tmp += author["lastName"] + ", " + author["firstName"] + " " + author["middleName"]
-                counter += 1
-                if counter < num:
-                    tmp += " and "
-            pub_info["author"] = tmp
-        # 特殊字段的处理：文章类型
-        if pub_info["ENTRYTYPE"] == "0":
-            pub_info["ENTRYTYPE"] = "ARTICLE"
-        elif pub_info["ENTRYTYPE"] == "1":
-            pub_info["ENTRYTYPE"] = "Book"
-        elif pub_info["ENTRYTYPE"] == "2":
-            pub_info["ENTRYTYPE"] = "Booklet"
-        elif pub_info["ENTRYTYPE"] == "3":
-            pub_info["ENTRYTYPE"] = "Conference"
-        elif pub_info["ENTRYTYPE"] == "4":
-            pub_info["ENTRYTYPE"] = "InBook"
-        elif pub_info["ENTRYTYPE"] == "5":
-            pub_info["ENTRYTYPE"] = "InCollection"
-        elif pub_info["ENTRYTYPE"] == "6":
-            pub_info["ENTRYTYPE"] = "InProceedings"
-        elif pub_info["ENTRYTYPE"] == "7":
-            pub_info["ENTRYTYPE"] = "Manual"
-        elif pub_info["ENTRYTYPE"] == "8":
-            pub_info["ENTRYTYPE"] = "MastersThesis"
-        elif pub_info["ENTRYTYPE"] == "9":
-            pub_info["ENTRYTYPE"] = "Misc"
-        elif pub_info["ENTRYTYPE"] == "10":
-            pub_info["ENTRYTYPE"] = "PhDThesis"
-        elif pub_info["ENTRYTYPE"] == "11":
-            pub_info["ENTRYTYPE"] = "Proceedings"
-        elif pub_info["ENTRYTYPE"] == "12":
-            pub_info["ENTRYTYPE"] = "TechReport"
-        elif pub_info["ENTRYTYPE"] == "13":
-            pub_info["ENTRYTYPE"] = "Unpublished"
-        else:
-            return HttpResponse(json.dumps({"msg": "unsupported paper type", "status": -3}))
-        # 调方法写数据库
-        flag = db_operation.create_or_match_publications(pub_info, mode=2, is_list=False)
-        if flag == 1:
-            return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
-        else:
-            return HttpResponse(json.dumps({"msg": "error when writing into database", "status": flag*3}))
-    else:
-        return HttpResponse(json.dumps({"msg": "not supported request form", "status": -2}))
 
 
 def add_person(request):
@@ -564,7 +628,7 @@ def search_person(request):
             return HttpResponse(
                 json.dumps({"code": -2, "msg": "标题一定要有才能搜索", "count": 0, "data": ""}))
         parameters = {"full_name": full_name}
-        flag = query_data.query_person_or_venue_by_multiple_field(parameters, "Person")
+        flag = query_data.query_person_or_venue_by_multiple_field(parameters, "PERSON")
         data = json.loads(flag)
         if data["code"] < 1:
             return HttpResponse(flag)
@@ -584,22 +648,37 @@ def search_person(request):
 
 def search_venue(request):
     """
-    在neo4j中搜索venue
+    在neo4j中搜索venue ---- 已改
     :param request:
     :return:
     """
     if request.method == 'POST':
-        the_paras = request.POST
-        pub_info = the_paras.keys()
-        if pub_info is None:
-            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
+        if request.is_ajax():
+            the_paras = request.body
+            if the_paras is None:
+                return HttpResponse(json.dumps({"msg": "no data is given", "code": 0, "data":"", "count": 0}))
+            try:
+                the_paras = bytes.decode(the_paras)
+                the_paras = json.loads(the_paras)
+            except:
+                return HttpResponse(json.dumps({"msg": "given data is not a json string", "code": -1, "data": "", "count": 0}))
+            # page = None
+            # limit = None
+        else:
+            the_paras = request.POST
+            pub_info = the_paras.keys()
+            if pub_info is None:
+                return HttpResponse(json.dumps({"msg": "no data is given", "code": 0, "data":"", "count": 0}))
+            # page = the_paras.get("page", None)
+            # limit = the_paras.get("limit", None)
+
         # 调方法写数据库
         title = the_paras.get("venue_name", None)
         if title is None or title.strip() == "":
             return HttpResponse(
                 json.dumps({"code": -2, "msg": "标题一定要有才能搜索", "count": 0, "data": ""}))
         parameters = {"venue_name": title}
-        flag = query_data.query_person_or_venue_by_multiple_field(parameters, "Venue")
+        flag = query_data.query_person_or_venue_by_multiple_field(parameters, "VENUE")
         data = json.loads(flag)
         if data["code"] < 1:
             return HttpResponse(flag)
@@ -611,7 +690,8 @@ def search_venue(request):
                 count += 1
                 venues.append(venue)
             data["data"] = venues
-            data["code"] = 0
+            data["count"] = count
+            data["code"] = 1
             return HttpResponse(json.dumps(data))
     else:
         return HttpResponse(json.dumps({"code": -1, "msg": "not support request method, should be post", "count": 0, "data": ""}))

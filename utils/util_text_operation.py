@@ -67,7 +67,7 @@ def check_number(entries, field):
 
 def check_ordinary(entries, field):
     txt = get_value_by_key(entries, field)
-    txt = "" if txt is None else txt
+    txt = "" if txt is None else txt.upper()
     return txt
 
 
@@ -82,8 +82,8 @@ def process_special_character(word):
     if word.find("AMICO") >= 0:
         print(word)
     # 转换latex特殊字符
-    if word.find("\\URL") >= 0:
-        print("rul")
+    # if word.find("\\URL") >= 0:
+    #     print("rul")
     mappings = {"\\`{a}": 'à',
                 "\\'{a}": 'á',
                 "\^{a}": 'â',
@@ -306,6 +306,7 @@ def null_int(value):
         return 0
     else:
         return value
+
 
 def split_name(name, authors):
     if name is None or name == "" or name == "null":

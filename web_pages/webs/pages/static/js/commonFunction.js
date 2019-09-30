@@ -1,6 +1,6 @@
 
 //1. 将长句子分成多行
-var yourSplit = function(N,string){
+function yourSplit(N,string){
     var app = string.split(' '),
         arrayApp = [],
         stringApp = "";
@@ -75,3 +75,66 @@ function resetRanking(ranking, value) {
     var tr = $("[data-index='" + new Number(ranking).toString() + "']").children("[data-field='ranking']").children("input").val(value["ranking"]);
     var tr = $("[data-index='" + new Number(ranking).toString() + "']").children("[data-field='ranking']").children("div").text(value["ranking"]);
 }
+
+
+
+    //检查提交的数据是否有效，并处理数据以满足发送查询请求的要求
+function verifySearchCondition(data, data_type){
+    msg = {"status": 0, "msg":"no fields are given", "data":{}};
+    if (data.length != undefined){
+        msg["status"] = -1;
+        msg["msg"] = "变量不是dict";
+    }else{
+        var data_new = {};
+        var title = data["title"]
+            , startTime = data["startTime1"]
+            , endTime = data["endTime1"]
+            , author = data["author"]
+            , paperIndex = data["paperIndexing1"]
+            , paperType = data["node_type"];
+        var myDate = new Date();
+        myDate = myDate.getFullYear();
+        if (!(title == undefined || title == "")){
+            data_new["title"] = title;
+        }
+        if (!(startTime == undefined || startTime == "")){
+            data_new["startTime"] = startTime;
+        }
+        if (!(endTime == undefined || endTime == "")){
+            data_new["endTime"] = endTime;
+        }
+        if (!(author == undefined || author == "")){
+            data_new["author"] = author;
+        }
+        if (!(paperIndex == undefined || paperIndex == "")){
+            data_new["paperIndex"] = paperIndex;
+        }
+        if (!(paperType == undefined || paperType == "")){
+            data_new["node_type"] = paperType;
+        }
+        for (var i in data_new){
+            msg["status"] = 1;
+            msg["msg"] = "done";
+            msg["data"] = data_new;
+            break;
+        }
+    }
+    return msg;
+}
+
+            function verifyAuthor(currentAuthors){
+                msg = {"status": 1, "msg": "OK"};
+                if (currentAuthors.length==0) {
+                    msg["status"] = -1;
+                    msg["msg"] = "没有作者信息";
+                }else {
+                    for (var i=0;i<currentAuthors.length;i++) {
+                        if (currentAuthors[i]["firstName"]=="" || currentAuthors[i]["lastName"]=="" || currentAuthors[i]["ranking"]=="") {
+                            msg["status"] = -1;
+                            msg["msg"] = "第" + new Number(i).toString() + "作者信息不全";
+                            break;
+                        }
+                    }
+                }
+                return msg;
+            }
