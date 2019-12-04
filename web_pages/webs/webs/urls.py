@@ -52,5 +52,7 @@ urlpatterns = [
     path('search/view-pdf/', views.view_pdf, name="search-view-pdf"),
     path('search/show-pdf/', views.show_pdf, name="search-show-pdf"),
     path('manage/', views.manage, name="manage"),
+    path('getCoordinates/', views.resolve_coordinates, name="resolve_coordinates"),
+    path('parseExcelStations/', views.parse_excel_stations, name="parse_excel_stations"),
     # path('manage/match-pub', views.manage_match_pub, name="manage-match-pub")
 ]

@@ -9,6 +9,13 @@ import os
 import utils.util_text_operation
 from utils.tmp_db import create_or_match_nodes_dict
 
+from django.core.cache import cache
+
+import xlrd
+
+from utils import query_data, db_operation
+from django.core.files.uploadedfile import InMemoryUploadedFile
+
 config_file = "./pages.conf"
 cf = ConfigParser()
 cf.read(os.path.abspath(config_file), encoding="utf-8")
@@ -23,7 +30,74 @@ pwd = cf.get("neo4j", "pwd")
 database_info = {"uri": uri, "username": username, "pwd": pwd}
 
 
-from utils import query_data, db_operation
+def resolve_coordinates(request):
+    return render(request, 'coordinates.html')
+
+
+def parse_excel_stations(request):
+    """
+    从Excel文件中解析出车站信息，提取的结果是excel表中的各个数据
+    :param request:
+    :return:
+    """
+    result = {"data": "", "msg": "", "code": 1}
+    try:
+        file = request.FILES.getlist('file')
+    except:
+        result["msg"] = 'No file in the request'
+        result["code"] = -1
+        return HttpResponse(json.dumps(result))
+    if file is None:
+        result["msg"] = 'No file in the request'
+        result["code"] = -1
+        return HttpResponse(json.dumps(result))
+    file = file[0]
+    try:
+        wb = xlrd.open_workbook(filename=None, file_contents=file.read())  # 打开文件
+    except:
+        result["code"] = -2
+        result["msg"] = '打开Excel文件失败'
+        return HttpResponse(json.dumps(result))
+
+    sheet_name = 'Sheet1'
+    try:
+        sheet_content = wb.sheet_by_name(sheet_name)  # 通过名字获取表格
+    except:
+        result["code"] = -3
+        result["msg"] = '读取Excel指定工作簿失败'
+        return HttpResponse(json.dumps(result))
+
+    try:
+        sheet_title = sheet_content.row_values(0)
+    except:
+        result["code"] = -4
+        result["msg"] = '读取Excel工作簿表头失败'
+        return HttpResponse(json.dumps(result))
+
+    column_name = ["序号", "地址", '城市', '线路', '下一站']
+    try:
+        col_index = [sheet_title.index(j) for j in column_name]  # [sheet_title.index(column_name[0]), sheet_title.index(column_name[1]), sheet_title.index(column_name[2]), sheet_title.index(column_name[3])]
+    except ValueError:
+        result["code"] = -5
+        result["msg"] = '指定的工作表中没有' + str(column_name) + '列'
+        return HttpResponse(json.dumps(result))
+
+    content = []
+    counter_null = 1  #
+    for index in range(1, sheet_content.nrows):  # index是行下标
+        addr = sheet_content.cell_value(index, col_index[1])
+        city = sheet_content.cell_value(index, col_index[2])
+        line = sheet_content.cell_value(index, col_index[3])
+        next = sheet_content.cell_value(index, col_index[4])
+        if addr == "":
+            print("第" + index + "行文献没有地址信息【" + str(sheet_content.row_values(index)) + "】")
+            continue
+        tmp = {"index": counter_null, "address": addr, 'city': city, "line": line, 'next': next}
+        counter_null += 1
+        content.append(tmp)
+    result["data"] = content
+    result["msg"] = "done"
+    return HttpResponse(json.dumps(result))
 
 
 def search_home(request):
@@ -40,7 +114,7 @@ def search_publication_new(request):
     :param request:
     :return:
     """
-    result = {"msg": "", "code": 0, "data":"", "count": 0}
+    result = {"msg": "", "code": 0, "data": "", "count": 0}
     if request.method == 'POST':
         # 解析传递参数，高级搜索的条件
         if request.is_ajax():
@@ -53,16 +127,20 @@ def search_publication_new(request):
                 pub_info = bytes.decode(the_paras)
                 pub_info = json.loads(pub_info)
             except:
-                result["msg"] = "given data is not a json string"
-                result["code"] = -2
-                return HttpResponse(json.dumps(result))
+                the_paras = request.POST
+                pub_info = the_paras.get("param", None)
+                if pub_info is None:
+                    result["msg"] = "given data is not a json string"
+                    result["code"] = -2
+                    return HttpResponse(json.dumps(result))
+                pub_info = json.loads(pub_info)
             page = None
             limit = None
         else:
             the_paras = request.POST
             pub_info = the_paras.get("param", None)
             if pub_info is None:
-                result["msg"] = "no valid info is provided for searchn"
+                result["msg"] = "no valid info is provided for search"
                 result["code"] = -3
                 return HttpResponse(json.dumps(result))
             pub_info = json.loads(pub_info)
@@ -77,7 +155,7 @@ def search_publication_new(request):
             except ValueError:
                 page_para = None
         # 查询
-        query_result = query_data.query_pub_by_multiple_field(parameters, page_para)
+        query_result = query_data.query_pub_by_multiple_field(database_info, parameters, page_para)
         query_result = json.loads(query_result)
         if query_result["code"] < 0:  # 返回的code有1，2，0，-1共四中
             return HttpResponse(json.dumps(query_result))
@@ -134,7 +212,7 @@ def search_publication_count(request):
         parameters = process_search_condition(pub_info)
         if parameters is None:
             return HttpResponse(json.dumps({"code": -1, "msg": "搜索条件解析失败，请重试", "count": 0, "data": ""}))
-        query_result = query_data.query_by_multiple_field_count(parameters, "Publication")  # -1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
+        query_result = query_data.query_by_multiple_field_count(database_info, parameters, "PUBLICATION")  # -1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
         query_result["status"] = query_result["code"]
         return HttpResponse(json.dumps(query_result))
     else:
@@ -233,34 +311,34 @@ def add_publication(request):
                     tmp += " and "
             pub_info["author"] = tmp
         # 特殊字段的处理：文章类型
-        if pub_info["ENTRYTYPE"] == "0":
-            pub_info["ENTRYTYPE"] = "ARTICLE"
-        elif pub_info["ENTRYTYPE"] == "1":
-            pub_info["ENTRYTYPE"] = "BOOK"
-        elif pub_info["ENTRYTYPE"] == "2":
-            pub_info["ENTRYTYPE"] = "BOOKLET"
-        elif pub_info["ENTRYTYPE"] == "3":
-            pub_info["ENTRYTYPE"] = "CONFERENCE"
-        elif pub_info["ENTRYTYPE"] == "4":
-            pub_info["ENTRYTYPE"] = "INBOOK"
-        elif pub_info["ENTRYTYPE"] == "5":
-            pub_info["ENTRYTYPE"] = "INCOLLECTION"
-        elif pub_info["ENTRYTYPE"] == "6":
-            pub_info["ENTRYTYPE"] = "INPROCEEDINGS"
-        elif pub_info["ENTRYTYPE"] == "7":
-            pub_info["ENTRYTYPE"] = "MANUAL"
-        elif pub_info["ENTRYTYPE"] == "8":
-            pub_info["ENTRYTYPE"] = "MASTERSTHESIS"
-        elif pub_info["ENTRYTYPE"] == "9":
-            pub_info["ENTRYTYPE"] = "MISC"
-        elif pub_info["ENTRYTYPE"] == "10":
-            pub_info["ENTRYTYPE"] = "PHDTHESIS"
-        elif pub_info["ENTRYTYPE"] == "11":
-            pub_info["ENTRYTYPE"] = "PROCEEDINGS"
-        elif pub_info["ENTRYTYPE"] == "12":
-            pub_info["ENTRYTYPE"] = "TECHREPORT"
-        elif pub_info["ENTRYTYPE"] == "13":
-            pub_info["ENTRYTYPE"] = "UNPUBLISHED"
+        if pub_info["node_type"] == "0":
+            pub_info["node_type"] = "ARTICLE"
+        elif pub_info["node_type"] == "1":
+            pub_info["node_type"] = "BOOK"
+        elif pub_info["node_type"] == "2":
+            pub_info["node_type"] = "BOOKLET"
+        elif pub_info["node_type"] == "3":
+            pub_info["node_type"] = "CONFERENCE"
+        elif pub_info["node_type"] == "4":
+            pub_info["node_type"] = "INBOOK"
+        elif pub_info["node_type"] == "5":
+            pub_info["node_type"] = "INCOLLECTION"
+        elif pub_info["node_type"] == "6":
+            pub_info["node_type"] = "INPROCEEDINGS"
+        elif pub_info["node_type"] == "7":
+            pub_info["node_type"] = "MANUAL"
+        elif pub_info["node_type"] == "8":
+            pub_info["node_type"] = "MASTERSTHESIS"
+        elif pub_info["node_type"] == "9":
+            pub_info["node_type"] = "MISC"
+        elif pub_info["node_type"] == "10":
+            pub_info["node_type"] = "PHDTHESIS"
+        elif pub_info["node_type"] == "11":
+            pub_info["node_type"] = "PROCEEDINGS"
+        elif pub_info["node_type"] == "12":
+            pub_info["node_type"] = "TECHREPORT"
+        elif pub_info["node_type"] == "13":
+            pub_info["node_type"] = "UNPUBLISHED"
         else:
             result["msg"] = "unsupported paper type"
             result["code"] = -5
@@ -472,34 +550,34 @@ def revise_publication(request):
                     tmp += " and "
             pub_info["author"] = tmp
         # 特殊字段的处理：文章类型
-        if pub_info["ENTRYTYPE"] == "0":
-            pub_info["ENTRYTYPE"] = "ARTICLE"
-        elif pub_info["ENTRYTYPE"] == "1":
-            pub_info["ENTRYTYPE"] = "Book"
-        elif pub_info["ENTRYTYPE"] == "2":
-            pub_info["ENTRYTYPE"] = "Booklet"
-        elif pub_info["ENTRYTYPE"] == "3":
-            pub_info["ENTRYTYPE"] = "Conference"
-        elif pub_info["ENTRYTYPE"] == "4":
-            pub_info["ENTRYTYPE"] = "InBook"
-        elif pub_info["ENTRYTYPE"] == "5":
-            pub_info["ENTRYTYPE"] = "InCollection"
-        elif pub_info["ENTRYTYPE"] == "6":
-            pub_info["ENTRYTYPE"] = "InProceedings"
-        elif pub_info["ENTRYTYPE"] == "7":
-            pub_info["ENTRYTYPE"] = "Manual"
-        elif pub_info["ENTRYTYPE"] == "8":
-            pub_info["ENTRYTYPE"] = "MastersThesis"
-        elif pub_info["ENTRYTYPE"] == "9":
-            pub_info["ENTRYTYPE"] = "Misc"
-        elif pub_info["ENTRYTYPE"] == "10":
-            pub_info["ENTRYTYPE"] = "PhDThesis"
-        elif pub_info["ENTRYTYPE"] == "11":
-            pub_info["ENTRYTYPE"] = "Proceedings"
-        elif pub_info["ENTRYTYPE"] == "12":
-            pub_info["ENTRYTYPE"] = "TechReport"
-        elif pub_info["ENTRYTYPE"] == "13":
-            pub_info["ENTRYTYPE"] = "Unpublished"
+        if pub_info["node_type"] == "0":
+            pub_info["node_type"] = "ARTICLE"
+        elif pub_info["node_type"] == "1":
+            pub_info["node_type"] = "Book"
+        elif pub_info["node_type"] == "2":
+            pub_info["node_type"] = "Booklet"
+        elif pub_info["node_type"] == "3":
+            pub_info["node_type"] = "Conference"
+        elif pub_info["node_type"] == "4":
+            pub_info["node_type"] = "InBook"
+        elif pub_info["node_type"] == "5":
+            pub_info["node_type"] = "InCollection"
+        elif pub_info["node_type"] == "6":
+            pub_info["node_type"] = "InProceedings"
+        elif pub_info["node_type"] == "7":
+            pub_info["node_type"] = "Manual"
+        elif pub_info["node_type"] == "8":
+            pub_info["node_type"] = "MastersThesis"
+        elif pub_info["node_type"] == "9":
+            pub_info["node_type"] = "Misc"
+        elif pub_info["node_type"] == "10":
+            pub_info["node_type"] = "PhDThesis"
+        elif pub_info["node_type"] == "11":
+            pub_info["node_type"] = "Proceedings"
+        elif pub_info["node_type"] == "12":
+            pub_info["node_type"] = "TechReport"
+        elif pub_info["node_type"] == "13":
+            pub_info["node_type"] = "Unpublished"
         else:
             return HttpResponse(json.dumps({"msg": "unsupported paper type", "status": -3}))
         # 特殊处理，pages

@@ -20,8 +20,7 @@ def do_extract(file_path, ext=None, parameters=None):
     :param file_path: 文件路径
     :param ext: 后缀，若无，则从file后缀进行判别
     :param parameters: 解析excel时需要的参数 todo 记录可接受参数
-    :return: 结构化的数据结构
-    -100: 无法文件解析后缀名
+    :return: 结构化的数据
     """
     result = {"data": "", "msg": "", "code": 0}
     # 解析文件后缀

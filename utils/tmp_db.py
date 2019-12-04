@@ -3,21 +3,21 @@
 """
 import time
 import uuid
-import json
 from neo4j import GraphDatabase
 import neo4j
 from utils.d_extraction import parse_bib_file, extract_publication
-from utils.util_operation import ini_neo4j
+from utils.util_operation import ini_neo4j, process_neo4j_result
 from utils.constants import GlobalVariables
 
 
 node_types = GlobalVariables.const_node_type
 edge_types = GlobalVariables.const_edge_tpe
+field_names = GlobalVariables.const_field_name
 
 
 def create_or_match_nodes_dict(bib_data, node_type, database_info, return_type='class', to_create=True):
     """
-
+    todo not recorded in doc for error code
     :param bib_data:
     :param node_type:
     :param database_info:
@@ -106,34 +106,121 @@ def create_or_match_nodes(bib_data, database_info, return_type="class", to_creat
     return result
 
 
-def revise_node(tx, node, field_value_revise):
+def revise_node_by_class(tx, node, field_value_revise):
     """
-    先查询节点是否存在，若存在，修改内容，否则，创建节点。-1表示出错 todo 还没改
+    有封装好的models类，进行文献修改，先查询节点是否存在，若存在，修改内容，否则，返回错误代码
     :param tx:
     :param node: 现有节点
     :param field_value_revise: 要修改的字段，dict
     :return:
     """
+    result = {"code": 0, "msg": "", "data": ""}
     if node is None:
-        return None
+        result["code"] = -190
+        result["msg"] = "输入节点信息错误"
+        return result
     cypher = node.get_match_cypher()
-    nodes = tx.run(cypher)
+    if cypher is None:
+        result["code"] = -191
+        result["msg"] = "cypher for match获取失败"
+        return result
+    try:
+        nodes = tx.run(cypher)
+    except:
+        result["code"] = -192
+        result["msg"] = "数据库连接失败"
+        return result
     nodes = nodes.data()
     if len(nodes) == 0:
-        return None
+        result["code"] = -193
+        result["msg"] = "无匹配记录，无法修改"
+        return result
     nodes = nodes[0]
     print("查询到了节点：" + str(nodes["node"]['uuid']) + "开始修改：")
+    # 进行修改
     field_value_match = {"uuid": nodes["node"]['uuid']}
     cypher = node.get_revise_cypher(field_value_revise, field_value_match)
-    node_revised = tx.run(cypher)
+    try:
+        node_revised = tx.run(cypher)
+    except:
+        result["code"] = -194
+        result["msg"] = "数据库连接失败"
+        return result
     node_revised = node_revised.data()
     node_revised = node_revised[0].get("node", None)
     if node_revised is None:
-        return None
+        result["code"] = -195
+        result["msg"] = "修改失败"
+        return result
     node_revised = node_revised.get("uuid", None)
     if node_revised is None:
-        return None
-    return 1
+        result["code"] = -194
+        result["msg"] = "修改失败"
+        return result
+    result["code"] = 190
+    result["msg"] = "修改成功"
+    return result
+
+
+def revise_node_by_fields(tx, node_type, field_match, field_value_revise):
+    """
+    根据指定的匹配字段，进行数据修改
+    :param tx:
+    :param node: 现有节点
+    :param field_value_revise: 要修改的字段，dict
+    :return:
+    """
+    result = {"code": 0, "msg": "", "data": ""}
+    if field_match is None or not isinstance(field_match, dict) or field_match.keys() is None:
+        result["code"] = -200
+        result["msg"] = "输入匹配信息错误"
+        return result
+
+    if field_value_revise is None or not isinstance(field_value_revise, dict) or field_value_revise.keys() is None:
+        result["code"] = -201
+        result["msg"] = "输入更新信息错误"
+        return result
+
+    try:
+        node_types.index(node_type)
+    except:
+        result["code"] = -202
+        result["msg"] = "节点类型指定错误"
+        return result
+    cypher = "MATCH (node:" + node_type + " {"
+    for field, value in field_match.items():
+        try:
+            field_index = field_names.index(field)
+        except:
+            print(field + "<-不是可执行的字段名称")
+            continue
+        if field_index == 7:  # year
+            cypher += field + ":" + str(value) + ","
+        else:
+            cypher += field + ":'" + str(value) + "',"
+    cypher = cypher[:-1] + "}) set "
+    for field, value in field_value_revise.items():
+        if value is not None and value != '':
+            if field == 'year':
+                cypher += "node." + field + "=" + value + ","
+            else:
+                cypher += "node." + field + "='" + value + "',"
+    cypher = cypher[:-1] + " return node"
+
+    try:
+        nodes = tx.run(cypher)
+    except:
+        result["code"] = -203
+        result["msg"] = "数据库连接失败"
+        return result
+    nodes = nodes.data()
+    if len(nodes) == 0:
+        result["code"] = -204
+        result["msg"] = "无匹配记录，无法修改"
+        return result
+    result["code"] = 200
+    result["msg"] = "修改成功"
+    return result
 
 
 def query_or_create_node(tx, node, to_create=True, match_field=None):
@@ -205,37 +292,6 @@ def query_or_create_node(tx, node, to_create=True, match_field=None):
                 result["code"] = -153
                 result["msg"] = "查询无记录，创建成功，但数据解析失败！"
             break
-    return result
-
-
-def process_neo4j_result(data, identifier, flag):
-    """
-
-    :param data:
-    :param identifier:
-    :return: dict格式
-    """
-    result = {"data": "", "msg": "", "code": 0}
-    if data is None:
-        result["code"] = -160
-        result["msg"] = "数据无效"
-        return result
-    processed = []
-    if flag == 1:
-        for item in data:
-            tmp = {}
-            for (key, value) in item[identifier].items():  # todo 对不对？
-                tmp[key] = value
-            processed.append(tmp)
-    else:  # create
-        for item in data:
-            tmp = {}
-            for (key, value) in item.items():  # todo 对不对？
-                tmp[key] = value
-            processed.append(tmp)
-    result["code"] = 160
-    result["msg"] = "done"
-    result["data"] = processed
     return result
 
 

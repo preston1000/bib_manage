@@ -313,7 +313,7 @@ function retrieveSearchResult(queryInfo){
                         ,{field:'title', title:'Title', width:300, edit: 'text'}
                         ,{field:'author', title:'Authors', width:200, sort: true, edit: 'text'}
                         ,{field:'journal', title:'Venue', width:200, sort: true, edit: 'text'}
-                        ,{field:'paperTypeEdit', title:'Type', width:90, sort: true, edit: 'text'}
+                        ,{field:'node_type', title:'Type', width:90, sort: true, edit: 'text'}
                         ,{width:300, align:'center', toolbar: '#bar_search_result'}
                     ]]
                     ,id: 'authorTable'
@@ -337,6 +337,7 @@ function retrieveSearchResult(queryInfo){
             ,error: function(xhr,status,error){
                 //如果请求失败要运行的函数
                 console.log("发送请求失败。");
+                layer.alert("发送请求失败。");
                 return -2;
             }
             ,complete: function(xhr,status){

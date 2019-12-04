@@ -34,7 +34,6 @@
     <script src="{% static 'js/commonFunction.js'%}"></script>
     <!-- Custom styles for this template -->
     <link href="{% static 'bootstrap-4.1.1-dist/css/carousel.css'%}" rel="stylesheet">
-
     <link href="{% static 'layui2/css/layui.css'%}" rel="stylesheet">
 
     <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
@@ -44,7 +43,7 @@
     <script src="{% static 'bootstrap-4.1.1-dist/js/ie10-viewport-bug-workaround.js'%}"></script>
 <!--    latex支持-->
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500" preserveAspectRatio="none" style="display: none; visibility: hidden; position: absolute; top: -100%; left: -100%;"><defs><style type="text/css"></style></defs><text x="0" y="25" style="font-weight:bold;font-size:25pt;font-family:Arial, Helvetica, Open Sans, sans-serif">500x500</text></svg>
+
   </head>
 
 <body class="layui-layout-body">
@@ -106,7 +105,7 @@
                         <div class="layui-form-item" id="addOrEditPub1-pubType">
                             <label class="layui-form-label" style="width:50px;">paper type</label>
                             <div class="layui-input-block">
-                                <select name="paperTypeEdit" lay-filter="paperTypeEdit1" lay-verify="required">
+                                <select name="node_type" lay-filter="node_type1" lay-verify="required">
                                     <option value="0" selected>Article</option>
                                     <option value="1">Book</option>
                                     <option value="2">Booklet</option>
@@ -135,14 +134,14 @@
                         <div class="layui-form-item" id="addOrEditPub1-title" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">Title</label>
                             <div  class="layui-input-block">
-                                <input type="text" name="title" placeholder="Title" autocomplete="off" class="layui-input">
+                                <input type="text" name="title" placeholder="必填" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--book标题-->
-                        <div class="layui-form-item" id="addOrEditPub1-booktitle" style="display:none">
+                        <div class="layui-form-item" id="addOrEditPub1-book_title" style="display:none">
                             <label class="layui-form-label" style="width:50px;">Book Title</label>
                             <div  class="layui-input-block" >
-                                <input type="text" name="booktitle" placeholder="Book Title" autocomplete="off" class="layui-input">
+                                <input type="text" name="book_title" placeholder="Book Title" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--editor-->
@@ -182,7 +181,7 @@
                         <div class="layui-form-item" id="addOrEditPub1-year" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">Year</label>
                             <div class="layui-input-block">
-                                <input id="pubYear" type="text" name="year" lay-veryfy="date"  placeholder="Year" autocomplete="off" class="layui-input">
+                                <input id="pubYear" type="text" name="year" lay-veryfy="date"  placeholder="必填" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--month-->
@@ -210,14 +209,14 @@
                         <div class="layui-form-item" id="addOrEditPub1-journal" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">Journal</label>
                             <div  class="layui-input-block">
-                                <input type="text" name="journal" placeholder="Journal" autocomplete="off" class="layui-input">
+                                <input type="text" name="journal" placeholder="必填" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--volume-->
                         <div class="layui-form-item" id="addOrEditPub1-volume" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">Volume</label>
                             <div  class="layui-input-block">
-                                <input type="text" name="volume" placeholder="Volume" autocomplete="off" class="layui-input">
+                                <input type="text" name="volume" placeholder="选填" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--type-->
@@ -238,7 +237,7 @@
                         <div class="layui-form-item" id="addOrEditPub1-number" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">Number</label>
                             <div  class="layui-input-block">
-                                <input type="text" name="number" placeholder="Number" autocomplete="off" class="layui-input">
+                                <input type="text" name="number" placeholder="选填" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--pages-->
@@ -246,13 +245,13 @@
                             <label class="layui-form-label" style="width:50px;">Pages</label>
                             <div class="layui-input-block">
                                 <div class="layui-input-inline" style="width:60px;">
-                                    <input type="text" name="pages1" placeholder="From" autocomplete="off" class="layui-input">
+                                    <input type="text" name="pages1" placeholder="选填" autocomplete="off" class="layui-input">
                                 </div>
                                 <div class="layui-form-mid" style="width:20px;margin-left:10px;">
                                     -
                                 </div>
                                 <div class="layui-input-inline" style="width:60px;">
-                                    <input type="text" name="pages2" placeholder="To" autocomplete="off" class="layui-input">
+                                    <input type="text" name="pages2" placeholder="选填" autocomplete="off" class="layui-input">
                                 </div>
                             </div>
                         </div>
@@ -299,10 +298,10 @@
                             </div>
                         </div>
                         <!--howpublished-->
-                        <div class="layui-form-item" id="addOrEditPub1-howpublished" style="display:none">
+                        <div class="layui-form-item" id="addOrEditPub1-how_published" style="display:none">
                             <label class="layui-form-label" style="width:50px;">How Published</label>
                             <div  class="layui-input-block">
-                                <input type="text" name="howpublished" placeholder="How Published" autocomplete="off" class="layui-input">
+                                <input type="text" name="how_published" placeholder="How Published" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--文章索引-->
@@ -322,7 +321,7 @@
                         <div class="layui-form-item" id="addOrEditPub1-note" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">Note</label>
                             <div  class="layui-input-block">
-                                <textarea  name="note" placeholder="Note" autocomplete="off" class="layui-textarea"></textarea>
+                                <textarea  name="note" placeholder="选填" autocomplete="off" class="layui-textarea"></textarea>
                             </div>
                         </div>
                         <!--按钮建-->
@@ -365,6 +364,13 @@
                                 <input type="text" name="person" placeholder="修改人"  lay-verify="required" autocomplete="off" class="layui-input">
                             </div>
                         </div>
+                        <!--作者排名  -->
+                        <div class="layui-form-item" id="author_rank" style="display:auto;display:none">
+                            <label class="layui-form-label" style="width:50px;">作者排名</label>
+                            <div  class="layui-input-block">
+                                <input type="text" name="rank" placeholder="作者排名（阿拉伯数字）"  lay-verify="number" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
                         <!--note-->
                         <div class="layui-form-item" id="edge-note" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">Note</label>
@@ -390,7 +396,7 @@
                         <div class="layui-form-item" id="addOrEditPub2-pubType">
                             <label class="layui-form-label" style="width:50px;">文献类型</label>
                             <div  class="layui-input-block">
-                                <select name="paperTypeEdit" lay-filter="paperTypeEdit2" lay-verify="required">
+                                <select name="node_type" lay-filter="node_type2" lay-verify="required">
                                     <option value="0" selected>Article</option>
                                     <option value="1">Book</option>
                                     <option value="2">Booklet</option>
@@ -419,14 +425,14 @@
                         <div class="layui-form-item" id="addOrEditPub2-title" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">Title</label>
                             <div  class="layui-input-block">
-                                <input type="text" name="title" placeholder="Title" autocomplete="off" class="layui-input">
+                                <input type="text" name="title" placeholder="必填" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--book标题-->
-                        <div class="layui-form-item" id="addOrEditPub2-booktitle" style="display:none">
+                        <div class="layui-form-item" id="addOrEditPub2-book_title" style="display:none">
                             <label class="layui-form-label" style="width:50px;">Book Title</label>
                             <div  class="layui-input-block">
-                                <input type="text" name="booktitle" placeholder="Book Title" autocomplete="off" class="layui-input">
+                                <input type="text" name="book_title" placeholder="Book Title" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--editor-->
@@ -466,7 +472,7 @@
                         <div class="layui-form-item" id="addOrEditPub2-year" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">Year</label>
                             <div class="layui-input-block">
-                                <input id="pubYear2" type="text" name="year" lay-veryfy="date"  placeholder="Year" autocomplete="off" class="layui-input">
+                                <input id="pubYear2" type="text" name="year" lay-veryfy="date"  placeholder="必填" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--month-->
@@ -494,14 +500,14 @@
                         <div class="layui-form-item" id="addOrEditPub2-journal" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">Journal</label>
                             <div  class="layui-input-block">
-                                <input type="text" name="journal" placeholder="Journal" autocomplete="off" class="layui-input">
+                                <input type="text" name="journal" placeholder="必填" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--volume-->
                         <div class="layui-form-item" id="addOrEditPub2-volume" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">Volume</label>
                             <div  class="layui-input-block">
-                                <input type="text" name="volume" placeholder="Volume" autocomplete="off" class="layui-input">
+                                <input type="text" name="volume" placeholder="选填" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--type-->
@@ -522,7 +528,7 @@
                         <div class="layui-form-item" id="addOrEditPub2-number" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">Number</label>
                             <div  class="layui-input-block">
-                                <input type="text" name="number" placeholder="Number" autocomplete="off" class="layui-input">
+                                <input type="text" name="number" placeholder="选填" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--pages-->
@@ -530,13 +536,13 @@
                             <label class="layui-form-label" style="width:50px;">Pages</label>
                             <div class="layui-input-block">
                                 <div class="layui-input-inline" style="width:60px;">
-                                    <input type="text" name="pages1" placeholder="From" autocomplete="off" class="layui-input">
+                                    <input type="text" name="pages1" placeholder="选填" autocomplete="off" class="layui-input">
                                 </div>
                                 <div class="layui-form-mid" style="width:20px;margin-left:10px;">
                                     -
                                 </div>
                                 <div class="layui-input-inline" style="width:60px;">
-                                    <input type="text" name="pages2" placeholder="To" autocomplete="off" class="layui-input">
+                                    <input type="text" name="pages2" placeholder="选填" autocomplete="off" class="layui-input">
                                 </div>
                             </div>
                         </div>
@@ -583,10 +589,10 @@
                             </div>
                         </div>
                         <!--howpublished-->
-                        <div class="layui-form-item" id="addOrEditPub2-howpublished" style="display:none">
+                        <div class="layui-form-item" id="addOrEditPub2-how_published" style="display:none">
                             <label class="layui-form-label" style="width:50px;">How Published</label>
                             <div  class="layui-input-block">
-                                <input type="text" name="howpublished" placeholder="How Published" autocomplete="off" class="layui-input">
+                                <input type="text" name="how_published" placeholder="How Published" autocomplete="off" class="layui-input">
                             </div>
                         </div>
                         <!--文章索引-->
@@ -606,7 +612,7 @@
                         <div class="layui-form-item" id="addOrEditPub2-note" style="display:auto">
                             <label class="layui-form-label" style="width:50px;">Note</label>
                             <div  class="layui-input-block">
-                                <textarea  name="note" placeholder="Note" autocomplete="off" class="layui-textarea"></textarea>
+                                <textarea  name="note" placeholder="选填" autocomplete="off" class="layui-textarea"></textarea>
                             </div>
                         </div>
                         <!--按钮建-->

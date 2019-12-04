@@ -22,6 +22,7 @@ class GlobalVariables:
                         'abstract', 'note_id', 'ei_index',  # 24-26
                         'sci_index', 'ssci_index', 'added_by',  # 27-29
                         'modified_date', 'uuid', 'added_date']  # 30-32
+    pub_unique_fields = ["uuid", "id", ["title", "journal", "year", "author"]]  # 现只用前两项，第三项涉及到文献类型，后面再修改
 
     def get_var(self, var_name):
         if var_name == 'pub_type':

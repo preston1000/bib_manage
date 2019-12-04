@@ -4,6 +4,7 @@ import neo4j.v1
 import json
 
 from utils.util_text_operation import null_string, split_name, null_int
+from utils.util_operation import process_neo4j_result
 
 cf = ConfigParser()
 cf.read("./neo4j.conf", encoding="utf-8")
@@ -170,15 +171,16 @@ def query_one_pub_by_uuid(pub_id):
     return msg
 
 
-def query_pub_by_multiple_field(pub_info, parameters=None):
+def query_pub_by_multiple_field(database_info, pub_info, parameters=None):
     """
+    :param database_info:
     :param pub_info:pub uuid
     :param parameters: 分页参数
     :return:-1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录，result={"data":, "code":}
     """
     # 根据提供的文献信息，查询数据库，并整理结果
     result = {"code": -1, "data": {}, "msg":""}
-    tmp = query_by_multiple_field(pub_info, "PUBLICATION", parameters)
+    tmp = query_by_multiple_field(database_info, pub_info, "PUBLICATION", parameters)
     result["code"] = tmp.get("code", -1)
     result["data"] = tmp.get("data", None)
     result["msg"] = tmp.get("msg", "")
@@ -186,7 +188,7 @@ def query_pub_by_multiple_field(pub_info, parameters=None):
         return json.dumps(result)
     pubs = []
     for record in result["data"]:
-        pages = record["m"]["pages"]
+        pages = record["pages"]
         page1 = None
         page2 = None
         # 处理页码
@@ -196,34 +198,36 @@ def query_pub_by_multiple_field(pub_info, parameters=None):
             if len(tmp) == 2:
                 page1 = tmp[0]
                 page2 = tmp[1]
+            else:
+                page1 = record["pages"]
 
-        pub = {"paperTypeEdit": record["m"]["node_type"],
-               "title": null_string(record["m"]["title"]),
-               "booktitle": null_string(record["m"]["book_title"]),
-               "author": null_string(record["m"]["author"]),
-               "editor": null_string(record["m"]["editor"]),
-               "keywords": null_string(record["m"]["keywords"]),
-               "edition": null_string(record["m"]["edition"]),
-               "year": null_int(record["m"]["year"]),
-               "month": null_string(record["m"]["month"]),
-               "journal": null_string(record["m"]["journal"]),
-               "volume": null_string(record["m"]["volume"]),
-               "type": null_string(record["m"]["type"]),
-               "chapter": null_string(record["m"]["chapter"]),
-               "number": null_string(record["m"]["number"]),
+        pub = {"node_type": record["node_type"],
+               "book_title": null_string(record["book_title"]),
+               "how_published": null_string(record["how_published"]),
+               "title": null_string(record["title"]),
+               "author": null_string(record["author"]),
+               "editor": null_string(record["editor"]),
+               "keywords": null_string(record["keywords"]),
+               "edition": null_string(record["edition"]),
+               "year": null_int(record["year"]),
+               "month": null_string(record["month"]),
+               "journal": null_string(record["journal"]),
+               "volume": null_string(record["volume"]),
+               "type": null_string(record["type"]),
+               "chapter": null_string(record["chapter"]),
+               "number": null_string(record["number"]),
                "pages1": null_string(page1),
                "pages2": null_string(page2),
-               "publisher": null_string(record["m"]["publisher"]),
-               "organization": null_string(record["m"]["organization"]),
-               "institution": null_string(record["m"]["institution"]),
-               "school": null_string(record["m"]["school"]),
-               "address": null_string(record["m"]["address"]),
-               "series": null_string(record["m"]["series"]),
-               "howpublished": null_string(record["m"]["how_published"]),
+               "publisher": null_string(record["publisher"]),
+               "organization": null_string(record["organization"]),
+               "institution": null_string(record["institution"]),
+               "school": null_string(record["school"]),
+               "address": null_string(record["address"]),
+               "series": null_string(record["series"]),
                "indexing": 0,
-               "id": null_string(record["m"]["id"]),
-               "uuid": null_string(record["m"]["uuid"]),
-               "note": null_string(record["m"]["note"])}
+               "id": null_string(record["id"]),
+               "uuid": null_string(record["uuid"]),
+               "note": null_string(record["note"])}
         pubs.append(pub)
     result["data"] = pubs
     return json.dumps(result)
@@ -253,21 +257,38 @@ def query_person_or_venue_by_multiple_field(person_info, node_type):
     return json.dumps(result)
 
 
-def query_by_multiple_field(node_info, node_type, parameter=None):
+def query_by_multiple_field(database_info, node_info, node_type, parameter=None):
     """
     通用方法：给予节点的一个或多个字段来搜索节点信息
+    :param database_info: 数据库信息
     :param node_info: dict
     :param node_type:数据库节点类型名
     :param parameter: 分页参数
     :return:返回的是dict，其中code：-1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
     """
     # 输入数据检测
-    msg = {"code": -1, "msg": "", "count": 0, "data": ""}
+    identifier = "m"
+    result = {"code": -1, "msg": "", "count": 0, "data": ""}
+    # 输入数据检查
     if node_info is None or not isinstance(node_info, dict):
-        msg["msg"] = "search conditions are not given"
-        return msg
+        result["msg"] = "search conditions are not given"
+        return result
+    if database_info is None:
+        result["code"] = -321
+        result["msg"] = "the database is not configured!"
+        return result
+    else:
+        uri = database_info.get("uri", None)
+        user_name = database_info.get("username", None)
+        pwd = database_info.get("pwd", None)
+        if uri is None or user_name is None or pwd is None:
+            result["code"] = -322
+            result["msg"] = "数据库信息不完整"
+            return result
     # 查询条件
-    cond = generate_cypher_for_multi_field_condition(node_info, node_type, 'm')
+    cond = generate_cypher_for_multi_field_condition(node_info, node_type, identifier)
+    if cond == "":
+        print("没有指定搜索条件")
     paging = ""
     if not (parameter is None or not isinstance(parameter, dict)):
         page = parameter.get("page", None)
@@ -276,31 +297,38 @@ def query_by_multiple_field(node_info, node_type, parameter=None):
             print("分页参数不正确")
         else:
             paging = " skip " + str((page-1)*limit) + " limit " + str(limit)
-    cypher = "match (m:{}) ".format(node_type) + cond + " return m " + paging
-
+    cypher = "match ({IF}:{NODE_TYPE}) ".format(IF=identifier, NODE_TYPE=node_type) + cond + " return " + identifier + " " + paging
     # 查询数据库
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))  # 初始化Neo4j数据库连接,及查询结果
+    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(user_name, pwd))  # 初始化Neo4j数据库连接,及查询结果
     with driver.session() as session:
-        records = session.run(cypher)
+        try:
+            records = session.run(cypher)
+        except:
+            result["code"] = -323
+            result["msg"] = "数据库连接失败"
+            return result
         records = records.data()
-    if records is None or len(records) == 0:
-        msg["msg"] = "no records"
-        msg["code"] = 0
-    elif len(records) > 1:
-        msg["msg"] = "more than one record. suppose that the publication has more than one author but not have " \
-                     "duplicated records for the same publication"
-        msg["code"] = 2
-        msg["count"] = len(records)
-        msg["data"] = records
+    records = process_neo4j_result(records, identifier, flag=1)  # 用match时
+    if records["code"] < 0:
+        result["msg"] = "no records"
+        result["code"] = 320
     else:
-        msg["msg"] = "found one record"
-        msg["code"] = 1
-        msg["count"] = len(records)
-        msg["data"] = records
-    return msg
+        print(records["msg"])
+        records = records["data"]
+        if len(records) > 1:
+            result["msg"] = "more than one record."
+            result["code"] = 321
+            result["count"] = len(records)
+            result["data"] = records
+        else:
+            result["msg"] = "one record"
+            result["code"] = 322
+            result["count"] = len(records)
+            result["data"] = records
+    return result
 
 
-def query_by_multiple_field_count(node_info, node_type, parameter=None):
+def query_by_multiple_field_count(database_info, node_info, node_type, parameter=None):
     """
     通用方法：根据给定的节点信息，查询有多少条数据满足条件
     :param node_info: dict
@@ -308,44 +336,65 @@ def query_by_multiple_field_count(node_info, node_type, parameter=None):
     :param parameter: 参数？未想好有什么用处
     :return:返回的是dict，其中code：-1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
     """
+    identifier = "m"
+    result = {"code": -1, "msg": "", "count": 0}
     # 输入数据检测
-    msg = {"code": -1,
-           "msg": "",
-           "count": 0}
     if node_info is None or not isinstance(node_info, dict):
-        msg["msg"] = "search conditions are not given"
-        return msg
+        result["msg"] = "search conditions are not given"
+        result["code"] = -310
+        return result
+    if database_info is None:
+        result["code"] = -311
+        result["msg"] = "the database is not configured!"
+        return result
+    else:
+        uri = database_info.get("uri", None)
+        user_name = database_info.get("username", None)
+        pwd = database_info.get("pwd", None)
+        if uri is None or user_name is None or pwd is None:
+            result["code"] = -312
+            result["msg"] = "数据库信息不完整"
+            return result
     # 查询条件
-    cond = generate_cypher_for_multi_field_condition(node_info, 'm')
-    cypher = "match (m:{}) ".format(node_type) + cond + " return count(m)"
+    cond = generate_cypher_for_multi_field_condition(node_info, node_type, identifier)  # 指定的查询条件
+    if cond == "":
+        print("没有指定搜索条件")
+    cypher = "match ({IF}:{NODE_TYPE}) ".format(IF=identifier, NODE_TYPE=node_type) + cond + " return count({IF})".format(IF=identifier)
 
     # 查询数据库
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))  # 初始化Neo4j数据库连接,及查询结果
+    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(user_name, pwd))  # 初始化Neo4j数据库连接,及查询结果
     with driver.session() as session:
-        records = session.run(cypher)
+        try:
+            records = session.run(cypher)
+        except:
+            result["code"] = -313
+            result["msg"] = "数据库连接失败"
+            return result
         records = records.data()
     if records is None or len(records) == 0:
-        msg["msg"] = "no records"
-        msg["count"] = 0
-        msg["code"] = 0
+        result["msg"] = "no records"
+        result["count"] = 0
+        result["code"] = 310
     elif len(records) > 1:
-        msg["msg"] = "error!"
-        msg["code"] = -1
-        msg["count"] = len(records)
+        result["msg"] = "查询错误，结果不是单一数值"
+        result["code"] = -314
+        result["count"] = len(records)
     else:
-        msg["msg"] = "done!"
-        msg["code"] = 1
-        msg["count"] = records[0]["count(m)"]
-    return msg
+        result["msg"] = "仅有一条匹配数据"
+        result["code"] = 312
+        result["count"] = records[0]["count(m)"]
+    return result
 
 
 def generate_cypher_for_multi_field_condition(node_info, node_type, node_identifier):
     """
-    根据节点的多个属性，设置查询条件
+    根据节点的多个属性，设置查询条件， todo 增加条件
+        Publication：仅支持node_type, title, year(start_year, end_year),不支持paperIndex和author
+        venue：仅支持venue_name
     :param node_info: dict，节点属性条件
     :param node_type: 节点类型，对不同的节点配置不同的可用参数以供查询
     :param node_identifier: str，查询语句中节点的标识符
-    :return:
+    :return: str："" 或查询语句
     """
     if node_type == 'VENUE':
         currently_supported_fields = ["venue_name"]
@@ -364,7 +413,7 @@ def generate_cypher_for_multi_field_condition(node_info, node_type, node_identif
     else:
         cypher = "where "
         key_flag = 0
-        for key, value in node_info.items():  # todo 对Publication：目前paperIndex和author还没加，venue：只有venue_name
+        for key, value in node_info.items():
             if key == "title":
                 cypher += node_identifier + "." + key + " =~ '(?i).*" + value + ".*' and "
                 key_flag += 1

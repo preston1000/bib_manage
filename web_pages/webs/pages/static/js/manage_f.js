@@ -20,7 +20,7 @@ var formSettings = [{"field":"0", "mandatory":[0,1,2,3,22,23], "others":[4,5,6,7
                     ];
 var contentStringName = ["author","title","journal","year","volume","number",
                         "pages","month","note","editor","publisher","series","address",
-                        "edition","howpublished","booktitle","organization","chapter",
+                        "edition","how_published","book_title","organization","chapter",
                         "type","school","keywords","institution","indexing", "id"];
 var pubTypes = ["ARTICLE", "BOOK","BOOKLET","CONFERENCE","INBOOK","INCOLLECTION","INPROCEEDINGS",
                  "MANUAL","MASTERSTHESIS","MISC","PHDTHESIS","PROCEEDINGS","TECHREPORT","UNPUBLISHED"];
@@ -37,7 +37,7 @@ var colSet1 = [[ //标题栏
     ,{field: 'journal', title: 'Journal', minWidth: 150}
     ,{field: 'volume', title: 'Volume', width: 80}
     ,{field: 'number', title: 'Number', width: 80}
-    ,{field: 'paperTypeEdit', title: 'Type', width: 80, sort: true}
+    ,{field: 'node_type', title: 'Type', width: 80, sort: true}
 ]];
 var colSet2 = [[ //标题栏
     {type: 'radio'}
@@ -47,7 +47,7 @@ var colSet2 = [[ //标题栏
     ,{field: 'journal', title: 'Journal', minWidth: 150}
     ,{field: 'volume', title: 'Volume', width: 80}
     ,{field: 'number', title: 'Number', width: 80}
-    ,{field: 'paperTypeEdit', title: 'Type', width: 80, sort: true}
+    ,{field: 'node_type', title: 'Type', width: 80, sort: true}
 ]];
 var colSetVenueMany = [[ //for venue
     {type: 'radio'}
@@ -105,7 +105,7 @@ layui.use(['form', 'element', 'laydate', 'table'], function(){
         form.render();
     });
     //起点文献编辑面板显示的内容
-    form.on('select(paperTypeEdit1)', function(data){
+    form.on('select(node_type1)', function(data){
         var value = data.value;
         value = new Number(value);
         if (value.valueOf() != currentPubType.valueOf()) {
@@ -114,7 +114,7 @@ layui.use(['form', 'element', 'laydate', 'table'], function(){
         }
     });
     //终点文献编辑面板显示的内容
-    form.on('select(paperTypeEdit2)', function(data){
+    form.on('select(node_type2)', function(data){
         var value = data.value;
         value = new Number(value);
         if (value.valueOf() != currentPubType.valueOf()) {
@@ -160,6 +160,7 @@ layui.use(['element', 'form', 'layer'], function(){
             document.getElementById('target-node-form-person').reset();
             $("#node_info_4").css('display', 'none');// venue
             document.getElementById('target-node-form-venue').reset();
+            $("#author_rank").css('display', 'none'); // 作者排名
         }else{
             value = new Number(value);
             if (value == 1){// published in
@@ -168,18 +169,21 @@ layui.use(['element', 'form', 'layer'], function(){
                 $("#node_info_3").css('display', 'none'); // person
                 document.getElementById('target-node-form-person').reset();
                 $("#node_info_4").css('display', '');// venue
+                $("#author_rank").css('display', 'none'); // 作者排名
             }else if (value == 2){//cite
                 $("#node_info_2").css('display', '');
                 $("#node_info_3").css('display', 'none');
                 document.getElementById('target-node-form-person').reset();
                 $("#node_info_4").css('display', 'none');
                 document.getElementById('target-node-form-venue').reset();
+                $("#author_rank").css('display', 'none'); // 作者排名
             }else if (value == 3){// author
                 $("#node_info_2").css('display', 'none');// pub
                 document.getElementById('target-node-form').reset();
                 $("#node_info_3").css('display', ''); // person
                 $("#node_info_4").css('display', 'none');// venue
                 document.getElementById('target-node-form-venue').reset();
+                $("#author_rank").css('display', ''); // 作者排名
             }else{
                 layer.error("边类型选择出错，未知编号")
             }
@@ -375,13 +379,13 @@ layui.use(['form', 'layer', 'element', 'laydate', 'table'], function(){
                             }
                             ,yes: function(index, layero){
                                 //填入数据表格中
-                                var indexT = pubTypes.indexOf(queryResult[0]["paperTypeEdit"]);
+                                var indexT = pubTypes.indexOf(queryResult[0]["node_type"]);
 //                                indexT = 2;
                                 toggleEditPanel(indexT, 'addOrEditPub1');
 //                                return false;
                                 var formData = queryResult[0];
                                 formData["pubMonth"] = queryResult[0]["month"];
-                                formData["paperTypeEdit"] = indexT;
+                                formData["node_type"] = indexT;
                                 form.val('addOrEditPubPanel1', formData);
                                 layer.close(index); //如果设定了yes回调，需进行手工关闭
                             }
@@ -505,11 +509,11 @@ layui.use(['form', 'layer', 'element', 'laydate', 'table'], function(){
                             }
                             ,yes: function(index, layero){
                                 //填入数据表格中
-                                var indexT = pubTypes.indexOf(queryResult[0]["paperTypeEdit"]);
+                                var indexT = pubTypes.indexOf(queryResult[0]["node_type"]);
                                 toggleEditPanel(indexT, 'addOrEditPub2');//distinguish
                                 var formData = queryResult[0];
                                 formData["pubMonth"] = queryResult[0]["month"];
-                                formData["paperTypeEdit"] = indexT;
+                                formData["node_type"] = indexT;
                                 form.val('addOrEditPubPanel2', formData); // distinguish
                                 layer.close(index); //如果设定了yes回调，需进行手工关闭
                             }
@@ -760,11 +764,11 @@ layui.use(['table', 'form'], function(){
         switch(obj.event){
             case 'getCheckData':
                 var data = checkStatus.data;
-                var indexT = pubTypes.indexOf(data[0]["paperTypeEdit"]);
+                var indexT = pubTypes.indexOf(data[0]["node_type"]);
                 toggleEditPanel(indexT, 'addOrEditPub1');
                 var formData = data[0];
                 formData["pubMonth"] = data[0]["month"];
-                formData["paperTypeEdit"] = indexT;
+                formData["node_type"] = indexT;
                 form.val('addOrEditPubPanel1', formData);
             break;
         };
@@ -775,11 +779,11 @@ layui.use(['table', 'form'], function(){
         switch(obj.event){
             case 'getCheckData':
                 var data = checkStatus.data;
-                var indexT = pubTypes.indexOf(data[0]["paperTypeEdit"]);
+                var indexT = pubTypes.indexOf(data[0]["node_type"]);
                 toggleEditPanel(indexT, 'addOrEditPub2');//dis
                 var formData = data[0];
                 formData["pubMonth"] = data[0]["month"];
-                formData["paperTypeEdit"] = indexT;
+                formData["node_type"] = indexT;
                 form.val('addOrEditPubPanel2', formData);//dis
             break;
         };
@@ -900,7 +904,7 @@ layui.use(['form', 'layer', 'element', 'laydate', 'table'], function(){
                     }else{//有一条或多条相关数据，
                         var queryResult = result["data"]; //这里的字段和数据库中一致
                         //数据整理，字段要匹配 todo
-                        queryResult['paperTypeEdit'] = queryResult["ENTRYTYPE"];
+                        queryResult['node_type'] = queryResult["node_type"];
                         layer.open({
                             type: 1
                             ,title: "数据库中有文献与输入数据匹配，请选择下一步操作" //
@@ -1283,7 +1287,7 @@ function toggleEditPanel(value, formPrefix) {
     //表单验证:参数是name：value形式,todo 这里先假设所返回数据的key和form中的name一致
 function verifyPubInfo(data, currentAuthors) {
     var msg = {status: -1, msg: "", data: ""};
-    var pubType = new Number(data["paperTypeEdit"])
+    var pubType = new Number(data["node_type"])
         ,mandatory = formSettings[pubType]["mandatory"]
         ,others = formSettings[pubType]["others"];
     var msg = {"status": 2, "msg":""};
@@ -1394,7 +1398,7 @@ function verifyPubInfo(data, currentAuthors) {
             break;
         }
     }
-    processedData["ENTRYTYPE"] = data["paperTypeEdit"];
+    processedData["node_type"] = data["node_type"];
     msg["data"] = processedData;
 
     console.log("退出验证");

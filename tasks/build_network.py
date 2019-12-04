@@ -4,11 +4,10 @@
 import neo4j
 from neo4j import GraphDatabase
 
-# from utils.db_operation import create_or_match_persons
-from utils.tmp_db import create_or_match_nodes, query_or_create_relation
-from utils.util_text_operation import string_util, process_person_names
+from utils.tmp_db import create_or_match_nodes, query_or_create_relation, revise_node_by_fields
+from utils.util_text_operation import string_util, process_person_names, process_pages
 from utils.d_extraction import do_extract
-from utils.util_operation import ini_neo4j, wrap_info_to_model, reverse_map_key_value, judge_type
+from utils.util_operation import ini_neo4j, wrap_info_to_model, process_neo4j_result, check_uniqueness_pubs
 from utils.constants import GlobalVariables
 
 field_names = GlobalVariables.const_field_name
@@ -18,17 +17,26 @@ edge_types = GlobalVariables.const_edge_tpe
 
 def generate_pub_node_from_file(file, database_info):
     """
+    todo not recorded in doc for error code
     从文件中提取bib信息，然后写入neo4j
     :param file: bib文件或Excel文件
-    :param neo4j_config_file: 配置文件
+    :param database_info: 配置文件
     :return:
     """
     # 提取bib信息
-    extract_result = do_extract(file)
+    extract_result = do_extract(file)  # 结果是models类
+
     if extract_result["code"] == 110:
         print(extract_result["msg"])
     elif extract_result["code"] == 111:
-        create_or_match_nodes(extract_result["data"], database_info)  # 写入节点
+        extracted_data = extract_result["data"]  # list of pubs
+        # 检查指定的唯一标识是否唯一
+        extracted_data_checked = check_uniqueness_pubs(extracted_data)
+        if extracted_data_checked["code"] == 300:
+            create_or_match_nodes(extract_result["data"], database_info)  # 写入节点
+        else:
+            print(extract_result["msg"])
+            print(extracted_data_checked["msg"])
     elif extract_result["code"] == 112:
         print(extract_result["msg"])
     else:
@@ -94,6 +102,10 @@ def build_relation_from_node_attribute(database_info, source_node_type="PUBLICAT
         else:
             cypher = "match ({IF}:{NODE}) return {IF}".format(IF=identifier, NODE=target_node_type)
     # 连接数据库，
+    if database_info is None or not isinstance(database_info, dict):
+        result["code"] = -132
+        result["msg"] = "数据库信息缺失"
+        return result
     uri = database_info.get("uri", None)
     user_name = database_info.get("username", None)
     pwd = database_info.get("pwd", None)
@@ -120,7 +132,7 @@ def build_relation_from_node_attribute(database_info, source_node_type="PUBLICAT
     # counter_processed = 0  todo 这里没有检查有数据的记录是否成功处理，后面要加
     if use_source:
         for record in nodes:  # 把各节点的info_field字段提取出来，组成dict，key是节点的uuid，value是info_field字段值
-            record_id = record[identifier][field_names[31]]  # uuid  todo 检查是id还是uuid
+            record_id = record[identifier][field_names[31]]  # uuid
             print("提取{NODE}与{NODE2}之间关系{REL}过程：查询到节点：".format(NODE=source_node_type, NODE2=target_node_type,
                                                               REL=rel_type) + str(record_id))
             counter_all += 1
@@ -146,7 +158,7 @@ def build_relation_from_node_attribute(database_info, source_node_type="PUBLICAT
                 counter_has_content += 1
     else:
         for record in nodes:  # 把各节点的info_field字段提取出来，组成dict，key是节点的uuid，value是info_field字段值
-            record_id = record[identifier][field_names[31]]  # id
+            record_id = record[identifier][field_names[31]]  # uuid
             print("提取{NODE}与{NODE2}之间关系{REL}过程：查询到节点：".format(NODE=source_node_type, NODE2=target_node_type,
                                                               REL=rel_type) + str(record_id))
             counter_all += 1
@@ -237,6 +249,124 @@ def build_relation_from_node_attribute(database_info, source_node_type="PUBLICAT
         result["code"] = 127
         result["msg"] = "全部边创建成功"
         return result
+
+
+def revise_node_info(database_info, node_type, node_field):
+    """
+    实现的是对某一类型所有节点的某一属性的修改，如对pub节点的pages属性的统一处理等
+    :param database_info: dict，数据库信息
+    :param node_type: 节点名，str
+    :param node_field: 属性名，str
+    :return:
+    """
+    result = {"code": 0, "msg": "", "data": ""}
+    # 连接数据库，
+    if database_info is None or not isinstance(database_info, dict):
+        result["code"] = -280
+        result["msg"] = "数据库信息缺失"
+        return result
+    uri = database_info.get("uri", None)
+    user_name = database_info.get("username", None)
+    pwd = database_info.get("pwd", None)
+    if uri is None or user_name is None or pwd is None:
+        result["code"] = -281
+        result["msg"] = "数据库信息不完整"
+        return result
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(user_name, pwd))
+    # 节点类型
+    try:
+        node_type_index = node_types.index(node_type)
+    except:
+        result["code"] = -282
+        result["msg"] = "节点类型不符合要求"
+        return result
+    if node_type_index == 0:  # pub
+        try:
+            field_index = field_names.index(node_field)
+        except:
+            result["code"] = -284
+            result["msg"] = "未知的节点属性"
+            return result
+        if field_index == 10:  # pages
+            process_result = process_pub_pages(driver)
+            result["msg"] = process_result.get("msg", "")
+            result["code"] = process_result.get("code", -286)
+        else:
+            result["code"] = -285
+            result["msg"] = "不能处理的节点属性"
+    else:
+        result["code"] = -283
+        result["msg"] = "不能处理的节点类型"
+    return result
+
+
+def process_pub_pages(driver):
+    """
+    对所有PUBLICATION节点的pages属性进行整理
+    :return:
+    """
+    filter_field = "uuid"
+    target_field = "pages"
+    result = {"code": 0, "msg": "", "data": ""}
+    cypher = "match (n:{PUB}) return n".format(PUB=node_types[0])
+    with driver.session() as session:
+        query_result = session.run(cypher)
+        query_result = query_result.data()
+    query_result = process_neo4j_result(query_result, "n", 1)
+    if query_result["msg"] < 0:
+        result["msg"] = "Publication的pages属性提取失败"
+        result["code"] = -290
+        return result
+    processed_data = {}
+    counter_all = len(query_result)
+    if counter_all == 0:
+        result["code"] = -291
+        result["msg"] = "没有PUBLICATION节点"
+        return result
+    counter_failed = 0
+    for pub_item in query_result["data"]:
+        pub_uuid = pub_item.get(filter_field, None)
+        if pub_uuid is None:
+            print(str(pub_item) + "->存在数据" + filter_field + "为空")
+            continue
+        pub_pages = pub_item.get(target_field, None)
+        if pub_pages is None:
+            print(str(pub_item) + "->缺少" + target_field + "字段")
+            continue
+        pub_pages = process_pages(pub_pages)
+        if pub_pages is None:
+            print(str(pub_item) + "->处理" + target_field + "字段失败")
+            counter_failed += 1
+            continue
+        processed_data[pub_uuid] = pub_pages
+
+    if counter_failed > 0:
+        result["code"] = -292
+        result["msg"] = "存在pages字段处理失败的情况，取消处理"
+        return result
+    if processed_data == {}:
+        result["code"] = 290
+        result["msg"] = "存在pages字段处理失败的情况，取消处理"
+        return result
+    # 修改字段
+    counter_success = 0
+    with driver.session() as session:
+        for (key, value) in processed_data.items():
+            field_match = {filter_field: key}
+            field_value_revise = {target_field: value}
+            revise_result = revise_node_by_fields(session, node_types[0], field_match, field_value_revise)
+            if revise_result["code"] != 200:
+                print(str(key) + "," + str(value) + "->" + revise_result["msg"])
+                continue
+            counter_success += 1
+    if counter_success < len(processed_data.keys()):
+        result["code"] = 291
+        result["msg"] = "部分处理成功，不成功部分请见日志"
+    else:
+        result['code'] = 292
+        result["msg"] = '全部处理成功'
+    return result
+
 
 
 if __name__ == "__main__":

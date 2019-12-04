@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        body, html,#allmap {width: 100%;height: 100%;overflow: hidden;margin:0;font-family:"微软雅黑";}
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=3.0&ak=35pFHkNXguKPxIYwh1gHLEtQFFvGGQav"></script>
+
+    {% load static %}
+    <script src="{% static 'layui2/layui.js'%}" charset="utf-8"></script>
+    <script src="{% static 'js/ditu.js'%}"></script>
+    <link href="{% static 'layui2/css/layui.css'%}" rel="stylesheet">
+
+    <title>google转百度</title>
+</head>
+<body class="layui-layout-body">
+
+    <div class="layui-layout layui-layout-admin">
+        <table class="layui-hide" id="placeDetails" lay-filter="placeDetails"></table>
+    </div>
+    <div id="allmap"></div>
+
+</body>
+
+<script type="text/html" id="toolbarMap">
+  <div class="layui-btn-container">
+    <button type="button" class="layui-btn layui-btn-sm" lay-event="upload" id="upload">上传文件</button>
+    <button type="button" class="layui-btn layui-btn-sm" lay-event="download">保存文件</button>
+    <button type="button" class="layui-btn layui-btn-sm" lay-event="resolve">开始解析</button>
+    <button type="button" class="layui-btn layui-btn-sm" lay-event="getWords" id="getWords" style="visibility:hidden;">开始解析</button>
+  </div>
+</script>
+
+<!--<script type="text/javascript">-->
+<!--	// 百度地图API功能-->
+<!--	var map = new BMap.Map("allmap");-->
+<!--	var point = new BMap.Point(116.331398,39.897445);-->
+<!--	map.centerAndZoom(point,12);-->
+<!--	// 创建地址解析器实例-->
+<!--	var myGeo = new BMap.Geocoder();-->
+<!--	// 将地址解析结果显示在地图上,并调整地图视野-->
+<!--	myGeo.getPoint("北京市海淀区上地10街", function(point){-->
+<!--		if (point) {-->
+<!--			map.centerAndZoom(point, 16);-->
+<!--			map.addOverlay(new BMap.Marker(point));-->
+<!--		}else{-->
+<!--			alert("您选择地址没有解析到结果!");-->
+<!--		}-->
+<!--	}, "北京市");-->
+<!--</script>-->
+</html>
+
+
+

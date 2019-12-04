@@ -1,6 +1,7 @@
 import re
 from utils.util_operation import get_value_by_key
 
+
 def string_util(string):
     if string is None or string is "":
         return False
@@ -295,6 +296,8 @@ def analyze_person_name(params):
 
 
 def null_string(string):
+    if not isinstance(string, str):
+        return ""
     if string is None or string.strip() == "" or string == "null":
         return ""
     else:
@@ -326,3 +329,17 @@ def split_name(name, authors):
             result = {"firstName": name[0], "middleName": " ".join(name[1:len(name)-1]), "lastName": name[-1],
                       "ranking": index}
         return result
+
+
+def process_pages(data):
+    if data is None or not isinstance(data, str):
+        return None
+    data = data.split()
+    if len(data) == 1:
+        data = data[0]
+    elif len(data) == 3:
+        data = data[0] + '-' + data[2]
+    else:
+        print(data)
+        data = data[0] + '-' + data[-1]
+    return data
