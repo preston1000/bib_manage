@@ -1,33 +1,70 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 import json
+from json import JSONDecodeError
 import sys
 from configparser import ConfigParser
 import datetime
 import os
+from pathlib import Path
 
 import utils.util_text_operation
 from utils.tmp_db import create_or_match_nodes_dict
 
-from django.core.cache import cache
+import numpy as np
+import uuid
 
 import xlrd
+from xlrd import XLRDError
 
 from utils import query_data, db_operation
-from django.core.files.uploadedfile import InMemoryUploadedFile
 
+from utils.ddparser import DDParser
+from LAC import LAC
+
+from graphviz import Digraph
+os.environ["PATH"] += os.pathsep + 'D:\\Graphviz\\bin'
+
+basedir = Path(__file__).parent.parent.parent.parent  # 项目根目录
+current_dir = Path(__file__).parent
+"""
+分词/依存关系配置
+"""
+lac_dict_path = basedir.joinpath('model_files/LAC_dict/tokenize_dict_lac.txt')
+dd_parser_model_path = basedir.joinpath('model_files/ddparser_models')
+lac = LAC()
+lac.load_customization(lac_dict_path)
+ddp = DDParser(use_cuda=False, tree=True, prob=False, use_pos=False, model_files_path=dd_parser_model_path, buckets=False,
+               batch_size=None, encoding_model="ernie-lstm")
+
+"""
+日志配置
+"""
+log_dir = basedir.joinpath('logs/')
+
+"""
+
+"""
 config_file = "./pages.conf"
 cf = ConfigParser()
 cf.read(os.path.abspath(config_file), encoding="utf-8")
 address = cf.get("moduleAddress", "address1")
 sys.path.append(address)
 
+"""
+neo4j 配置
+"""
 cf = ConfigParser()
 cf.read("./neo4j.conf", encoding="utf-8")
 uri = cf.get("neo4j", "uri")
 username = cf.get("neo4j", "username")
 pwd = cf.get("neo4j", "pwd")
 database_info = {"uri": uri, "username": username, "pwd": pwd}
+
+
+"""
+代码
+"""
 
 
 def resolve_coordinates(request):
@@ -54,7 +91,7 @@ def parse_excel_stations(request):
     file = file[0]
     try:
         wb = xlrd.open_workbook(filename=None, file_contents=file.read())  # 打开文件
-    except:
+    except XLRDError:
         result["code"] = -2
         result["msg"] = '打开Excel文件失败'
         return HttpResponse(json.dumps(result))
@@ -62,7 +99,7 @@ def parse_excel_stations(request):
     sheet_name = 'Sheet1'
     try:
         sheet_content = wb.sheet_by_name(sheet_name)  # 通过名字获取表格
-    except:
+    except ValueError:
         result["code"] = -3
         result["msg"] = '读取Excel指定工作簿失败'
         return HttpResponse(json.dumps(result))
@@ -84,15 +121,15 @@ def parse_excel_stations(request):
 
     content = []
     counter_null = 1  #
-    for index in range(1, sheet_content.nrows):  # index是行下标
-        addr = sheet_content.cell_value(index, col_index[1])
-        city = sheet_content.cell_value(index, col_index[2])
-        line = sheet_content.cell_value(index, col_index[3])
-        next = sheet_content.cell_value(index, col_index[4])
-        if addr == "":
-            print("第" + index + "行文献没有地址信息【" + str(sheet_content.row_values(index)) + "】")
+    for iii in range(1, sheet_content.nrows):  # index是行下标
+        address_station = sheet_content.cell_value(iii, col_index[1])
+        city = sheet_content.cell_value(iii, col_index[2])
+        line = sheet_content.cell_value(iii, col_index[3])
+        next_station = sheet_content.cell_value(iii, col_index[4])
+        if address_station == "":
+            print("第" + str(iii) + "行文献没有地址信息【" + str(sheet_content.row_values(iii)) + "】")
             continue
-        tmp = {"index": counter_null, "address": addr, 'city': city, "line": line, 'next': next}
+        tmp = {"index": counter_null, "address": address_station, 'city': city, "line": line, 'next': next_station}
         counter_null += 1
         content.append(tmp)
     result["data"] = content
@@ -126,7 +163,7 @@ def search_publication_new(request):
             try:
                 pub_info = bytes.decode(the_paras)
                 pub_info = json.loads(pub_info)
-            except:
+            except JSONDecodeError or TypeError:
                 the_paras = request.POST
                 pub_info = the_paras.get("param", None)
                 if pub_info is None:
@@ -146,7 +183,7 @@ def search_publication_new(request):
             pub_info = json.loads(pub_info)
             page = the_paras.get("page", None)
             limit = the_paras.get("limit", None)
-        parameters = process_search_condition(pub_info) # 封装数据为后台数据库能够接收的格式
+        parameters = process_search_condition(pub_info)  # 封装数据为后台数据库能够接收的格式
         # 分页条件
         page_para = None
         if page is not None and limit is not None:
@@ -202,7 +239,7 @@ def search_publication_count(request):
         try:
             pub_info = bytes.decode(pub_info)
             pub_info = json.loads(pub_info)
-        except:
+        except JSONDecodeError or TypeError:
             return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
 
         if pub_info is None:
@@ -256,15 +293,156 @@ def view_pdf(request):
 
 def show_pdf(request):
     # todo 实现文件存储
-    return  render(request)
+    return render(request)
 
 
 def manage(request):
 
     return render(request, 'manage.html')
 
-
 # 以上是新网页
+######################################################################################
+
+
+def deprel(request):
+    # return HttpResponse('welcome to the front page')
+    return render(request, 'deprel.html')
+
+
+def save_deprel_result(request):
+    """
+    存储页面标注结果,将修改信息存储在txt文件中，格式为：id 提交评论时间 句子 解析文件路径(名) relation words head 是否有问题 comments（\t 隔开）
+    :param request:
+    :return:
+    """
+
+    result = {'code': None, 'msg': ''}
+
+    data = request.body
+
+    if request.is_ajax() and request.method == 'POST':
+
+        try:
+            data = bytes.decode(data)
+            data = json.loads(data)
+
+            record_uuid = str(uuid.uuid1())
+            record_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            sentence = data.get('sentence', '-')
+
+            result_file_name = data.get('image_path', '-')
+
+            words = data.get('words', '-')
+            relation = data.get('relation', '-')
+            head = data.get('head', '-')
+
+            is_correct = data.get('is_problematic', '-')
+            comments = data.get('comments', '-')
+
+            tmp = [record_uuid, record_time, sentence, result_file_name, words, relation, head, is_correct, comments]
+            tmp = '\t'.join(tmp)
+
+            with open(log_dir.joinpath('dep_rel_service_log.log'), 'a+', encoding="utf-8") as f:
+                f.write(tmp + '\n')
+
+            result["msg"] = "successfully saved"
+            result["code"] = 400
+            # result["field"] = data
+
+        except TypeError:
+            result['code'] = -402
+            result['msg'] = "no valid data is given"
+
+    else:
+        result['code'] = -400
+        result['msg'] = "not supported request form (should be post and with ajax)"
+
+    return HttpResponse(json.dumps(result))
+
+
+def resolve_deprel(request):
+    """
+    由“开始解析”按钮触发的对给定句子的解析，对外返回解析结果。
+
+    注：采用ajax方式，header指定{"X-Requested-With"："XMLHttpRequest", "Content-Type"："application/x-www-form-urlencoded"}
+
+    :param request: 包含待解析sentence
+    :return:
+    """
+    result = {'code': None, 'msg': '', 'data': None}
+    if request.is_ajax() and request.method == 'POST':
+        data = request.body  #
+        if data is None or data == "":
+            result['code'] = -301
+            result['msg'] = "no data is given"
+        else:
+            try:
+                data = bytes.decode(data)
+                data = json.loads(data)
+                sentence = data["sentence"]
+
+                # 调用ddparser处理结果-命名规则：sentence+timestamp
+                resolve_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                words, head, relation = dd_parser_caller(sentence)
+
+                # 生成依存关系图
+                graph_name = sentence + '_' + resolve_time
+                # graph_name = os.path.join(current_dir, graph_name)  # 拼装目录名称+文件名称
+                g = Digraph(graph_name, format='png')
+                g.node(name='Root')
+                for word in words:
+                    g.node(name=word, fontname="Microsoft YaHei")
+
+                for i in range(len(words)):
+                    if relation[i] not in ['HED']:
+                        g.edge(words[i], head[i], label=relation[i], fontname="Microsoft YaHei")
+                    else:
+                        if head[i] == 'Root':
+                            g.edge(words[i], 'Root', label=relation[i], fontname="Microsoft YaHei")
+                        else:
+                            g.edge(head[i], 'Root', label=relation[i], fontname="Microsoft YaHei")
+
+                g.render(graph_name, os.path.join(current_dir, 'static/images/cache'), view=False, cleanup=True)
+
+                result['code'] = 100
+                result['msg'] = "success"
+                result["data"] = {'sentence': sentence, 'deprel': graph_name+".png", 'relation': str(relation), 'words': str(words), 'head': str(head)}
+
+            except TypeError:
+                result['code'] = -302
+                result['msg'] = "no valid data is given"
+
+    else:
+        result['code'] = -300
+        result['msg'] = "not supported request form (should be post and with ajax)"
+
+    return HttpResponse(json.dumps(result))
+
+
+def dd_parser_caller(sentence):
+    """
+    获取给定句子的依存关系
+    :param sentence: str
+    :return: tokens (list of str), head (list of str, words), deprel (list of str)
+    """
+    lac_result = lac.run(sentence)
+    dep_result = ddp.parse_seg(lac_result)
+
+    tokens = dep_result[0].get("word", None)
+    head_integer = dep_result[0].get("head", None)
+    dep_rel = dep_result[0].get("deprel", None)
+
+    head = []
+
+    for i in range(len(tokens)):
+        if head_integer[i] == 0:
+            head.append("Root")
+        else:
+            head.append(tokens[head_integer[i]-1])
+
+    return tokens, head, dep_rel
+
+# 以上是意图理解相关网页
 ######################################################################################
 
 
@@ -274,7 +452,7 @@ def add_publication(request):
     :param request:
     :return:
     """
-    result = {"msg": "", "code": 0, "data":"", "count": 0}
+    result = {"msg": "", "code": 0, "data": "", "count": 0}
     if request.method == 'POST':
         if request.is_ajax():
             pub_info = request.body
@@ -285,7 +463,7 @@ def add_publication(request):
             try:
                 pub_info = bytes.decode(pub_info)
                 pub_info = json.loads(pub_info)
-            except:
+            except JSONDecodeError:
                 result["msg"] = "given data is not a json string"
                 result["code"] = -4
                 return HttpResponse(json.dumps(result))
@@ -351,7 +529,7 @@ def add_publication(request):
         result["data"] = query_result.get("data", [])
         try:
             result["count"] = len(result["data"])
-        except:
+        except KeyError:
             result["count"] = 0
         return HttpResponse(json.dumps(result))
     else:
@@ -394,7 +572,7 @@ def get_sample_data(request):
     return HttpResponse(data)
 
 
-def get_vis_data(request):
+def get_vis_data():
     json_str = query_data.query_vis_data()
     return HttpResponse(json_str)
 
@@ -433,9 +611,9 @@ def get_author_table_data(request):
                 else:
                     data = [{"firstName": "", "middleName": "", "lastName": "", "ranking": "1"}]
                     print("未能识别的mode")
-            except:
+            except IndexError or KeyError:
                 print("解析失败")
-        except:
+        except JSONDecodeError or TypeError:
             data = [{"firstName": "", "middleName": "", "lastName": "", "ranking": "1"}]
 
     json_str = {"code": 0, "msg": "successfully queried data", "count": 1, "data": data}
@@ -455,7 +633,7 @@ def add_person(request):
         try:
             node_info = bytes.decode(node_info)
             node_info = json.loads(node_info)
-        except:
+        except JSONDecodeError or TypeError:
             return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
         # 调方法写数据库
         flag = db_operation.create_or_match_persons(node_info, mode=2)
@@ -480,7 +658,7 @@ def add_venue(request):
         try:
             node_info = bytes.decode(node_info)
             node_info = json.loads(node_info)
-        except:
+        except JSONDecodeError or TypeError:
             return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
         # 调方法写数据库
         flag = db_operation.create_or_match_venues(node_info, mode=2)
@@ -505,7 +683,7 @@ def add_relation(request):
         try:
             node_info = bytes.decode(node_info)
             node_info = json.loads(node_info)
-        except:
+        except JSONDecodeError or TypeError:
             return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
         # 调方法写数据库
         source_id = node_info["sourceID"]
@@ -535,7 +713,7 @@ def revise_publication(request):
         try:
             pub_info = bytes.decode(pub_info)
             pub_info = json.loads(pub_info)
-        except:
+        except JSONDecodeError or TypeError:
             return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
         # 特殊字段的处理：作者
         authors = pub_info.get("author", None)
@@ -608,7 +786,7 @@ def revise_person(request):
         try:
             node_info = bytes.decode(node_info)
             node_info = json.loads(node_info)
-        except:
+        except JSONDecodeError or TypeError:
             return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
         # 调方法写数据库
         flag = db_operation.revise_persons(node_info)
@@ -633,7 +811,7 @@ def revise_venue(request):
         try:
             node_info = bytes.decode(node_info)
             node_info = json.loads(node_info)
-        except:
+        except JSONDecodeError or TypeError:
             return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
         # 调方法写数据库
         flag = db_operation.revise_venues(node_info)
@@ -734,11 +912,11 @@ def search_venue(request):
         if request.is_ajax():
             the_paras = request.body
             if the_paras is None:
-                return HttpResponse(json.dumps({"msg": "no data is given", "code": 0, "data":"", "count": 0}))
+                return HttpResponse(json.dumps({"msg": "no data is given", "code": 0, "data": "", "count": 0}))
             try:
                 the_paras = bytes.decode(the_paras)
                 the_paras = json.loads(the_paras)
-            except:
+            except JSONDecodeError or TypeError:
                 return HttpResponse(json.dumps({"msg": "given data is not a json string", "code": -1, "data": "", "count": 0}))
             # page = None
             # limit = None
@@ -746,7 +924,7 @@ def search_venue(request):
             the_paras = request.POST
             pub_info = the_paras.keys()
             if pub_info is None:
-                return HttpResponse(json.dumps({"msg": "no data is given", "code": 0, "data":"", "count": 0}))
+                return HttpResponse(json.dumps({"msg": "no data is given", "code": 0, "data": "", "count": 0}))
             # page = the_paras.get("page", None)
             # limit = the_paras.get("limit", None)
 
@@ -782,20 +960,19 @@ def verify_auth(request):
         :return:
         """
     user_list = {"user": "123456"}
-    result = {}
     if request.is_ajax() and request.method == 'GET':
         user = request.GET.get("username", None)
-        pwd = request.GET.get("pwd", None)
-        if user is None or pwd is None:
+        password = request.GET.get("pwd", None)
+        if user is None or password is None:
             result = {"status": -1, "msg": "invalid request parameters"}
         else:
             pwd_in_database = user_list.get(user, None)
             if pwd_in_database is None:
                 result = {"status": -1, "msg": "no registered user"}
-            elif pwd_in_database != pwd:
+            elif pwd_in_database != password:
                 result = {"status": -1, "msg": "unmatched password"}
             else:
-                result = {"status": 1, "msg": "matched user and password", "user":user, "pwd": pwd}
+                result = {"status": 1, "msg": "matched user and password", "user": user, "pwd": password}
     else:
         result = {"status": -1, "msg": "invalid request"}
     return HttpResponse(json.dumps(result))
@@ -803,15 +980,15 @@ def verify_auth(request):
 
 def get_pib_info_for_edit(request):
     if request.is_ajax() and request.method == 'GET':
-        uuid = request.GET.get("id", None)
-        if uuid is None:
+        the_uuid = request.GET.get("id", None)
+        if the_uuid is None:
             return HttpResponse(json.dumps({"msg": "no valid publication id is provided.", "status": -1}))
         else:
-            data = query_data.query_one_pub_by_uuid(uuid)
+            data = query_data.query_one_pub_by_uuid(the_uuid)
             if data["code"] != 1:
                 return HttpResponse(json.dumps({"msg": data["msg"], "status": -1}))
             else:
-                return HttpResponse(json.dumps({"msg": data["msg"], "status": 1, "data":data["data"]}))
+                return HttpResponse(json.dumps({"msg": data["msg"], "status": 1, "data": data["data"]}))
     return HttpResponse(json.dumps({"msg": "not ajax request or the request method is not get", "status": -1}))
 
 
@@ -857,12 +1034,16 @@ def handle_uploaded_file(f):
 
 
 def split_name(request):
-    name = request.body
-    name = bytes.decode(name)
-    name = json.loads(name)
-    if name is None or name == {}:
-        return HttpResponse(json.dumps({"first_name": '', "middle_name": "", "last_name": "", "status": -1,
-                                        "msg": "no given name"}))
-    result = utils.util_text_operation.analyze_person_name(name)
+    person_name = request.body
+    result = {"first_name": '', "middle_name": "", "last_name": "", "status": -1,
+              "msg": "no given name"}
+    try:
+        person_name = bytes.decode(person_name)
+        person_name = json.loads(person_name)
+    except JSONDecodeError or TypeError:
+        print("error")
+        HttpResponse(json.dumps(result))
+    if person_name is None or person_name == {}:
+        return HttpResponse(json.dumps(result))
+    result = utils.util_text_operation.analyze_person_name(person_name)
     return HttpResponse(json.dumps(result))
-

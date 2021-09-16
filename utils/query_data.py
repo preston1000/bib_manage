@@ -1,6 +1,6 @@
 from configparser import ConfigParser
-from neo4j.v1 import GraphDatabase
-import neo4j.v1
+from neo4j import GraphDatabase
+import neo4j
 import json
 
 from utils.util_text_operation import null_string, split_name, null_int
@@ -33,7 +33,7 @@ def sample_data(skip=None, limit=None):
     person_list = [item.upper() for item in person_list]
 
     # 初始化Neo4j数据库连接,及查询结果
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
 
     # 查询是否存在数据
     cypher_total = "match (n:Person)-[r:Write]->(m:Publication)  where n.name in " + str(person_list) + \
@@ -101,7 +101,7 @@ def query_one_pub_by_uuid(pub_id):
     """
 
     # 初始化Neo4j数据库连接,及查询结果
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
 
     # 查询是否存在数据
     cypher = "match (m:Publication {uuid:'" + pub_id + "'}) <-[r:Write]- (n:Person) return m, n"
@@ -299,7 +299,7 @@ def query_by_multiple_field(database_info, node_info, node_type, parameter=None)
             paging = " skip " + str((page-1)*limit) + " limit " + str(limit)
     cypher = "match ({IF}:{NODE_TYPE}) ".format(IF=identifier, NODE_TYPE=node_type) + cond + " return " + identifier + " " + paging
     # 查询数据库
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(user_name, pwd))  # 初始化Neo4j数据库连接,及查询结果
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(user_name, pwd))  # 初始化Neo4j数据库连接,及查询结果
     with driver.session() as session:
         try:
             records = session.run(cypher)
@@ -362,7 +362,7 @@ def query_by_multiple_field_count(database_info, node_info, node_type, parameter
     cypher = "match ({IF}:{NODE_TYPE}) ".format(IF=identifier, NODE_TYPE=node_type) + cond + " return count({IF})".format(IF=identifier)
 
     # 查询数据库
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(user_name, pwd))  # 初始化Neo4j数据库连接,及查询结果
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(user_name, pwd))  # 初始化Neo4j数据库连接,及查询结果
     with driver.session() as session:
         try:
             records = session.run(cypher)
@@ -454,7 +454,7 @@ def query_vis_data():
     person_list = [item.upper() for item in person_list]
 
     # 初始化Neo4j数据库连接,及查询结果
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
 
     # 查询是否存在数据
     cypher_total = "match (n:Person)-[r:Write]->(m:Publication)  where n.name in " + str(person_list) + \

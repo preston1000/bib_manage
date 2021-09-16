@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.urls import path
 import pages.views as views
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='home'),
@@ -55,4 +56,10 @@ urlpatterns = [
     path('getCoordinates/', views.resolve_coordinates, name="resolve_coordinates"),
     path('parseExcelStations/', views.parse_excel_stations, name="parse_excel_stations"),
     # path('manage/match-pub', views.manage_match_pub, name="manage-match-pub")
+
+    # 意图理解相关网址
+    path('deprel/', views.deprel, name="deprel"),
+    path('deprel/save-result/', views.save_deprel_result, name="deprel-result"),
+    path('deprel/resolve-deprel/', views.resolve_deprel, name="resolve-deprel"),
+
 ]

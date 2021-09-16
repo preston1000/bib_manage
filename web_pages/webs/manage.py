@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import os
 import sys
-sys.path.append("/Volumes/Transcend/web")
-import  utils
+# sys.path.append("/Volumes/Transcend/web")
+import utils
 
 if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "webs.settings")

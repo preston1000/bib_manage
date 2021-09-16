@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--<head>-->
+    <!--{% load static %}-->
+    <!--<meta charset="UTF-8">-->
+    <!--<title>Title</title>-->
+    <!--<link src="{% static 'bootstrap-4.1.1-vis/css/bootstrap.css' %}">-->
+    <!--<script src="{% static 'bootstrap-4.1.1-vis/js/bootstrap.js' %}"></script>-->
+<!--</head>-->
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    {% load static %}
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{% static 'images/favicon.ico'%}">
+
+    <title>向明学术</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.bootcss.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+
+    <![endif]-->
+    <script src="{% static 'layui2/layui.js'%}" charset="utf-8"></script>
+    <script src="{% static 'js/tu_deprel.js'%}"></script>
+    <!-- Custom styles for this template -->
+    <link href="{% static 'bootstrap-4.1.1-dist/css/carousel.css'%}" rel="stylesheet">
+
+    <link href="{% static 'layui2/css/layui.css'%}" rel="stylesheet">
+
+    <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="{% static 'bootstrap-4.1.1-dist/js/vendor/holder.min.js'%}"></script>
+    <script src="{% static 'bootstrap-4.1.1-dist/js/ie10-viewport-bug-workaround.js'%}"></script>
+<!--    latex支持-->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500" preserveAspectRatio="none" style="display: none; visibility: hidden; position: absolute; top: -100%; left: -100%;"><defs><style type="text/css"></style></defs><text x="0" y="25" style="font-weight:bold;font-size:25pt;font-family:Arial, Helvetica, Open Sans, sans-serif">500x500</text></svg>
+  </head>
+
+<body class="layui-layout-body">
+
+    <div class="layui-layout layui-layout-admin">
+<!--        导航栏-->
+        <div class="layui-header" style="background-color:white;color:#3a3737;">
+            <div class="layui-logo"><img src="{% static 'images/zhejianglab_logo.PNG'%}" width="150px;"></div>
+<!--            头部区域-->
+            <ul class="layui-nav layui-layout-left">
+                <li id="deprel_page" class="layui-nav-item layui-this"><a href="http://127.0.0.1:53210/deprel/" style="color:#000000">依存分析</a></li>
+<!--                <li id="about-top" class="layui-nav-item"><a href="javascript:void(0);">关于</a></li>-->
+<!--                <li id="contact-us" class="layui-nav-item"><a href="javascript:void(0);">联系我们</a></li>-->
+            </ul>
+<!--            <ul class="layui-nav layui-layout-right">-->
+<!--&lt;!&ndash;                <li id="shopping-cart" class="layui-nav-item">&ndash;&gt;-->
+<!--&lt;!&ndash;                    <a href="" class="layui-icon layui-icon-cart" style="font-size:40px;">&ndash;&gt;-->
+<!--&lt;!&ndash;                        <span class="layui-badge">1</span>&ndash;&gt;-->
+<!--&lt;!&ndash;                    </a>&ndash;&gt;-->
+<!--&lt;!&ndash;                </li>&ndash;&gt;-->
+<!--                <li id="manage" class="layui-nav-item" style="visibility:hidden;"><a href="/manage/">管理</a></li>-->
+<!--                <li id="logout" class="layui-nav-item" style="visibility:hidden;"><a href="javascript:void(0);">退出</a></li>-->
+<!--&lt;!&ndash;                <li id="log-in" class="layui-nav-item" style="display:auto;"><a href="javascript:void(0);">登陆/注册</a></li>&ndash;&gt;-->
+<!--&lt;!&ndash;                <li id="manage" class="layui-nav-item" style="display:none;"><a href="javascript:void(0);">管理</a></li>&ndash;&gt;-->
+<!--&lt;!&ndash;                <li id="logout" class="layui-nav-item" style="display:none;"><a href="javascript:void(0);">退出</a></li>&ndash;&gt;-->
+<!--                <li id="log-in" class="layui-nav-item" style="display:auto;"><a href="javascript:void(0);">登陆/注册</a></li>-->
+<!--            </ul>-->
+        </div>
+<!--    展示部分-->
+        <div class="layui-body" style="left:0;">
+            <div style="height:auto;">
+                <br><br><br><br>
+            </div>
+<!--        语句表单-->
+            <form id="sentence_input"  class="layui-form">
+
+                <!--输入语句-->
+                <div class="layui-form-item" id="sentence" style="display:auto;">
+                    <label class="layui-form-label" style="width:100px">请输入语句</label>
+                    <div class="layui-input-block" style="width:400px">
+                        <input id="sentence-block" type="text" name="sentence" placeholder="请输入待分析的句子，按提交按钮开始解析" autocomplete="off" class="layui-input" lay-verify="sentence_check">
+                    </div>
+                </div>
+
+                <!--按钮建-->
+                <div class="layui-form-item" id="btn_sentence" style="display:auto;">
+                    <div class="layui-input-block" style="width:400px">
+                        <button class="layui-btn" lay-submit lay-filter="parse_sentence_btn">开始解析</button>
+                        <button id="reset_sentence"  class="layui-btn layui-btn-primary">重置</button>
+                    </div>
+                </div>
+            </form>
+
+<!--        结果显示/意见提交表单-->
+            <form id="show_parse_result"  class="layui-form" style="display:none;">
+
+                <!--分析结果-->
+                <div class="layui-form-item" id="keyword_adv" style="display:auto;">
+                    <label class="layui-form-label" style="width:100px">分析结果</label>
+                    <div class="layui-input-block" style="width:600px">
+                        <img id="image-block" src="" width="200" height="200" class="img-responsive" alt="Generic placeholder thumbnail"> <!-- value记录对应的文字, {% static 'images/deprel_image.png'%}-->
+                    </div>
+                </div>
+                <!--是否存在问题-->
+                <div class="layui-form-item" id="problem-block" style="display:auto;">
+                    <label class="layui-form-label" style="width:100px">有无问题</label>
+                    <div class="layui-input-inline" style="width:400px">
+                        <input id="problematic_1" type="radio" name="is_problematic" value="yes" title="是" lay-filter="radio-yes" style="display:auto;">
+                        <input id="problematic_2" type="radio" name="is_problematic" value="no" title="否" lay-filter="radio-no" checked style="display:auto;">
+                    </div>
+                </div>
+                <!--问题描述-->
+                <div class="layui-form-item" id="comment-block" style="display:none;">
+                    <label class="layui-form-label" style="width:100px">问题描述</label>
+                    <div class="layui-input-block" style="width:400px;display:auto;">
+                        <textarea id="comment-text" name="comments" disabled placeholder="请输入解析结果中存在的问题" autocomplete="off" class="layui-textarea"></textarea>
+                    </div>
+                </div>
+                <!--按钮建-->
+                <div class="layui-form-item" id="btn_adv" style="display:auto;">
+                    <div class="layui-input-block">
+                        <button id="submit-comment" class="layui-btn" lay-submit lay-filter="sub_comments">提交意见</button>
+                    </div>
+                </div>
+            </form>
+
+
+        </div>
+
+
+<!-- FOOTER -->
+      <div class="layui-footer">
+        <p class="pull-right"><a href="#">Back to top</a></p>
+        <p>© 2018 Research Group · <a href="#">Privacy</a> · <a href="#">Terms</a></p>
+      </div>
+    </div>
+
+<!--脚本-->
+    <script type="text/html" id="toolbarSearchResult">
+<!--        搜索结果页面中，表格上方工具栏-->
+        <div class="layui-btn-container">
+            <button class="layui-btn layui-btn-sm" lay-event="addCart">加入购物车</button>
+            <button class="layui-btn layui-btn-sm" lay-event="exportBibs" onmouseover="showBibTips(this)" id="exportBibs">Export bibs</button>
+        </div>
+    </script>
+    <script type="text/html" id="bar_search_result">
+<!--        搜索结果表格每项操作按钮-->
+        <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="details">Details</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="Bib">Bib</a>
+        <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="View">View</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="Archive">Archive</a>
+    </script>
+<!--样式-->
+    <style>
+        .box_pic{
+<!--        居中显示-->
+            margin: auto;
+            display: table;
+        }
+<!--        数据表格单元格样式-->
+        .layui-table-cell{
+            height:auto!important;
+            line-height:auto!important;
+
+            overflow:visible;
+            text-overflow:inherit;
+            word-break: break-all;
+            white-space:normal;
+        }
+    </style>
+    <style>
+        /* 下拉多选样式 需要引用*/
+        select[multiple]+.layui-form-select>.layui-select-title>input.layui-input{ border-bottom: 0}
+        select[multiple]+.layui-form-select dd{ padding:0;}
+        select[multiple]+.layui-form-select .layui-form-checkbox[lay-skin=primary]{ margin:0 !important; display:block; line-height:36px !important; position:relative; padding-left:26px;}
+        select[multiple]+.layui-form-select .layui-form-checkbox[lay-skin=primary] span{line-height:36px !important; float:none;}
+        select[multiple]+.layui-form-select .layui-form-checkbox[lay-skin=primary] i{ position:absolute; left:10px; top:0; margin-top:9px;}
+        .multiSelect{ line-height:normal; height:auto; padding:4px 10px; overflow:hidden;min-height:38px; margin-top:-38px; left:0; z-index:99;position:relative;background:none;}
+        .multiSelect a{ padding:2px 5px; background:#908e8e; border-radius:2px; color:#fff; display:block; line-height:20px; height:20px; margin:2px 5px 2px 0; float:left;}
+        .multiSelect a span{ float:left;}
+        .multiSelect a i {float:left;display:block;margin:2px 0 0 2px;border-radius:2px;width:8px;height:8px;padding:4px;position:relative;-webkit-transition:all .3s;transition:all .3s}
+        .multiSelect a i:before, .multiSelect a i:after {position:absolute;left:8px;top:2px;content:'';height:12px;width:1px;background-color:#fff}
+        .multiSelect a i:before {-webkit-transform:rotate(45deg);transform:rotate(45deg)}
+        .multiSelect a i:after {-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}
+        .multiSelect a i:hover{ background-color:#545556;}
+
+        /* 下面是页面内样式，无需引用 */
+        .layui-block {
+            margin-bottom: 10px;
+        }
+
+        .layui-form-label {
+            width: 180px;
+        }
+        .code {
+            color: gray;
+            margin-left: 10px;
+        }
+        .unshow>#result {
+            display: none;
+        }
+        pre { padding: 5px; margin: 5px; }
+        .string { color: green; }
+        .number { color: darkorange; }
+        .boolean { color: blue; }
+        .null { color: magenta; }
+        .key { color: red; }
+    </style>
+</body>
+</html>

@@ -45,7 +45,7 @@ def create_or_match_publications(data_source='bibtex.bib', mode=1, is_list=False
     if bib_data is None or bib_data == []:
         print('No valid bibliography in the database')
         return -1
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
     with driver.session() as session:
         flag = 1
         for entry in bib_data:
@@ -90,7 +90,7 @@ def create_or_match_venues(data_source, mode=1):
         result["code"] = -3
         result["msg"] = "mode值错误"
         return result
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
     with driver.session() as session:
         flag = 1
         mappings = {}  # name 和uuid的mapping
@@ -149,7 +149,7 @@ def create_or_match_persons(data_source, mode=1):
         result["code"] = -3
         result["msg"] = "mode值错误"
         return result
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
     with driver.session() as session:
         flag = 1
         mappings = {}  # name 和uuid的mapping
@@ -204,7 +204,7 @@ def build_network_of_venues(source_node_type="Publication", node_type="ARTICLE",
     # 查询指定venue_type字段的source_node_type
     cypher = "match (node:{NODE}) where node.node_type='{TYPE}' return node".format(NODE=source_node_type,
                                                                                     TYPE=node_type)
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
     with driver.session() as session:
         nodes = session.run(cypher)
         data = {}  # key: source_node_type的uuid， value：venue的name
@@ -247,7 +247,7 @@ def build_network_of_venues(source_node_type="Publication", node_type="ARTICLE",
         result["code"] = -6
         result["msg"] = create_result["msg"] + "\n 停止创建关系"
         return result
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
     with driver.session() as session:
         for source_id, target_name in data.items():
             processed_name = name_mappings.get(target_name, None)
@@ -295,7 +295,7 @@ def revise_publications(data):
     if data is None or data == []:
         print('No valid bibliography in the database')
         return -1
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
     with driver.session() as session:
         node = extract_publication(data)  # 提取文献信息，构造节点
         if node is None or isinstance(node, int):
@@ -316,7 +316,7 @@ def revise_persons(data):
     if data is None or data == []:
         print('No valid person info is given')
         return -1
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
     with driver.session() as session:
         node = extract_person(data)  # 提取文献信息，构造节点
         if node is None or isinstance(node, int):
@@ -337,7 +337,7 @@ def revise_venues(data):
     if data is None or data == []:
         print('No valid venue info is given')
         return -1
-    driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
     with driver.session() as session:
         node = extract_venue(data)  # 提取文献信息，构造节点
         if node is None or isinstance(node, int):
@@ -869,7 +869,7 @@ def query_or_create_relation(tx, source_type, source_id, target_type, target_id,
         message["msg"] = "输入参数不完整"
         return None
     if tx is None:
-        driver = GraphDatabase.driver(uri, auth=neo4j.v1.basic_auth(username, pwd))
+        driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
         tx = driver.session()
     cypher = "MATCH (s:{source}) -[r:{rel}]-> (t:{target}) where s.uuid='{IDs}' and t.uuid='{IDt}'  " \
              "return s, r, t" .format(source=source_type, target=target_type, IDs=source_id,
