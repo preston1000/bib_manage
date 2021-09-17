@@ -1,0 +1,18 @@
+d48bd9a0-14aa-11ec-b9c5-1e00e20a3f26	2021-09-13 15:54:08		../static/images/deprel_result/xixiangming.jpg				no	
+969ccf86-14ab-11ec-b9c5-1e00e20a3f26	2021-09-13 15:59:34		../static/images/deprel_result/deprel_image.png				yes	嘻嘻嘻
+a3b609da-14ab-11ec-b9c5-1e00e20a3f26	2021-09-13 15:59:56		../static/images/deprel_result/logo_hit.jpg				yes	再制造
+4691f326-14ac-11ec-a771-1e00e20a3f26	2021-09-13 16:04:29	a,b	../static/images/deprel_result/cpwl_1D.png				yes	xxxx
+9945d0c4-14ac-11ec-8fde-1e00e20a3f26	2021-09-13 16:06:48	xxx	../static/images/deprel_result/cpwl_1D.png	['ss', 'cc']	['a', 'b']	['c', 'v']	yes	ccccc
+7e11833c-14ae-11ec-8fde-1e00e20a3f26	2021-09-13 16:20:21	xxx	../static/images/deprel_result/logo_hit.jpg	['ss', 'cc']	['a', 'b']	['c', 'v']	yes	js
+c08db17c-14ae-11ec-8fde-1e00e20a3f26	2021-09-13 16:22:12	xx	../static/images/deprel_result/deprel_image.png	['ss', 'cc']	['a', 'b']	['c', 'v']	yes	xxx
+4ef0e7f4-14af-11ec-8fde-1e00e20a3f26	2021-09-13 16:26:11	硕士	../static/images/deprel_result/logo_hit.jpg	['ss', 'cc']	['a', 'b']	['c', 'v']	no	
+5d8d0e78-14af-11ec-8fde-1e00e20a3f26	2021-09-13 16:26:36	小魔仙	../static/images/deprel_result/cpwl_1D.png	['ss', 'cc']	['a', 'b']	['c', 'v']	no	
+a4f14932-14af-11ec-80d2-1e00e20a3f26	2021-09-13 16:28:36	xx	../static/images/deprel_result/xixiangming.jpg	['ss', 'cc']	['a', 'b']	['c', 'v']	no	
+b121d8ca-14af-11ec-80d2-1e00e20a3f26	2021-09-13 16:28:56	xxx	../static/images/deprel_result/cpwl_1D.png	['ss', 'cc']	['a', 'b']	['c', 'v']	no	
+de9bb92e-14af-11ec-b71f-1e00e20a3f26	2021-09-13 16:30:12	xxvv	../static/images/deprel_result/deprel_image.png	['ss', 'cc']	['a', 'b']	['c', 'v']	no	
+13d943da-14f8-11ec-9d51-d45d64485fca	2021-09-14 09:07:05	gg	../static/images/deprel_result/xixiangming.jpg	['ss', 'cc']	['a', 'b']	['c', 'v']	yes	ff
+4271e05a-1606-11ec-9459-d45d64485fca	2021-09-15 17:21:08	带周元海参观双足机器人	../static/images/cache/带周元海参观双足机器人_2021-09-15_17-21-01.png	['带', '周元海', '参观', '双足机器人']	['HED', 'DBL', 'DBL', 'VOB']	['Root', '带', '带', '参观']	no	
+55a1aa3a-1606-11ec-94f8-d45d64485fca	2021-09-15 17:21:40	带周元海参观导览机器人	../static/images/cache/带周元海参观导览机器人_2021-09-15_17-21-28.png	['带', '周元海', '参观', '导览机器人']	['HED', 'DBL', 'DBL', 'VOB']	['Root', '带', '带', '参观']	no	
+5a7780af-1606-11ec-b8c0-d45d64485fca	2021-09-15 17:21:48	带周元海参观导览机器人	../static/images/cache/带周元海参观导览机器人_2021-09-15_17-21-28.png	['带', '周元海', '参观', '导览机器人']	['HED', 'DBL', 'DBL', 'VOB']	['Root', '带', '带', '参观']	no	
+76e8e8dc-1606-11ec-8cde-d45d64485fca	2021-09-15 17:22:36	带金天磊参观导览机器人	../static/images/cache/带金天磊参观导览机器人_2021-09-15_17-21-51.png	['带', '金天磊', '参观', '导览机器人']	['HED', 'VOB', 'ATT', 'VOB']	['Root', '带', '导览机器人', '带']	yes	参观和金天磊应为带的兼语，导览机器人英文参观的宾语
+30763817-168d-11ec-907d-d45d64485fca	2021-09-16 09:27:00	带周元海到展厅门口	../static/images/cache/带周元海到展厅门口_2021-09-16_09-26-48.png	['带', '周元海', '到', '展厅', '门口']	['HED', 'VOB', 'VV', 'ATT', 'VOB']	['Root', '带', '带', '门口', '到']	no	

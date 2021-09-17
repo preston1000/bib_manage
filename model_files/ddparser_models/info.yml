@@ -1,0 +1,6 @@
+name: DDParser
+type: NLP/DDParser
+author: ddparser_models-nlp
+author_email: nlp@ddparser_models.com
+version: 1.0.6
+description: Baidu's open-source DDParser model based on ernie-lstm.

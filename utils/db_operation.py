@@ -1,5 +1,5 @@
-from neo4j.v1 import GraphDatabase
-import neo4j.v1
+from neo4j import GraphDatabase
+import neo4j
 import uuid
 import os
 import time
@@ -16,8 +16,8 @@ from configparser import ConfigParser
 这里是读取neo4j的配置
 """
 cf = ConfigParser()
-cf.read("/Volumes/Transcend/web/web_pages/webs/neo4j.conf", encoding="utf-8")
-# cf.read("./neo4j.conf", encoding="utf-8")
+# cf.read("/Volumes/Transcend/web/web_pages/webs/neo4j.conf", encoding="utf-8")
+cf.read("./neo4j.conf", encoding="utf-8")
 # cf.read("E:\\projects\\web_pages\\webs/neo4j.conf", encoding="utf-8")
 
 uri = cf.get("neo4j", "uri")
