@@ -18,7 +18,7 @@
     <meta name="author" content="">
     <link rel="icon" href="{% static 'images/favicon.ico'%}">
 
-    <title>向明学术</title>
+    <title>意图理解</title>
 
     <!-- Bootstrap core CSS -->
     <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
@@ -55,7 +55,7 @@
 <!--            头部区域-->
             <ul class="layui-nav layui-layout-left">
                 <li id="deprel_page" class="layui-nav-item layui-this"><a href="http://127.0.0.1:53210/deprel/" style="color:#000000">依存分析</a></li>
-<!--                <li id="about-top" class="layui-nav-item"><a href="javascript:void(0);">关于</a></li>-->
+                <li id="about-top" class="layui-nav-item"><a href="javascript:void(0);">指令分类</a></li>
 <!--                <li id="contact-us" class="layui-nav-item"><a href="javascript:void(0);">联系我们</a></li>-->
             </ul>
 <!--            <ul class="layui-nav layui-layout-right">-->
@@ -126,6 +126,14 @@
                 <div class="layui-form-item" id="btn_adv" style="display:auto;">
                     <div class="layui-input-block">
                         <button id="submit-comment" class="layui-btn" lay-submit lay-filter="sub_comments">提交意见</button>
+                    </div>
+                </div>
+                <HR size=3>
+                <!--符号说明style="width:600px"-->
+                <div class="layui-form-item" id="legend" style="display:auto;">
+                    <label class="layui-form-label" style="width:100px">标签说明</label>
+                    <div class="layui-input-block">
+                        <img id="image-legend" src="{% static 'images/deprel_legend.png'%}" width="500" height="200" class="img-responsive" alt="Generic placeholder thumbnail">
                     </div>
                 </div>
             </form>

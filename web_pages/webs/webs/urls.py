@@ -58,8 +58,9 @@ urlpatterns = [
     # path('manage/match-pub', views.manage_match_pub, name="manage-match-pub")
 
     # 意图理解相关网址
-    path('deprel/', views.deprel, name="deprel"),
-    path('deprel/save-result/', views.save_deprel_result, name="deprel-result"),
-    path('deprel/resolve-deprel/', views.resolve_deprel, name="resolve-deprel"),
+    path('deprel/', views.deprel, name="deprel"),  # 依存分析网页界面
+    path('deprel/save-result/', views.save_deprel_result, name="deprel-result"),  # 保存评论结果
+    path('deprel/resolve-deprel/', views.resolve_deprel, name="resolve-deprel"),  # 解析句子依存关系的接口
+    path('tu/', views.command_resolve, name="resolve-command"),  # 解析任务型指令
 
 ]

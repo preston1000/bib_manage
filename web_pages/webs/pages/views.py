@@ -1,17 +1,19 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+import requests
+
 import json
 from json import JSONDecodeError
-import sys
-from configparser import ConfigParser
-import datetime
 import os
+import sys
+import datetime
+from configparser import ConfigParser
 from pathlib import Path
 
 import utils.util_text_operation
+from utils.nlp.utils import dd_parser_caller
 from utils.tmp_db import create_or_match_nodes_dict
 
-import numpy as np
 import uuid
 
 import xlrd
@@ -19,23 +21,14 @@ from xlrd import XLRDError
 
 from utils import query_data, db_operation
 
-from utils.ddparser import DDParser
-from LAC import LAC
+from utils.task_understanding.command_resolver import resolve, ini_result
+from model_files.NLP.config import PLANNING_URL
 
 from graphviz import Digraph
 os.environ["PATH"] += os.pathsep + 'D:\\Graphviz\\bin'
 
 basedir = Path(__file__).parent.parent.parent.parent  # 项目根目录
 current_dir = Path(__file__).parent
-"""
-分词/依存关系配置
-"""
-lac_dict_path = basedir.joinpath('model_files/LAC_dict/tokenize_dict_lac.txt')
-dd_parser_model_path = basedir.joinpath('model_files/ddparser_models')
-lac = LAC()
-lac.load_customization(lac_dict_path)
-ddp = DDParser(use_cuda=False, tree=True, prob=False, use_pos=False, model_files_path=dd_parser_model_path, buckets=False,
-               batch_size=None, encoding_model="ernie-lstm")
 
 """
 日志配置
@@ -154,7 +147,8 @@ def search_publication_new(request):
     result = {"msg": "", "code": 0, "data": "", "count": 0}
     if request.method == 'POST':
         # 解析传递参数，高级搜索的条件
-        if request.is_ajax():
+        is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+        if is_ajax:
             the_paras = request.body
             if the_paras is None:
                 result["msg"] = "no data is given"
@@ -209,7 +203,7 @@ def search_publication_new(request):
             # pub.pop("pages2")
             count += 1
             pubs.append(pub)
-        if request.is_ajax():
+        if is_ajax:
             result["msg"] = "done"
             result["count"] = len(pubs)  # todo 检查是否正确？
             result["code"] = query_result["code"]
@@ -232,7 +226,8 @@ def search_publication_count(request):
     :param request:
     :return:
     """
-    if request.is_ajax() and request.method == 'POST':
+    is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+    if is_ajax and request.method == 'POST':
         pub_info = request.body
         if pub_info is None or pub_info == "":
             return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
@@ -297,7 +292,6 @@ def show_pdf(request):
 
 
 def manage(request):
-
     return render(request, 'manage.html')
 
 # 以上是新网页
@@ -319,8 +313,8 @@ def save_deprel_result(request):
     result = {'code': None, 'msg': ''}
 
     data = request.body
-
-    if request.is_ajax() and request.method == 'POST':
+    is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+    if is_ajax and request.method == 'POST':
 
         try:
             data = bytes.decode(data)
@@ -370,7 +364,8 @@ def resolve_deprel(request):
     :return:
     """
     result = {'code': None, 'msg': '', 'data': None}
-    if request.is_ajax() and request.method == 'POST':
+    is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+    if is_ajax and request.method == 'POST':
         data = request.body  #
         if data is None or data == "":
             result['code'] = -301
@@ -419,28 +414,84 @@ def resolve_deprel(request):
     return HttpResponse(json.dumps(result))
 
 
-def dd_parser_caller(sentence):
+def command_resolve(request):
     """
-    获取给定句子的依存关系
-    :param sentence: str
-    :return: tokens (list of str), head (list of str, words), deprel (list of str)
+    基本功能，按照模板匹配的方式处理指令，为进行grounding
+    :return:
     """
-    lac_result = lac.run(sentence)
-    dep_result = ddp.parse_seg(lac_result)
+    request_method = request.method
+    result = ini_result()
+    if request_method != 'GET':
+        result["code"] = 800
+        result["message"] = "request method should be get"
+        return HttpResponse(json.dumps(result))
 
-    tokens = dep_result[0].get("word", None)
-    head_integer = dep_result[0].get("head", None)
-    dep_rel = dep_result[0].get("deprel", None)
+    command = request.GET.get("command", None)
+    session_id = request.GET.get("sessionId", '')
+    robot_id = request.GET.get("robotId", '')
 
-    head = []
+    if not command or not session_id or not robot_id:
+        result["code"] = 801
+        result["message"] = "No command found"
+        return HttpResponse(json.dumps(result))
 
-    for i in range(len(tokens)):
-        if head_integer[i] == 0:
-            head.append("Root")
-        else:
-            head.append(tokens[head_integer[i]-1])
+    result = resolve(command)
+    if not result["success"]:
+        result["code"] = 802
+        result["message"] = "failed to resolve"
+        return HttpResponse(json.dumps(result))
 
-    return tokens, head, dep_rel
+    task = result.get("task", None)
+    if task is None:
+        result["code"] = 803
+        result["message"] = "success without task information"
+        return HttpResponse(json.dumps(result))
+
+    task["sessionId"] = session_id
+    task["robotId"] = robot_id
+
+    # ret = requests.post(PLANNING_URL, json=task).text
+    ret = '{"code": 200}'
+    try:
+        ret_content = json.loads(ret)
+        reason_code = ret_content.get("code", 0)
+    except JSONDecodeError or TypeError:
+        result["code"] = 805
+        result["message"] = "success but failed to send to reasoning module"
+        return HttpResponse(json.dumps(result))
+
+    if reason_code != 200:
+        result["code"] = 806
+        result["message"] = "success but reasoning failed"
+        return HttpResponse(json.dumps(result))
+
+    result["code"] = 100
+    result["message"] = "success"
+
+    print_log(request, result)
+
+    return HttpResponse(json.dumps(result))
+
+
+def print_log(request, response):
+    ip_address = request.META.get('REMOTE_ADDR', "")
+    api_method = request.method
+    api_path = request.full_path
+
+    request_data = request.GET.get("command", "")
+
+    with open(log_dir.joinpath('tu_service_log.log'), 'a+', encoding="utf-8") as f:
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        f.write(current_time + " " + ip_address + " " + api_method + " " + api_path + '->' + request_data + '->' +
+                str(response) + '\n')
+
+    # # 记录慢查询日志，在日志处理器函数中会将其写入到文件中
+    # for query in get_debug_queries():
+    #     if query.duration >= app.config['FLASK_SLOW_DB_QUERY_TIME']:
+    #         app.logger.warning(
+    #             'Slow query: %s\n Parameters: %s\n Duration: %fs\n Context: %s'
+    #             % (query.statement, query.parameters, query.duration, query.context))
+    # pass
 
 # 以上是意图理解相关网页
 ######################################################################################
@@ -453,8 +504,10 @@ def add_publication(request):
     :return:
     """
     result = {"msg": "", "code": 0, "data": "", "count": 0}
+
     if request.method == 'POST':
-        if request.is_ajax():
+        is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+        if is_ajax:
             pub_info = request.body
             if pub_info is None:
                 result["msg"] = "no data is given"
@@ -626,7 +679,8 @@ def add_person(request):
     :param request:
     :return: {"msg": "", "status": 0}, 0:缺少参数；-1：参数格式错误;-10:请求方式错误，-2~-5见create_or_match_persons方法
     """
-    if request.is_ajax() and request.method == 'POST':
+    is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+    if is_ajax and request.method == 'POST':
         node_info = request.body  # 处理后是dict，直接传到后台写入数据库就可以了
         if node_info is None or node_info == "":
             return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
@@ -651,7 +705,8 @@ def add_venue(request):
     :param request:
     :return: {"msg": "", "status": 0}, 0:缺少参数；-1：参数格式错误;-10:请求方式错误，-2~-5见create_or_match_persons方法
     """
-    if request.is_ajax() and request.method == 'POST':
+    is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+    if is_ajax and request.method == 'POST':
         node_info = request.body  # 处理后是dict，直接传到后台写入数据库就可以了
         if node_info is None or node_info == "":
             return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
@@ -676,7 +731,8 @@ def add_relation(request):
     :param request:
     :return: {"msg": "", "status": 0}, 0:缺少参数；-1：参数格式错误;-10:请求方式错误，-2~-5见create_or_match_persons方法
     """
-    if request.is_ajax() and request.method == 'POST':
+    is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+    if is_ajax and request.method == 'POST':
         node_info = request.body  # 处理后是dict，直接传到后台写入数据库就可以了
         if node_info is None or node_info == "":
             return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
@@ -706,7 +762,8 @@ def revise_publication(request):
     :param request:
     :return:
     """
-    if request.is_ajax() and request.method == 'POST':
+    is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+    if is_ajax and request.method == 'POST':
         pub_info = request.body
         if pub_info is None or pub_info == "":
             return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
@@ -779,7 +836,8 @@ def revise_person(request):
     :param request:
     :return:{"msg": "no data is given", "status": 0} 0:无参数,-1:参数格式错误,
     """
-    if request.is_ajax() and request.method == 'POST':
+    is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+    if is_ajax and request.method == 'POST':
         node_info = request.body
         if node_info is None or node_info == "":
             return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
@@ -804,7 +862,8 @@ def revise_venue(request):
     :param request:
     :return:{"msg": "no data is given", "status": 0} 0:无参数,-1:参数格式错误,
     """
-    if request.is_ajax() and request.method == 'POST':
+    is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+    if is_ajax and request.method == 'POST':
         node_info = request.body
         if node_info is None or node_info == "":
             return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
@@ -909,7 +968,8 @@ def search_venue(request):
     :return:
     """
     if request.method == 'POST':
-        if request.is_ajax():
+        is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+        if is_ajax:
             the_paras = request.body
             if the_paras is None:
                 return HttpResponse(json.dumps({"msg": "no data is given", "code": 0, "data": "", "count": 0}))
@@ -960,7 +1020,8 @@ def verify_auth(request):
         :return:
         """
     user_list = {"user": "123456"}
-    if request.is_ajax() and request.method == 'GET':
+    is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+    if is_ajax and request.method == 'GET':
         user = request.GET.get("username", None)
         password = request.GET.get("pwd", None)
         if user is None or password is None:
@@ -979,7 +1040,8 @@ def verify_auth(request):
 
 
 def get_pib_info_for_edit(request):
-    if request.is_ajax() and request.method == 'GET':
+    is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+    if is_ajax and request.method == 'GET':
         the_uuid = request.GET.get("id", None)
         if the_uuid is None:
             return HttpResponse(json.dumps({"msg": "no valid publication id is provided.", "status": -1}))
