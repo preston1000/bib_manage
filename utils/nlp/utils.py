@@ -41,3 +41,29 @@ def dd_parser_caller(sentence):
             head.append(tokens[head_integer[i]-1])
 
     return tokens, head, dep_rel, pos_tag
+
+
+def get_modifier_as_children_att(word, words, head, dep_rel):
+    """
+    识别一个词之前的定语，如一杯水、一号展厅门口。暂时只能识别定语词，无法识别从句
+    :param word:
+    :param words:
+    :param head:
+    :param dep_rel:
+    :return:
+    """
+    modifier = ""
+    father = word
+    while True:
+        att = [ii for ii, tmp_head in enumerate(head) if tmp_head == father and dep_rel[ii] == "ATT"]
+        if att:
+            if len(att) > 1:
+                print('more than one child in <get_modifier_as_children_att>')
+            modifier = words[att[0]] + modifier
+        else:
+            break
+        father = words[att[0]]
+
+    if modifier == "":
+        modifier = None
+    return modifier

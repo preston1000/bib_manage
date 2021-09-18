@@ -17,7 +17,7 @@ import requests
 import json
 from json import JSONDecodeError
 
-from utils.nlp.utils import dd_parser_caller
+from utils.nlp.utils import dd_parser_caller, get_modifier_as_children_att
 from model_files.NLP.task_list import WORDS, POSSIBILITY, SYNONYMS_INVERSE
 from model_files.NLP.config import QUERY_URL, QUERY_EXHIBITION_BY_NAME, PARAMETER_DELIMITER, PARAMETER_KEY_VALUE_DELIMITER
 """
@@ -167,7 +167,7 @@ def find_task_element(task_type, selected_verb, words, head, dep_rel, pos_tag):
 
     if task_type == "导览":  # 目的地，被带领人
         try:
-            plc = [ii for ii, tmp_head in enumerate(head) if tmp_head == selected_verb and dep_rel[ii] == "VOB" and pos_tag[ii] in ['n', 'LOC']]  # find index of destination
+            plc = [ii for ii, tmp_head in enumerate(head) if tmp_head == selected_verb and dep_rel[ii] == "VOB" and pos_tag[ii] in ['n', 'LOC', 's']]  # find index of destination(children of verb which satisfy given condition)
             if plc:
                 elements[ELE_CONTENT] = "destination=" + words[plc[0]]
                 if len(plc) > 1:
@@ -186,218 +186,157 @@ def find_task_element(task_type, selected_verb, words, head, dep_rel, pos_tag):
                 elements[ELE_OBJ] = words[sibling[0]]
                 if len(plc) > 1:
                     print("multiple person")
-
-            elements[ELE_SUB] = "导览机器人"
-            elements[ELE_PLACE] = "展厅"
         except ValueError or IndexError:
-            print("failed to resolve task element for task 导览")
+            print("failed to resolve task element for task '导览'")
             return None
-    elif task_type == '欢迎':
+    elif task_type == '欢迎':  # todo revise
         try:
-            verb_index = words.index(selected_verb)
-            children = [ii for ii in range(len(words)) if head[ii] == (verb_index + 1)]
-            ppl = [ii for ii in children if dep_rel[ii] == "VOB"]
+            # find index of destination(children of verb which satisfy given condition)
+            ppl = [ii for ii, tmp_head in enumerate(head) if
+                   tmp_head == selected_verb and dep_rel[ii] == "VOB" and pos_tag[ii] in ['n', 'PER']]
             if ppl:
                 elements[ELE_OBJ] = words[ppl[0]]
 
-            elements[ELE_SUB] = "导览机器人"
-            elements[ELE_PLACE] = "展厅"
         except ValueError:
             return None
     elif task_type == "讲解":  # 内容，听众
         try:
-            verb_index = words.index(selected_verb)
-            children = [ii for ii in range(len(words)) if head[ii] == (verb_index + 1)]
-            plc = [ii for ii in children if dep_rel[ii] == "VOB"]
+
+            # find index of destination(children of verb which satisfy given condition)
+            plc = [ii for ii, tmp_head in enumerate(head) if
+                   tmp_head == selected_verb and dep_rel[ii] == "VOB" and pos_tag[ii] in ['n', 'LOC', 's']]
             if plc:
                 elements[ELE_CONTENT] = "destination=" + words[plc[0]]
 
-            adv = [ii for ii in children if dep_rel[ii] == "ADV"]
+            # find index of adverbs (children of verb which satisfy given condition)
+            adv = [ii for ii, tmp_head in enumerate(head) if
+                   tmp_head == selected_verb and dep_rel[ii] == "ADV"]
+
             if adv:
-                children = [ii for ii in range(len(words)) if head[ii] == (adv[0] + 1)]
-                ppl = [ii for ii in children if dep_rel[ii] == "POB"]
+                # find index of person (children of verb which satisfy given condition)
+                ppl = [ii for ii, tmp_head in enumerate(head) if
+                       tmp_head == words[adv[0]] and dep_rel[ii] == "POB" and pos_tag[ii] in ['n', 'PER', 'r']]
+
                 if ppl:
                     elements[ELE_OBJ] = words[ppl[0]]
-                else:
-                    cmp = [ii for ii in children if dep_rel[ii] == "CMP"]
-                    if cmp:
-                        children = [ii for ii in range(len(words)) if head[ii] == (cmp[0] + 1)]
-                        ppl = [ii for ii in children if dep_rel[ii] == "VOB"]
-                        if ppl:
-                            elements[ELE_OBJ] = words[ppl[0]]
+                # else: todo 这是什么情况来着
+                #     cmp = [ii for ii in children if dep_rel[ii] == "CMP"]
+                #     if cmp:
+                #         children = [ii for ii in range(len(words)) if head[ii] == (cmp[0] + 1)]
+                #         ppl = [ii for ii in children if dep_rel[ii] == "VOB"]
+                #         if ppl:
+                #             elements[ELE_OBJ] = words[ppl[0]]
 
-            elements[ELE_SUB] = "导览机器人"
-            elements[ELE_PLACE] = "展厅"
         except ValueError:
             print("error")
             return None
-    # elif task_type == "讲解":  # 内容，听众
-    #     try:
-    #         verb_index = sentence.index(selected_verb)
-    #         children = [ii for ii in range(len(sentence)) if head[ii] == (verb_index + 1)]
-    #         plc = [ii for ii in children if dep_rel[ii] == "VOB"]
-    #         if plc:
-    #             elements[ELE_CONTENT] = sentence[plc[0]]
-    #
-    #         adv = [ii for ii in children if dep_rel[ii] == "ADV"]
-    #         if adv:
-    #             children = [ii for ii in range(len(sentence)) if head[ii] == (adv[0] + 1)]
-    #             ppl = [ii for ii in children if dep_rel[ii] == "POB"]
-    #             if ppl:
-    #                 elements[ELE_OBJ] = sentence[ppl[0]]
-    #
-    #         elements[ELE_SUB] = "导览机器人"
-    #         elements[ELE_PLACE] = "展厅"
-    #     except ValueError:
-    #         print("error")
-    #         return None
     elif task_type == "递送":  # 物品，对象
         try:
-            verb_index = words.index(selected_verb)
-            children = [ii for ii in range(len(words)) if head[ii] == (verb_index + 1)]
-            plc1 = [ii for ii in children if dep_rel[ii] == "VOB"]
-            plc2 = [ii for ii in children if dep_rel[ii] == "DOB"]
+            # find index of candidate objects (children of verb which satisfy given condition)
+            objects_vob = [ii for ii, tmp_head in enumerate(head) if tmp_head == selected_verb and dep_rel[ii] == "VOB" and pos_tag[ii] in ['n']]
 
-            if plc1 and plc2:
+            # find index of candidate objects (children of verb which satisfy given condition)
+            objects_dob = [ii for ii, tmp_head in enumerate(head) if tmp_head == selected_verb and dep_rel[ii] == "DOB" and pos_tag[ii] in ['n']]
+
+            # find index of candidate objects (children of verb which satisfy given condition)
+            who_cmp = [ii for ii, tmp_head in enumerate(head) if tmp_head == selected_verb and dep_rel[ii] == "CMP"]
+
+            # find index of candidate objects (children of verb which satisfy given condition)
+            who_adv = [ii for ii, tmp_head in enumerate(head) if tmp_head == selected_verb and dep_rel[ii] == "ADV"]
+
+            # find index of candidate person (children of verb which satisfy given condition)
+            person_dob = [ii for ii, tmp_head in enumerate(head) if tmp_head == selected_verb and dep_rel[ii] == "DOB" and pos_tag[ii] in ['PER', 'r']]
+
+            # resolve objects
+            if objects_vob and objects_dob:
+                print('Strange pattern with both VOB and DOB for 讲解' + str(words))
+                return None
+            elif objects_vob and not objects_dob:  # with VOB, 给张春华拿一杯水
+                objects = objects_vob[0]  # todo multiple matching
+            elif not objects_vob and objects_dob:  # with DOB, 给我一瓶水
+                objects = objects_dob[0]  # todo multiple matching
+            else:
                 print('Strange pattern without VOB and DOB for 讲解' + str(words))
                 return None
-            elif plc1 and not plc2:
-                children = [ii for ii in range(len(words)) if head[ii] == (plc1[0] + 1)]
-                quantity = [ii for ii in children if dep_rel[ii] == "ATT"]
-                if quantity:
-                    elements[ELE_CONTENT] = "destination=" + words[quantity[0]] + words[plc1[0]]
-                else:
-                    elements[ELE_CONTENT] = "destination=" + words[plc1[0]]
 
-                children = [ii for ii in range(len(words)) if head[ii] == (verb_index + 1)]
-                cmp = [ii for ii in children if dep_rel[ii] == "CMP"]
-                adv = [ii for ii in children if dep_rel[ii] == "ADV"]
-                if cmp and not adv:
-                    children = [ii for ii in range(len(words)) if head[ii] == (cmp[0] + 1)]
-                    ppl = [ii for ii in children if dep_rel[ii] == "VOB"]
-                    if ppl:
-                        elements[ELE_OBJ] = words[ppl[0]]
-                elif cmp and adv:
-                    print('unknown pattern')
-                    return None
-                elif not cmp and adv:
-                    children = [ii for ii in range(len(words)) if head[ii] == (adv[0] + 1)]
-                    ppl = [ii for ii in children if dep_rel[ii] == "POB"]
-                    if ppl:
-                        elements[ELE_OBJ] = words[ppl[0]]
-                else:
-                    pass
-            elif not plc1 and plc2:
-                ppl = [ii for ii in children if pos_tag[ii] == "r" or pos_tag[ii] == "PER"]
-                if ppl:
-                    elements[ELE_OBJ] = words[ppl[0]]
-                obj = [ii for ii in children if pos_tag[ii] == "n"]
-                if obj:
-                    children = [ii for ii in range(len(words)) if head[ii] == (obj[0] + 1)]
-                    quantity = [ii for ii in children if dep_rel[ii] == "ATT"]
-                    if quantity:
-                        elements[ELE_CONTENT] = "destination=" + words[quantity[0]] + words[obj[0]]
-                    else:
-                        elements[ELE_CONTENT] = "destination=" + words[obj[0]]
+            quantity = get_modifier_as_children_att(words[objects], words, head, dep_rel)  # resolve quantity of objects
+            if quantity:
+                elements[ELE_CONTENT] = "destination=" + quantity + words[objects]
             else:
-                pass
+                elements[ELE_CONTENT] = "destination=" + words[objects]
 
-            elements[ELE_SUB] = "导览机器人"
-            elements[ELE_PLACE] = "展厅"
+            # resolve who to give the objects
+            if person_dob:  # 给我一杯水
+                ppl = person_dob
+            else:
+                if who_cmp and who_adv:
+                    print('Strange pattern with both CMP and ADV for 讲解' + str(words))
+                    return None
+                elif who_cmp and not who_adv:  # 拿给我一瓶水
+                    ppl = [ii for ii, tmp_head in enumerate(head) if tmp_head == words[who_cmp[0]] and dep_rel[ii] == "VOB" and pos_tag[ii] in ['n', 'PER', 'r']]
+                elif not who_cmp and who_adv:  # 给张春华那一瓶水
+                    ppl = [ii for ii, tmp_head in enumerate(head) if tmp_head == words[who_adv[0]] and dep_rel[ii] == "POB" and pos_tag[ii] in ['n', 'PER', 'r']]
+                else:
+                    print('Strange pattern without CMP and ADV for 讲解' + str(words))
+                    return None
+            if ppl:
+                elements[ELE_OBJ] = words[ppl[0]]
+
         except ValueError:
             print("error")
             return None
     elif task_type == "送别":  # 对象，目的地
         try:
-            verb_index = words.index(selected_verb)
-            children = [ii for ii in range(len(words)) if head[ii] == (verb_index + 1)]
-            pattern1 = [ii for ii in children if dep_rel[ii] == "DBL"]
-            pattern2 = [ii for ii in children if dep_rel[ii] == "VOB"]
-            if pattern1 and pattern2:
-                print('Strange pattern without VOB and DOB for 讲解' + str(words))
-                return None
-            elif pattern1 and not pattern2:
+            destination_dbl = [ii for ii, tmp_head in enumerate(head) if tmp_head == selected_verb and dep_rel[ii] == "DBL" and pos_tag[ii] in ["v"]]
+            destination_vob = [ii for ii, tmp_head in enumerate(head) if tmp_head == selected_verb and dep_rel[ii] == "VOB" and pos_tag[ii] in ['n', 's', 'LOC']]
+            destination_cmp = [ii for ii, tmp_head in enumerate(head) if tmp_head == selected_verb and dep_rel[ii] == "CMP" and pos_tag[ii] in ['v']]
 
-                ppl = [ii for ii in children if pos_tag[ii] == "r" or pos_tag[ii] == "PER"]
-                if ppl:
-                    elements[ELE_OBJ] = words[ppl[0]]
+            person_dbl = [ii for ii, tmp_head in enumerate(head) if tmp_head == selected_verb and dep_rel[ii] == "DBL" and pos_tag[ii] in ["PER", "r"]]
+            person_vob = [ii for ii, tmp_head in enumerate(head) if tmp_head == selected_verb and dep_rel[ii] == "VOB" and pos_tag[ii] in ["PER", "r"]]
+            person_pob = [ii for ii, tmp_head in enumerate(head) if tmp_head == selected_verb and dep_rel[ii] == "POB" and pos_tag[ii] in ['p']]
 
-                des_v = [ii for ii in children if pos_tag[ii] == "v"]
-                if des_v:
-                    children = [ii for ii in range(len(words)) if head[ii] == (des_v[0] + 1)]
-                    des = [ii for ii in children if dep_rel[ii] == "VOB"]
-                    if des:
-
-                        start = des[0]
-                        content = ""
-                        while True:
-                            children = [ii for ii in range(len(words)) if head[ii] == (start + 1)]
-                            att = [ii for ii in children if dep_rel[ii] == "ATT"]
-                            if att:
-                                content = words[att[0]] + content
-                                start = att[0]
-                            else:
-                                break
-                        elements[ELE_CONTENT] = "destination=" + content + words[des[0]]
-
-            elif not pattern1 and pattern2:
-
-                ppl_v = [ii for ii in children if dep_rel[ii] == "POB"]
-                ppl_c = [ii for ii in children if dep_rel[ii] == "CMP"]
-                if ppl_v and not ppl_c:
-                    children = [ii for ii in range(len(words)) if head[ii] == (ppl_v[0] + 1)]
-                    ppl = [ii for ii in children if dep_rel[ii] == "POB"]
-                    if ppl:
-                        elements[ELE_OBJ] = words[ppl[0]]
-
-                    start = pattern2[0]
-                    content = ""
-                    while True:
-                        children = [ii for ii in range(len(words)) if head[ii] == (start + 1)]
-                        att = [ii for ii in children if dep_rel[ii] == "ATT"]
-                        if att:
-                            content = words[att[0]] + content
-                            start = att[0]
-                        else:
-                            break
-                    elements[ELE_CONTENT] = "destination=" + content + words[pattern2[0]]
-                elif ppl_v and ppl_c:
-                    print('unknown pattern' + str(words))
-                    return None
-                elif not ppl_v and ppl_c:
-                    elements[ELE_OBJ] = words[pattern2[0]]
-
-                    children = [ii for ii in range(len(words)) if head[ii] == (ppl_c[0] + 1)]
-
-                    des = [ii for ii in children if dep_rel[ii] == "VOB"]
-                    if des:
-                        start = des[0]
-                        content = ""
-                        while True:
-                            children = [ii for ii in range(len(words)) if head[ii] == (start + 1)]
-                            att = [ii for ii in children if dep_rel[ii] == "ATT"]
-                            if att:
-                                content = words[att[0]] + content
-                                start = att[0]
-                            else:
-                                break
-                        elements[ELE_CONTENT] = "destination=" + content + words[des[0]]
+            # 解析目的地
+            destination = None
+            if destination_cmp:  # 送张春华到这个展厅门口
+                destination = [ii for ii, tmp_head in enumerate(head) if
+                               tmp_head == words[destination_cmp[0]] and dep_rel[ii] == "VOB"]
+            else:
+                if destination_dbl and destination_vob:
+                    print('Strange pattern without VOB and DBL for 送别' + str(words))
+                elif destination_dbl and not destination_vob:  # 送张春华到一号展厅门口
+                    destination = [ii for ii, tmp_head in enumerate(head) if tmp_head == words[destination_dbl[0]] and dep_rel[ii] == "VOB"]
+                elif not destination_dbl and destination_vob:  # 把张春华送到展厅门口
+                    destination = destination_vob
                 else:
                     pass
+            if destination:
+                content = get_modifier_as_children_att(words[destination[0]], words, head, dep_rel)
+                elements[ELE_CONTENT] = "destination=" + content + words[destination[0]]
 
+            # 解析送别人
+            ppl = None
+            if person_pob and person_vob and person_dbl:
+                print('Strange pattern with all VOB and DBL POB for person in 送别' + str(words))
+            elif person_pob and not person_vob and not person_dbl:  # 把张春华送到展厅门口
+                ppl = [ii for ii, tmp_head in enumerate(head) if tmp_head == words[person_pob[0]] and dep_rel[ii] == "POB" and pos_tag[ii] in ["PER", 'r']]
+            elif not person_pob and not person_vob and person_dbl:  # 送张春华到一号展厅门口
+                ppl = person_dbl
+            elif not person_pob and person_vob and not person_dbl:  # 送张春华到这个展厅门口
+                ppl = person_vob
             else:
+                print('Strange pattern with any two of VOB and DBL POB for person in 送别' + str(words))
+            if ppl:
+                elements[ELE_OBJ] = words[ppl[0]]
 
-                pass
-
-            elements[ELE_SUB] = "导览机器人"
-            elements[ELE_PLACE] = "展厅"
         except ValueError:
             print("error")
             return None
     elif task_type == "停止":
         pass
-    if elements == {}:
-        elements = None
+
+    elements[ELE_SUB] = "导览机器人"
+    elements[ELE_PLACE] = "展厅"
+
     return elements
 
 
