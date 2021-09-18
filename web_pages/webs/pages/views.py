@@ -395,7 +395,7 @@ def resolve_deprel(request):
 
                 # 调用ddparser处理结果-命名规则：sentence+timestamp
                 resolve_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                words, head, relation = dd_parser_caller(sentence)
+                words, head, relation, pos_tag = dd_parser_caller(sentence)
 
                 # 生成依存关系图
                 graph_name = sentence + '_' + resolve_time
