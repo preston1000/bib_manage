@@ -53,8 +53,6 @@ urlpatterns = [
     path('search/view-pdf/', views.view_pdf, name="search-view-pdf"),
     path('search/show-pdf/', views.show_pdf, name="search-show-pdf"),
     path('manage/', views.manage, name="manage"),
-    path('getCoordinates/', views.resolve_coordinates, name="resolve_coordinates"),
-    path('parseExcelStations/', views.parse_excel_stations, name="parse_excel_stations"),
     # path('manage/match-pub', views.manage_match_pub, name="manage-match-pub")
 
     # 意图理解相关网址
@@ -62,5 +60,9 @@ urlpatterns = [
     path('deprel/save-result/', views.save_deprel_result, name="deprel-result"),  # 保存评论结果
     path('deprel/resolve-deprel/', views.resolve_deprel, name="resolve-deprel"),  # 解析句子依存关系的接口
     path('tu/', views.command_resolve, name="resolve-command"),  # 解析任务型指令
+
+    # 火车相关
+    path('getCoordinates/', views.resolve_coordinates, name="resolve_coordinates"),
+    path('parseExcelStations/', views.parse_excel_stations, name="parse_excel_stations"),
 
 ]

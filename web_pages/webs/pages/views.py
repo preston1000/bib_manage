@@ -11,13 +11,12 @@ from configparser import ConfigParser
 from pathlib import Path
 
 import utils.util_text_operation
-from utils.nlp.utils import dd_parser_caller
+from utils.nlp.utils import dd_parser_caller, generate_dep_rel_graph
 from utils.tmp_db import create_or_match_nodes_dict
 
 import uuid
 
-import xlrd
-from xlrd import XLRDError
+from utils.file_util.utils import read_from_excel
 
 from utils import query_data, db_operation
 
@@ -26,7 +25,6 @@ from model_files.NLP.config import PLANNING_URL
 
 from utils.mqtt_util import MqttUtil
 
-from graphviz import Digraph
 os.environ["PATH"] += os.pathsep + 'D:\\Graphviz\\bin'
 
 basedir = Path(__file__).parent.parent.parent.parent  # 项目根目录
@@ -72,6 +70,15 @@ mqtt_client = MqttUtil(broker, port, client_id)
 """
 
 
+def wrap_result(result, ensure_ascii=False, content_type='application/json', charset='utf-8'):
+    return HttpResponse(json.dumps(result, ensure_ascii=ensure_ascii), content_type=content_type, charset=charset)
+
+
+"""
+火车相关
+"""
+
+
 def resolve_coordinates(request):
     return render(request, 'coordinates.html')
 
@@ -86,60 +93,23 @@ def parse_excel_stations(request):
     try:
         file = request.FILES.getlist('file')
     except:
-        result["msg"] = 'No file in the request'
-        result["code"] = -1
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+        result["msg"] = 'failed to retrieve file in the request'
+        result["code"] = -701
+        return wrap_result(result)
     if file is None:
         result["msg"] = 'No file in the request'
-        result["code"] = -1
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-    file = file[0]
-    try:
-        wb = xlrd.open_workbook(filename=None, file_contents=file.read())  # 打开文件
-    except XLRDError:
-        result["code"] = -2
-        result["msg"] = '打开Excel文件失败'
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+        result["code"] = -702
+        return wrap_result(result)
 
-    sheet_name = 'Sheet1'
-    try:
-        sheet_content = wb.sheet_by_name(sheet_name)  # 通过名字获取表格
-    except ValueError:
-        result["code"] = -3
-        result["msg"] = '读取Excel指定工作簿失败'
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+    # 打开Excel文件# todo support multiple files
+    result = read_from_excel(file[0], 'Sheet1', ["序号", "地址", '城市', '线路', '下一站'])
 
-    try:
-        sheet_title = sheet_content.row_values(0)
-    except:
-        result["code"] = -4
-        result["msg"] = '读取Excel工作簿表头失败'
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+    return wrap_result(result)
 
-    column_name = ["序号", "地址", '城市', '线路', '下一站']
-    try:
-        col_index = [sheet_title.index(j) for j in column_name]  # [sheet_title.index(column_name[0]), sheet_title.index(column_name[1]), sheet_title.index(column_name[2]), sheet_title.index(column_name[3])]
-    except ValueError:
-        result["code"] = -5
-        result["msg"] = '指定的工作表中没有' + str(column_name) + '列'
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
-    content = []
-    counter_null = 1  #
-    for iii in range(1, sheet_content.nrows):  # index是行下标
-        address_station = sheet_content.cell_value(iii, col_index[1])
-        city = sheet_content.cell_value(iii, col_index[2])
-        line = sheet_content.cell_value(iii, col_index[3])
-        next_station = sheet_content.cell_value(iii, col_index[4])
-        if address_station == "":
-            print("第" + str(iii) + "行文献没有地址信息【" + str(sheet_content.row_values(iii)) + "】")
-            continue
-        tmp = {"index": counter_null, "address": address_station, 'city': city, "line": line, 'next': next_station}
-        counter_null += 1
-        content.append(tmp)
-    result["data"] = content
-    result["msg"] = "done"
-    return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+"""
+文献管理相关
+"""
 
 
 def search_home(request):
@@ -323,8 +293,10 @@ def show_pdf(request):
 def manage(request):
     return render(request, 'manage.html')
 
-# 以上是新网页
-######################################################################################
+
+"""
+意图理解相关
+"""
 
 
 def deprel(request):
@@ -343,7 +315,6 @@ def save_deprel_result(request):
     data = request.body
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if is_ajax and request.method == 'POST':
-
         try:
             data = bytes.decode(data)
             data = json.loads(data)
@@ -386,7 +357,7 @@ def resolve_deprel(request):
     """
     由“开始解析”按钮触发的对给定句子的解析，对外返回解析结果。
 
-    注：采用ajax方式，header指定{"X-Requested-With"："XMLHttpRequest", "Content-Type"："application/x-www-form-urlencoded"}
+    注：采用ajax + post方式，header指定{"X-Requested-With"："XMLHttpRequest", "Content-Type"："application/x-www-form-urlencoded"}
 
     :param request: 包含待解析sentence
     :return:
@@ -409,34 +380,27 @@ def resolve_deprel(request):
                 words, head, relation, pos_tag = dd_parser_caller(sentence)
 
                 # 生成依存关系图
-                graph_name = sentence + '_' + resolve_time
-                # graph_name = os.path.join(current_dir, graph_name)  # 拼装目录名称+文件名称
-                g = Digraph(graph_name, format='png')
-                g.node(name='Root')
-                for word in words:
-                    g.node(name=word, fontname="Microsoft YaHei")
+                graph_name = sentence + '_' + resolve_time  # 拼装:句子+时间
 
-                for i in range(len(words)):
-                    if relation[i] not in ['HED']:
-                        g.edge(words[i], head[i], label=relation[i], fontname="Microsoft YaHei")
-                    else:
-                        if head[i] == 'Root':
-                            g.edge(words[i], 'Root', label=relation[i], fontname="Microsoft YaHei")
-                        else:
-                            g.edge(head[i], 'Root', label=relation[i], fontname="Microsoft YaHei")
-
-                g.render(graph_name, os.path.join(current_dir, 'static/images/cache'), view=False, cleanup=True)
-
-                result['code'] = 100
-                result['msg'] = "success"
-                result["data"] = {'sentence': sentence, 'deprel': graph_name+".png", 'relation': str(relation), 'words': str(words), 'head': str(head)}
+                g = generate_dep_rel_graph(os.path.join(current_dir, 'static/images/cache'), graph_name,
+                                           words, relation, head)
+                if g is None:
+                    print("failed to generate dependency graph")
+                    result['code'] = -303
+                    result['msg'] = "failed to generate dependency graph"
+                    result["data"] = {'sentence': sentence, 'deprel': None, 'relation': str(relation), 'words': str(words), 'head': str(head)}
+                else:
+                    print('successfully generate dependency graph')
+                    result['code'] = 300
+                    result['msg'] = "success"
+                    result["data"] = {'sentence': sentence, 'deprel': graph_name+".png", 'relation': str(relation), 'words': str(words), 'head': str(head)}
 
             except TypeError:
                 result['code'] = -302
                 result['msg'] = "no valid data is given"
 
     else:
-        result['code'] = -300
+        result['code'] = -400
         result['msg'] = "not supported request form (should be post and with ajax)"
 
     return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
@@ -450,7 +414,7 @@ def command_resolve(request):
     request_method = request.method
     result = ini_result()
     if request_method != 'GET':
-        result["code"] = 800
+        result["code"] = -801
         result["message"] = "request method should be get"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
@@ -459,19 +423,19 @@ def command_resolve(request):
     robot_id = request.GET.get("robotId", '')
 
     if not command or not session_id or not robot_id:
-        result["code"] = 801
+        result["code"] = -802
         result["message"] = "No command found"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
     result = resolve(command)
     if not result["success"]:
-        result["code"] = 802
+        result["code"] = -803
         result["message"] = "failed to resolve"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
     task = result.get("task", None)
     if task is None:
-        result["code"] = 803
+        result["code"] = -804
         result["message"] = "success without task information"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
@@ -491,16 +455,16 @@ def command_resolve(request):
         ret_content = json.loads(ret)
         reason_code = ret_content.get("code", 0)
     except JSONDecodeError or TypeError:
-        result["code"] = 805
+        result["code"] = 801
         result["message"] = "success but failed to send to reasoning module"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
     if reason_code != 200:
-        result["code"] = 806
+        result["code"] = 802
         result["message"] = "success but reasoning failed"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
-    result["code"] = 100
+    result["code"] = 800
     result["message"] = "success"
 
     print_log(request, result)
