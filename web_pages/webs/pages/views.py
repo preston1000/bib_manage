@@ -24,6 +24,8 @@ from utils import query_data, db_operation
 from utils.task_understanding.command_resolver import resolve, ini_result
 from model_files.NLP.config import PLANNING_URL
 
+from utils.mqtt_util import MqttUtil
+
 from graphviz import Digraph
 os.environ["PATH"] += os.pathsep + 'D:\\Graphviz\\bin'
 
@@ -54,6 +56,16 @@ username = cf.get("neo4j", "username")
 pwd = cf.get("neo4j", "pwd")
 database_info = {"uri": uri, "username": username, "pwd": pwd}
 
+"""
+MQTT service
+
+"""
+broker = '10.11.80.108'  # 连接地址
+port = 1883  # 端口地址
+topic = "/tu/command"  # 主题topic
+client_id = f'tu-command-102'
+
+mqtt_client = MqttUtil(broker, port, client_id)
 
 """
 代码
@@ -316,7 +328,6 @@ def manage(request):
 
 
 def deprel(request):
-    # return HttpResponse('welcome to the front page')
     return render(request, 'deprel.html')
 
 
@@ -467,7 +478,14 @@ def command_resolve(request):
     task["sessionId"] = session_id
     task["robotId"] = robot_id
 
+    # todo send to reasoning service
     # ret = requests.post(PLANNING_URL, json=task).text
+
+    msg_to_front = {'input': command, 'output': task}
+    msg_to_front = json.dumps(msg_to_front, ensure_ascii=False)
+
+    mqtt_client.publish(topic, msg_to_front)
+
     ret = '{"code": 200}'
     try:
         ret_content = json.loads(ret)
