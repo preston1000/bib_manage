@@ -49,7 +49,7 @@ database_info = {"uri": uri, "username": username, "pwd": pwd}
 MQTT service
 """
 broker = cf.get("mqtt", "broker")  # 连接地址
-port = cf.get("mqtt", "port")  # 端口地址
+port = int(cf.get("mqtt", "port"))  # 端口地址
 topic = cf.get("mqtt", "topic")  # 主题topic
 client_id = cf.get("mqtt", "clientPublish")
 
@@ -579,7 +579,6 @@ def index(request):
 
 
 def about(request):
-    import json
     pos = request.GET.get("pos", None)
     if pos is None:
         return render(request, 'about_backup.html', {"position": json.dumps('null')})

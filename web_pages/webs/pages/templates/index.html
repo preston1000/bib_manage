@@ -31,39 +31,38 @@
 
     <!-- Custom styles for this template -->
     <link href="{% static 'bootstrap-4.1.1-dist/css/carousel.css'%}" rel="stylesheet">
-  </head>
+</head>
 
 <body>
 
-<div class="navbar-wrapper">
-  <div class="container">
+    <div class="navbar-wrapper">
+        <div class="container">
+            <nav class="navbar navbar-inverse navbar-static-top">
+                <div class="container">
+                    <div class="navbar-header">
+                      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                          <span class="sr-only">Toggle navigation</span>
+                          <span class="icon-bar"></span>
+                          <span class="icon-bar"></span>
+                          <span class="icon-bar"></span>
+                      </button>
+                      <a class="navbar-brand" href="">CPWL</a>
+                  </div>
+                  <div id="navbar" class="navbar-collapse collapse">
+                      <ul class="nav navbar-nav">
+                          <li class="active"><a href="#">首页</a></li>
+                          <li><a href="/about">关于项目</a></li>
+                          <li><a href="/about/?pos=collapse2" target="_blank">成员</a></li>
+                          <li><a href="/about/?pos=collapse3" target="_blank">科研成果</a></li>
+                          <li><a href="/about/?pos=collapse4" target="_blank">代码</a></li>
+                          <li><a href="#contact">联系我们</a></li>
+                      </ul>
+                  </div>
+                </div>
+            </nav>
 
-    <nav class="navbar navbar-inverse navbar-static-top">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="#">CPWL</a>
         </div>
-        <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav">
-            <li class="active"><a href="#">首页</a></li>
-            <li><a href="http://127.0.0.1:8000/about">关于项目</a></li>
-            <li><a href="http://127.0.0.1:8000/about/?pos=collapse2">成员</a></li>
-            <li><a href="http://127.0.0.1:8000/about/?pos=collapse3">科研成果</a></li>
-            <li><a href="http://127.0.0.1:8000/about/?pos=collapse4">代码</a></li>
-            <li><a href="#contact">联系我们</a></li>
-          </ul>
-        </div>
-      </div>
-    </nav>
-
-  </div>
-</div>
+    </div>
 
     <div id="myCarousel" class="carousel slide" data-ride="carousel">
       <!-- Indicators -->
@@ -125,44 +124,44 @@
       </a>
     </div>
 
-<div class="container marketing pull-center">
-      <!-- Three columns of text below the carousel -->
-      <div class="row">
-        <div class="col-lg-4">
-          <img class="img-circle" src="{% static 'images/timg.jpeg'%}" alt="Generic placeholder image" width="140" height="140">
-          <h2> Compact Representation </h2>
-          <p>Donec sed odio dui. Etiam porta sem malesuada magna mollis euismod. Nullam id dolor id nibh ultricies vehicula ut id elit. Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Praesent commodo cursus magna.</p>
-          <!--<p><a class="btn btn-default" href="#" role="button">View details »</a></p>-->
-        </div><!-- /.col-lg-4 -->
-        <div class="col-lg-4">
-          <img class="img-circle" src="{% static 'images/img4.png'%}" alt="Generic placeholder image" width="140" height="140">
-          <h2> Global Approximatability </h2>
-          <p>Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Cras mattis consectetur purus sit amet fermentum. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh.</p>
-          <!--<p><a class="btn btn-default" href="#" role="button">View details »</a></p>-->
-        </div><!-- /.col-lg-4 -->
-        <div class="col-lg-4">
-          <img class="img-circle" src="{% static 'images/img4.png'%}" alt="Generic placeholder image" width="140" height="140">
-          <h2> Bridge between non-linearity and linearity </h2>
-          <p>Donec sed odio dui. Cras justo odio, dapibus ac facilisis in, egestas eget quam. Vestibulum id ligula porta felis euismod semper. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
-          <!--<p><a class="btn btn-default" href="#" role="button">View details »</a></p>-->
-        </div><!-- /.col-lg-4 -->
-      </div><!-- /.row -->
+    <div class="container marketing pull-center">
+          <!-- Three columns of text below the carousel -->
+          <div class="row">
+            <div class="col-lg-4">
+              <img class="img-circle" src="{% static 'images/timg.jpeg'%}" alt="Generic placeholder image" width="140" height="140">
+              <h2> Compact Representation </h2>
+              <p>Donec sed odio dui. Etiam porta sem malesuada magna mollis euismod. Nullam id dolor id nibh ultricies vehicula ut id elit. Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Praesent commodo cursus magna.</p>
+              <!--<p><a class="btn btn-default" href="#" role="button">View details »</a></p>-->
+            </div><!-- /.col-lg-4 -->
+            <div class="col-lg-4">
+              <img class="img-circle" src="{% static 'images/img4.png'%}" alt="Generic placeholder image" width="140" height="140">
+              <h2> Global Approximatability </h2>
+              <p>Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Cras mattis consectetur purus sit amet fermentum. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh.</p>
+              <!--<p><a class="btn btn-default" href="#" role="button">View details »</a></p>-->
+            </div><!-- /.col-lg-4 -->
+            <div class="col-lg-4">
+              <img class="img-circle" src="{% static 'images/img4.png'%}" alt="Generic placeholder image" width="140" height="140">
+              <h2> Bridge between non-linearity and linearity </h2>
+              <p>Donec sed odio dui. Cras justo odio, dapibus ac facilisis in, egestas eget quam. Vestibulum id ligula porta felis euismod semper. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
+              <!--<p><a class="btn btn-default" href="#" role="button">View details »</a></p>-->
+            </div><!-- /.col-lg-4 -->
+          </div><!-- /.row -->
 
 
-      <!-- FOOTER -->
-      <footer>
-        <p class="pull-right"><a href="#">Back to top</a></p>
-        <p>© 2018 Research Group · <a href="#">Privacy</a> · <a href="#">Terms</a></p>
+          <!-- FOOTER -->
+          <footer>
+            <p class="pull-right"><a href="#">Back to top</a></p>
+            <p>© 2018 Research Group · <a href="#">Privacy</a> · <a href="#">Terms</a></p>
 
-    </footer>
-</div>
+        </footer>
+    </div>
 
-<script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
-<script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
-<script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-<script src="{% static 'bootstrap-4.1.1-dist/js/vendor/holder.min.js'%}"></script>
-<script src="{% static 'bootstrap-4.1.1-dist/js/ie10-viewport-bug-workaround.js'%}"></script>
-<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500" preserveAspectRatio="none" style="display: none; visibility: hidden; position: absolute; top: -100%; left: -100%;"><defs><style type="text/css"></style></defs><text x="0" y="25" style="font-weight:bold;font-size:25pt;font-family:Arial, Helvetica, Open Sans, sans-serif">500x500</text></svg>
+    <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="{% static 'bootstrap-4.1.1-dist/js/vendor/holder.min.js'%}"></script>
+    <script src="{% static 'bootstrap-4.1.1-dist/js/ie10-viewport-bug-workaround.js'%}"></script>
+    <svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500" preserveAspectRatio="none" style="display: none; visibility: hidden; position: absolute; top: -100%; left: -100%;"><defs><style type="text/css"></style></defs><text x="0" y="25" style="font-weight:bold;font-size:25pt;font-family:Arial, Helvetica, Open Sans, sans-serif">500x500</text></svg>
 
 
 </body>
