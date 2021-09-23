@@ -3,10 +3,10 @@
 class GlobalVariables:
 
     const_pub_type = ["ARTICLE", "BOOK", "BOOKLET",  # 0-2
-                "CONFERENCE", "INBOOK", "INCOLLECTION",  # 3-5
-                "INPROCEEDINGS", "MANUAL", "MASTERSTHESIS",  # 6-8
-                "MISC", "PHDTHESIS", "PROCEEDINGS",  # 9-11
-                "TECHREPORT", "UNPUBLISHED"]  # 12-13
+                      "CONFERENCE", "INBOOK", "INCOLLECTION",  # 3-5
+                      "INPROCEEDINGS", "MANUAL", "MASTERSTHESIS",  # 6-8
+                      "MISC", "PHDTHESIS", "PROCEEDINGS",  # 9-11
+                      "TECHREPORT", "UNPUBLISHED"]  # 12-13
     const_edge_tpe = ['PUBLISHED_IN', 'CITE', 'AUTHORED_BY']
 
     const_node_type = ['PUBLICATION', 'VENUE', 'PERSON']

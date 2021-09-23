@@ -46,13 +46,14 @@ urlpatterns = [
     path('search-person-popup/', views.search_person_popup, name='search-person-popup'),
     path('search-venue-popup/', views.search_venue_popup, name='search-venue-popup'),
 
-    path('home/', views.search_home, name="search-home"),
-    path('search/', views.search_result, name="search"),
-    path('search/result/', views.search_publication_new, name="search-result"),
-    path('search/search-count/', views.search_publication_count, name="search-result-count"),
-    path('search/view-pdf/', views.view_pdf, name="search-view-pdf"),
-    path('search/show-pdf/', views.show_pdf, name="search-show-pdf"),
-    path('manage/', views.manage, name="manage"),
+    path('home/', views.search_home, name="search-home"),  # 搜索文献页面
+    path('search/', views.search_result, name="search"),  # 搜索结果页面
+    path('search/view-pdf/', views.view_pdf, name="search-view-pdf"),  # 浏览pdf页面， todo
+    path('manage/', views.manage, name="manage"),  # 三元组检查和编辑界面 todo
+
+    path('search/result/', views.search_publication_new, name="search-result"),  # 查询结果（详细）
+    path('search/search-count/', views.search_publication_count, name="search-result-count"),  # 查询结果（个数）
+    path('search/show-pdf/', views.show_pdf, name="search-show-pdf"),  # 浏览pdf， todo
     # path('manage/match-pub', views.manage_match_pub, name="manage-match-pub")
 
     # 意图理解相关网址
@@ -62,7 +63,7 @@ urlpatterns = [
     path('tu/', views.command_resolve, name="resolve-command"),  # 解析任务型指令
 
     # 火车相关
-    path('getCoordinates/', views.resolve_coordinates, name="resolve_coordinates"),
-    path('parseExcelStations/', views.parse_excel_stations, name="parse_excel_stations"),
+    path('getCoordinates/', views.resolve_coordinates, name="resolve_coordinates"),  # 上传车站信息（excel文件）进行解析
+    path('parseExcelStations/', views.parse_excel_stations, name="parse_excel_stations"),  # 解析excel
 
 ]

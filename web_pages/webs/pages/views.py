@@ -1,69 +1,72 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-import requests
 
 import json
-from json import JSONDecodeError
 import os
 import sys
 import datetime
 from configparser import ConfigParser
 from pathlib import Path
-
-import utils.util_text_operation
-from utils.nlp.utils import dd_parser_caller, generate_dep_rel_graph
-from utils.tmp_db import create_or_match_nodes_dict
-
 import uuid
 
+from utils.bib_util.utils import process_search_condition
+from utils.nlp.utils import dd_parser_caller, generate_dep_rel_graph
 from utils.file_util.utils import read_from_excel
-
-from utils import query_data, db_operation
-
 from utils.task_understanding.command_resolver import resolve, ini_result
-from model_files.NLP.config import PLANNING_URL
-
 from utils.mqtt_util import MqttUtil
+
+from utils.tmp_db import create_or_match_nodes_dict
+from utils import query_data, db_operation, util_text_operation
 
 os.environ["PATH"] += os.pathsep + 'D:\\Graphviz\\bin'
 
 basedir = Path(__file__).parent.parent.parent.parent  # 项目根目录
 current_dir = Path(__file__).parent
-
+config_dir = Path(__file__).parent.parent
 """
 日志配置
 """
 log_dir = basedir.joinpath('logs/')
 
-"""
+config_file_neo4j = os.path.join(config_dir, "neo4j.conf")
+cf = ConfigParser()
+cf.read(config_file_neo4j, encoding="utf-8")
 
 """
-config_file = "./pages.conf"
-cf = ConfigParser()
-cf.read(os.path.abspath(config_file), encoding="utf-8")
+？？？
+"""
 address = cf.get("moduleAddress", "address1")
 sys.path.append(address)
-
 """
 neo4j 配置
 """
-cf = ConfigParser()
-cf.read("./neo4j.conf", encoding="utf-8")
 uri = cf.get("neo4j", "uri")
 username = cf.get("neo4j", "username")
 pwd = cf.get("neo4j", "pwd")
-database_info = {"uri": uri, "username": username, "pwd": pwd}
 
+database_info = {"uri": uri, "username": username, "pwd": pwd}
 """
 MQTT service
-
 """
-broker = '10.11.80.108'  # 连接地址
-port = 1883  # 端口地址
-topic = "/tu/command"  # 主题topic
-client_id = f'tu-command-102'
+broker = cf.get("mqtt", "broker")  # 连接地址
+port = cf.get("mqtt", "port")  # 端口地址
+topic = cf.get("mqtt", "topic")  # 主题topic
+client_id = cf.get("mqtt", "clientPublish")
 
 mqtt_client = MqttUtil(broker, port, client_id)
+
+"""
+load result field from config file 
+"""
+RESULT_DATA = cf.get("resultField", "data")
+RESULT_MSG = cf.get("resultField", "message")
+RESULT_CODE = cf.get("resultField", "code")
+RESULT_COUNT = cf.get("resultField", "count")
+"""
+station file format
+"""
+SHEET_NAME = cf.get("stationFileFormat", "sheetname")
+SHEET_TITLE = cf.get("stationFileFormat", "title").split(",")
 
 """
 代码
@@ -72,6 +75,11 @@ mqtt_client = MqttUtil(broker, port, client_id)
 
 def wrap_result(result, ensure_ascii=False, content_type='application/json', charset='utf-8'):
     return HttpResponse(json.dumps(result, ensure_ascii=ensure_ascii), content_type=content_type, charset=charset)
+
+
+def ini_result():
+    result = {RESULT_DATA: None, RESULT_MSG: "", RESULT_CODE: -1}
+    return result
 
 
 """
@@ -89,20 +97,20 @@ def parse_excel_stations(request):
     :param request:
     :return:
     """
-    result = {"data": "", "msg": "", "code": 1}
+    result = ini_result()
     try:
         file = request.FILES.getlist('file')
     except:
-        result["msg"] = 'failed to retrieve file in the request'
-        result["code"] = -701
+        result[RESULT_MSG] = 'failed to retrieve file in the request'
+        result[RESULT_CODE] = -701
         return wrap_result(result)
-    if file is None:
-        result["msg"] = 'No file in the request'
-        result["code"] = -702
+    if file is None or len(file) == 0:
+        result[RESULT_MSG] = 'No file in the request'
+        result[RESULT_CODE] = -702
         return wrap_result(result)
 
     # 打开Excel文件# todo support multiple files
-    result = read_from_excel(file[0], 'Sheet1', ["序号", "地址", '城市', '线路', '下一站'])
+    result = read_from_excel(file[0], SHEET_NAME, SHEET_TITLE)
 
     return wrap_result(result)
 
@@ -126,159 +134,129 @@ def search_publication_new(request):
     :param request:
     :return:
     """
-    result = {"msg": "", "code": 0, "data": "", "count": 0}
-    if request.method == 'POST':
-        # 解析传递参数，高级搜索的条件
-        is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
-        if is_ajax:
-            the_paras = request.body
-            if the_paras is None:
-                result["msg"] = "no data is given"
-                result["code"] = -3
-                return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-            try:
-                pub_info = bytes.decode(the_paras)
-                pub_info = json.loads(pub_info)
-            except JSONDecodeError or TypeError:
-                the_paras = request.POST
-                pub_info = the_paras.get("param", None)
-                if pub_info is None:
-                    result["msg"] = "given data is not a json string"
-                    result["code"] = -2
-                    return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-                pub_info = json.loads(pub_info)
-            page = None
-            limit = None
-        else:
-            the_paras = request.POST
-            pub_info = the_paras.get("param", None)
-            if pub_info is None:
-                result["msg"] = "no valid info is provided for search"
-                result["code"] = -3
-                return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+    result = ini_result()
+    result[RESULT_COUNT] = 0
+    is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+    if request.method != 'POST':
+        result[RESULT_MSG] = "not support request method, should be post"
+        result[RESULT_CODE] = -102
+        return wrap_result(result)
+
+    # 解析传递参数，高级搜索的条件
+    if is_ajax:
+        the_paras = request.body
+        if the_paras is None:
+            result[RESULT_MSG] = "no query condition is given"
+            result[RESULT_CODE] = -601
+            return wrap_result(result)
+
+        try:
+            pub_info = bytes.decode(the_paras)
             pub_info = json.loads(pub_info)
-            page = the_paras.get("page", None)
-            limit = the_paras.get("limit", None)
-        parameters = process_search_condition(pub_info)  # 封装数据为后台数据库能够接收的格式
-        # 分页条件
-        page_para = None
-        if page is not None and limit is not None:
-            try:
-                page_para = {"page": int(page), "limit": int(limit)}
-            except ValueError:
-                page_para = None
-        # 查询
-        query_result = query_data.query_pub_by_multiple_field(database_info, parameters, page_para)
-        query_result = json.loads(query_result)
-        if query_result["code"] < 0:  # 返回的code有1，2，0，-1共四中
-            return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-        # 处理返回的数据
-        count = 1
-        pubs = []
-        for pub in query_result["data"]:
-            pub["ID"] = count
-            if pub["pages1"] == "" or pub["pages2"] == "":
-                pub["pages"] = ""
-            else:
-                pub["pages"] = str(pub["pages1"]) + "-" + str(pub["pages2"])
-            # pub.pop("pages1")
-            # pub.pop("pages2")
-            count += 1
-            pubs.append(pub)
-        if is_ajax:
-            result["msg"] = "done"
-            result["count"] = len(pubs)  # todo 检查是否正确？
-            result["code"] = query_result["code"]
-            result["data"] = pubs
-        else:
-            result["msg"] = "done"
-            result["count"] = pub_info["count"]
-            result["code"] = query_result["code"]
-            result["data"] = pubs
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+        except json.JSONDecodeError or TypeError:  # todo chech when this will happen
+            result[RESULT_MSG] = "failed to serialize parameters"
+            result[RESULT_CODE] = -602
+            return wrap_result(result)
+        page = None
+        limit = None
     else:
-        result["msg"] = "not support request method, should be post"
-        result["code"] = -4
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+        the_paras = request.POST
+        pub_info = the_paras.get("param", None)
+        if pub_info is None:
+            result[RESULT_MSG] = "no valid info is provided for search"
+            result[RESULT_CODE] = -601
+            return wrap_result(result)
+
+        pub_info = json.loads(pub_info)
+        page = the_paras.get("page", None)
+        limit = the_paras.get("limit", None)
+
+    parameters = process_search_condition(pub_info)  # 封装数据为后台数据库能够接收的格式
+    # 分页条件
+    page_para = None
+    if page is not None and limit is not None:
+        try:
+            page_para = {"page": int(page), "limit": int(limit)}
+        except ValueError:
+            page_para = None
+    # 查询
+    query_result = query_data.query_pub_by_multiple_field(database_info, parameters, page_para)
+    query_result = json.loads(query_result)
+    if query_result[RESULT_CODE] < 0:  # 返回的code有1，2，0，-1共四中
+        return wrap_result(result)
+
+    # 处理返回的数据
+    count = 1
+    pubs = []
+    for pub in query_result[RESULT_DATA]:
+        pub["ID"] = count
+        if pub["pages1"] == "" or pub["pages2"] == "":
+            pub["pages"] = ""
+        else:
+            pub["pages"] = str(pub["pages1"]) + "-" + str(pub["pages2"])
+        count += 1
+        pubs.append(pub)
+    if is_ajax:
+        result[RESULT_MSG] = "done"
+        result["count"] = len(pubs)  # todo 检查是否正确？
+        result[RESULT_CODE] = query_result[RESULT_CODE]
+        result[RESULT_DATA] = pubs
+    else:
+        result[RESULT_MSG] = "done"
+        result["count"] = pub_info["count"]
+        result[RESULT_CODE] = query_result[RESULT_CODE]
+        result[RESULT_DATA] = pubs
+    return wrap_result(result)
 
 
 def search_publication_count(request):
     """
-    根据搜索条件，计算有多少条数据满足条件
+    根据搜索条件，计算有多少条数据满足条件. should be post and ajax
     :param request:
     :return:
     """
-    result = {"status": 0, "msg": None, "count": -1, "data": None}
+    result = ini_result()
+    result[RESULT_COUNT] = -1
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
-    if is_ajax and request.method == 'POST':
-        pub_info = request.body
-        if pub_info is None or pub_info == "":
-            result["status"] = 0
-            result["msg"] = "no data is given"
-            return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-        try:
-            pub_info = bytes.decode(pub_info)
-            pub_info = json.loads(pub_info)
-        except JSONDecodeError or TypeError:
-            result["status"] = -1
-            result["msg"] = "given data is not a json string"
-            return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-
-        if pub_info is None:
-            result["status"] = -1
-            result["msg"] = "no valid info is provided for search"
-            return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-
-        # 封装数据为后台数据库能够接收的格式
-        parameters = process_search_condition(pub_info)
-        if parameters is None:
-            result["status"] = -1
-            result["msg"] = "搜索条件解析失败，请重试"
-            result["count"] = 0
-            return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-        query_result = query_data.query_by_multiple_field_count(database_info, parameters, "PUBLICATION")  # -1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
-
-        result["status"] = query_result["code"]
-        result["msg"] = query_result.get("msg", "")
-        result["count"] = query_result.get("count", -1)
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-
-    else:
-        result["status"] = -1
-        result["msg"] = "not support request method, should be post"
+    if not is_ajax or request.method != 'POST':
+        result[RESULT_CODE] = -103
+        result[RESULT_MSG] = "not support request method, should be post"
         result["count"] = 0
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+        return wrap_result(result)
 
+    pub_info = request.body
+    if pub_info is None or pub_info == "":
+        result[RESULT_CODE] = -601
+        result[RESULT_MSG] = "no query condition is given"
+        return wrap_result(result)
 
-def process_search_condition(pub_info):
-    parameters = {}
-    # 标题关键字
-    title = pub_info.get("title", None)
-    if not(title is None or title == ""):
-        parameters["title"] = title
-    # 起止时间
-    start_time = pub_info.get("startTime", None)
-    end_time = pub_info.get("endTime", None)
-    if not (start_time is None or start_time == ""):
-        parameters["startTime"] = start_time
-    if not (end_time is None or end_time == ""):
-        parameters["endTime"] = end_time
-    # 作者
-    author = pub_info.get("author", None)
-    if not (author is None or author == ""):
-        parameters["author"] = author
-    # 文章索引
-    paper_index = pub_info.get("paperIndex", None)
-    if not (paper_index is None or paper_index == ""):
-        parameters["paperIndex"] = paper_index
-    # 文献类型
-    node_type = pub_info.get("node_type", None)
-    if node_type is not None and node_type != "":
-        parameters["node_type"] = node_type.upper()
-    # 检查是否有效条件
-    if parameters == {}:
-        parameters = None
-    return parameters
+    try:
+        pub_info = bytes.decode(pub_info)
+        pub_info = json.loads(pub_info)
+    except json.JSONDecodeError or TypeError:
+        result[RESULT_CODE] = -603
+        result[RESULT_MSG] = "query condition should be json string"
+        return wrap_result(result)
+
+    if pub_info is None:
+        result[RESULT_CODE] = -601
+        result[RESULT_MSG] = "no query condition is given"
+        return wrap_result(result)
+
+    # 封装数据为后台数据库能够接收的格式
+    parameters = process_search_condition(pub_info)
+    if parameters is None:
+        result[RESULT_CODE] = -604
+        result[RESULT_MSG] = "搜索条件解析失败，请重试"
+        result["count"] = 0
+        return wrap_result(result)
+
+    query_result = query_data.query_by_multiple_field_count(database_info, parameters, "PUBLICATION")  # -1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
+
+    result[RESULT_CODE] = query_result[RESULT_CODE]
+    result[RESULT_MSG] = query_result.get(RESULT_MSG, "")
+    result["count"] = query_result.get("count", -1)
+    return wrap_result(result)
 
 
 def view_pdf(request):
@@ -310,47 +288,48 @@ def save_deprel_result(request):
     :return:
     """
 
-    result = {'code': None, 'msg': ''}
+    result = ini_result()
 
     data = request.body
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
-    if is_ajax and request.method == 'POST':
-        try:
-            data = bytes.decode(data)
-            data = json.loads(data)
+    if not is_ajax or request.method != 'POST':
 
-            record_uuid = str(uuid.uuid1())
-            record_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            sentence = data.get('sentence', '-')
-
-            result_file_name = data.get('image_path', '-')
-
-            words = data.get('words', '-')
-            relation = data.get('relation', '-')
-            head = data.get('head', '-')
-
-            is_correct = data.get('is_problematic', '-')
-            comments = data.get('comments', '-')
-
-            tmp = [record_uuid, record_time, sentence, result_file_name, words, relation, head, is_correct, comments]
-            tmp = '\t'.join(tmp)
-
-            with open(log_dir.joinpath('dep_rel_service_log.log'), 'a+', encoding="utf-8") as f:
-                f.write(tmp + '\n')
-
-            result["msg"] = "successfully saved"
-            result["code"] = 400
-            # result["field"] = data
-
-        except TypeError:
-            result['code'] = -402
-            result['msg'] = "no valid data is given"
-
-    else:
-        result['code'] = -400
+        result['code'] = -103
         result['msg'] = "not supported request form (should be post and with ajax)"
+        return wrap_result(result)
 
-    return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+    try:
+        data = bytes.decode(data)
+        data = json.loads(data)
+
+        record_uuid = str(uuid.uuid1())
+        record_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        sentence = data.get('sentence', '-')
+
+        result_file_name = data.get('image_path', '-')
+
+        words = data.get('words', '-')
+        relation = data.get('relation', '-')
+        head = data.get('head', '-')
+
+        is_correct = data.get('is_problematic', '-')
+        comments = data.get('comments', '-')
+
+        tmp = [record_uuid, record_time, sentence, result_file_name, words, relation, head, is_correct, comments]
+        tmp = '\t'.join(tmp)
+
+        with open(log_dir.joinpath('dep_rel_service_log.log'), 'a+', encoding="utf-8") as f:
+            f.write(tmp + '\n')
+
+        result[RESULT_MSG] = "successfully saved"
+        result[RESULT_CODE] = 400
+        # result["field"] = data
+
+    except TypeError:
+        result['code'] = -402
+        result['msg'] = "no valid data is given"
+
+    return wrap_result(result)
 
 
 def resolve_deprel(request):
@@ -362,48 +341,49 @@ def resolve_deprel(request):
     :param request: 包含待解析sentence
     :return:
     """
-    result = {'code': None, 'msg': '', 'data': None}
+    result = ini_result()
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
-    if is_ajax and request.method == 'POST':
-        data = request.body  #
-        if data is None or data == "":
-            result['code'] = -301
-            result['msg'] = "no data is given"
-        else:
-            try:
-                data = bytes.decode(data)
-                data = json.loads(data)
-                sentence = data["sentence"]
-
-                # 调用ddparser处理结果-命名规则：sentence+timestamp
-                resolve_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                words, head, relation, pos_tag = dd_parser_caller(sentence)
-
-                # 生成依存关系图
-                graph_name = sentence + '_' + resolve_time  # 拼装:句子+时间
-
-                g = generate_dep_rel_graph(os.path.join(current_dir, 'static/images/cache'), graph_name,
-                                           words, relation, head)
-                if g is None:
-                    print("failed to generate dependency graph")
-                    result['code'] = -303
-                    result['msg'] = "failed to generate dependency graph"
-                    result["data"] = {'sentence': sentence, 'deprel': None, 'relation': str(relation), 'words': str(words), 'head': str(head)}
-                else:
-                    print('successfully generate dependency graph')
-                    result['code'] = 300
-                    result['msg'] = "success"
-                    result["data"] = {'sentence': sentence, 'deprel': graph_name+".png", 'relation': str(relation), 'words': str(words), 'head': str(head)}
-
-            except TypeError:
-                result['code'] = -302
-                result['msg'] = "no valid data is given"
-
-    else:
-        result['code'] = -400
+    if not is_ajax or request.method != 'POST':
+        result['code'] = -103
         result['msg'] = "not supported request form (should be post and with ajax)"
+        return wrap_result(result)
 
-    return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+    data = request.body  #
+    if data is None or data == "":
+        result['code'] = -301
+        result['msg'] = "no data is given"
+        return wrap_result(result)
+
+    try:
+        data = bytes.decode(data)
+        data = json.loads(data)
+        sentence = data["sentence"]
+
+        # 调用ddparser处理结果-命名规则：sentence+timestamp
+        resolve_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        words, head, relation, pos_tag = dd_parser_caller(sentence)
+
+        # 生成依存关系图
+        graph_name = sentence + '_' + resolve_time  # 拼装:句子+时间
+
+        g = generate_dep_rel_graph(os.path.join(current_dir, 'static/images/cache'), graph_name,
+                                   words, relation, head)
+        if g is None:
+            print("failed to generate dependency graph")
+            result['code'] = -303
+            result['msg'] = "failed to generate dependency graph"
+            result[RESULT_DATA] = {'sentence': sentence, 'deprel': None, 'relation': str(relation), 'words': str(words), 'head': str(head)}
+        else:
+            print('successfully generate dependency graph')
+            result['code'] = 300
+            result['msg'] = "success"
+            result[RESULT_DATA] = {'sentence': sentence, 'deprel': graph_name+".png", 'relation': str(relation), 'words': str(words), 'head': str(head)}
+
+    except TypeError:
+        result['code'] = -302
+        result['msg'] = "no valid data is given"
+
+    return wrap_result(result)
 
 
 def command_resolve(request):
@@ -414,7 +394,7 @@ def command_resolve(request):
     request_method = request.method
     result = ini_result()
     if request_method != 'GET':
-        result["code"] = -801
+        result[RESULT_CODE] = -101
         result["message"] = "request method should be get"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
@@ -423,19 +403,19 @@ def command_resolve(request):
     robot_id = request.GET.get("robotId", '')
 
     if not command or not session_id or not robot_id:
-        result["code"] = -802
+        result[RESULT_CODE] = -802
         result["message"] = "No command found"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
     result = resolve(command)
     if not result["success"]:
-        result["code"] = -803
+        result[RESULT_CODE] = -803
         result["message"] = "failed to resolve"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
     task = result.get("task", None)
     if task is None:
-        result["code"] = -804
+        result[RESULT_CODE] = -804
         result["message"] = "success without task information"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
@@ -450,21 +430,21 @@ def command_resolve(request):
 
     mqtt_client.publish(topic, msg_to_front)
 
-    ret = '{"code": 200}'
+    ret = '{RESULT_CODE: 200}'
     try:
         ret_content = json.loads(ret)
-        reason_code = ret_content.get("code", 0)
-    except JSONDecodeError or TypeError:
-        result["code"] = 801
+        reason_code = ret_content.get(RESULT_CODE, 0)
+    except json.JSONDecodeError or TypeError:
+        result[RESULT_CODE] = 801
         result["message"] = "success but failed to send to reasoning module"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
     if reason_code != 200:
-        result["code"] = 802
+        result[RESULT_CODE] = 802
         result["message"] = "success but reasoning failed"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
-    result["code"] = 800
+    result[RESULT_CODE] = 800
     result["message"] = "success"
 
     print_log(request, result)
@@ -504,28 +484,29 @@ def add_publication(request):
     :param request:
     :return:
     """
-    result = {"msg": "", "code": 0, "data": "", "count": 0}
+    result = ini_result()
+    result[RESULT_COUNT] = -1
 
     if request.method == 'POST':
         is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
         if is_ajax:
             pub_info = request.body
             if pub_info is None:
-                result["msg"] = "no data is given"
-                result["code"] = -3
+                result[RESULT_MSG] = "no data is given"
+                result[RESULT_CODE] = -3
                 return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
             try:
                 pub_info = bytes.decode(pub_info)
                 pub_info = json.loads(pub_info)
-            except JSONDecodeError:
-                result["msg"] = "given data is not a json string"
-                result["code"] = -4
+            except json.JSONDecodeError:
+                result[RESULT_MSG] = "given data is not a json string"
+                result[RESULT_CODE] = -4
                 return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         else:
             pub_info = request.POST
             if pub_info is None:
-                result["msg"] = "no data is given"
-                result["code"] = -3
+                result[RESULT_MSG] = "no data is given"
+                result[RESULT_CODE] = -3
                 return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         # 参数提取
         to_create = pub_info.get("to_create", False)
@@ -572,23 +553,23 @@ def add_publication(request):
         elif pub_info["node_type"] == "13":
             pub_info["node_type"] = "UNPUBLISHED"
         else:
-            result["msg"] = "unsupported paper type"
-            result["code"] = -5
+            result[RESULT_MSG] = "unsupported paper type"
+            result[RESULT_CODE] = -5
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         # 调方法写数据库
         query_result = create_or_match_nodes_dict(pub_info, "PUBLICATION", database_info, return_type=return_type, to_create=to_create)
 
-        result["msg"] = query_result.get("msg", "查询数据接口无返回值")
-        result["code"] = query_result.get("code", -6)
-        result["data"] = query_result.get("data", [])
+        result[RESULT_MSG] = query_result.get(RESULT_MSG, "查询数据接口无返回值")
+        result[RESULT_CODE] = query_result.get(RESULT_CODE, -6)
+        result[RESULT_DATA] = query_result.get(RESULT_DATA, [])
         try:
-            result["count"] = len(result["data"])
+            result["count"] = len(result[RESULT_DATA])
         except KeyError:
             result["count"] = 0
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
     else:
-        result["msg"] = "请求方式应为post"
-        result["code"] = -7
+        result[RESULT_MSG] = "请求方式应为post"
+        result[RESULT_CODE] = -7
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
 
@@ -667,10 +648,10 @@ def get_author_table_data(request):
                     print("未能识别的mode")
             except IndexError or KeyError:
                 print("解析失败")
-        except JSONDecodeError or TypeError:
+        except json.JSONDecodeError or TypeError:
             data = [{"firstName": "", "middleName": "", "lastName": "", "ranking": "1"}]
 
-    json_str = {"code": 0, "msg": "successfully queried data", "count": 1, "data": data}
+    json_str = {RESULT_CODE: 0, RESULT_MSG: "successfully queried data", "count": 1, RESULT_DATA: data}
     return HttpResponse(json.dumps(json_str, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
 
@@ -678,36 +659,36 @@ def add_person(request):
     """
     向cypher添加person
     :param request:
-    :return: {"msg": "", "status": 0}, 0:缺少参数；-1：参数格式错误;-10:请求方式错误，-2~-5见create_or_match_persons方法
+    :return: {RESULT_MSG: "", RESULT_CODE: 0}, 0:缺少参数；-1：参数格式错误;-10:请求方式错误，-2~-5见create_or_match_persons方法
     """
-    result = {"msg": "", "status": 0}
+    result = ini_result()
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if is_ajax and request.method == 'POST':
         node_info = request.body  # 处理后是dict，直接传到后台写入数据库就可以了
         if node_info is None or node_info == "":
-            result["status"] = 0
-            result["msg"] = "no data is given"
+            result[RESULT_CODE] = 0
+            result[RESULT_MSG] = "no data is given"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         try:
             node_info = bytes.decode(node_info)
             node_info = json.loads(node_info)
-        except JSONDecodeError or TypeError:
-            result["status"] = -1
-            result["msg"] = "given data is not a json string"
+        except json.JSONDecodeError or TypeError:
+            result[RESULT_CODE] = -1
+            result[RESULT_MSG] = "given data is not a json string"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         # 调方法写数据库
         flag = db_operation.create_or_match_persons(node_info, mode=2)
-        if flag["code"] == 1:
-            result["status"] = 1
-            result["msg"] = "successfully write into database"
+        if flag[RESULT_CODE] == 1:
+            result[RESULT_CODE] = 1
+            result[RESULT_MSG] = "successfully write into database"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         else:
-            result["status"] = flag
-            result["msg"] = "error when writing into database" + flag["msg"]
+            result[RESULT_CODE] = flag
+            result[RESULT_MSG] = "error when writing into database" + flag[RESULT_MSG]
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
     else:
-        result["status"] = -10
-        result["msg"] = "not supported request form"
+        result[RESULT_CODE] = -10
+        result[RESULT_MSG] = "not supported request form"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
 
@@ -715,36 +696,36 @@ def add_venue(request):
     """
     向cypher添加venue
     :param request:
-    :return: {"msg": "", "status": 0}, 0:缺少参数；-1：参数格式错误;-10:请求方式错误，-2~-5见create_or_match_persons方法
+    :return: {RESULT_MSG: "", RESULT_CODE: 0}, 0:缺少参数；-1：参数格式错误;-10:请求方式错误，-2~-5见create_or_match_persons方法
     """
-    result = {"msg": "", "status": 0}
+    result = ini_result()
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if is_ajax and request.method == 'POST':
         node_info = request.body  # 处理后是dict，直接传到后台写入数据库就可以了
         if node_info is None or node_info == "":
-            result["status"] = 0
-            result["msg"] = "no data is given"
+            result[RESULT_CODE] = 0
+            result[RESULT_MSG] = "no data is given"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         try:
             node_info = bytes.decode(node_info)
             node_info = json.loads(node_info)
-        except JSONDecodeError or TypeError:
-            result["status"] = -1
-            result["msg"] = "given data is not a json string"
+        except json.JSONDecodeError or TypeError:
+            result[RESULT_CODE] = -1
+            result[RESULT_MSG] = "given data is not a json string"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         # 调方法写数据库
         flag = db_operation.create_or_match_venues(node_info, mode=2)
-        if flag["code"] == 1:
-            result["status"] = 1
-            result["msg"] = "successfully write into database"
+        if flag[RESULT_CODE] == 1:
+            result[RESULT_CODE] = 1
+            result[RESULT_MSG] = "successfully write into database"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         else:
-            result["status"] = flag
-            result["msg"] = "error when writing into database" + flag["msg"]
+            result[RESULT_CODE] = flag
+            result[RESULT_MSG] = "error when writing into database" + flag[RESULT_MSG]
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
     else:
-        result["status"] = -10
-        result["msg"] = "not supported request form"
+        result[RESULT_CODE] = -10
+        result[RESULT_MSG] = "not supported request form"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
 
@@ -752,22 +733,22 @@ def add_relation(request):
     """
     向cypher添加relation
     :param request:
-    :return: {"msg": "", "status": 0}, 0:缺少参数；-1：参数格式错误;-10:请求方式错误，-2~-5见create_or_match_persons方法
+    :return: {RESULT_MSG: "", RESULT_CODE: 0}, 0:缺少参数；-1：参数格式错误;-10:请求方式错误，-2~-5见create_or_match_persons方法
     """
-    result = {"msg": "", "status": 0}
+    result = ini_result()
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if is_ajax and request.method == 'POST':
         node_info = request.body  # 处理后是dict，直接传到后台写入数据库就可以了
         if node_info is None or node_info == "":
-            result["status"] = 0
-            result["msg"] = "no data is given"
+            result[RESULT_CODE] = 0
+            result[RESULT_MSG] = "no data is given"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         try:
             node_info = bytes.decode(node_info)
             node_info = json.loads(node_info)
-        except JSONDecodeError or TypeError:
-            result["status"] = -1
-            result["msg"] = "given data is not a json string"
+        except json.JSONDecodeError or TypeError:
+            result[RESULT_CODE] = -1
+            result[RESULT_MSG] = "given data is not a json string"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         # 调方法写数据库
         source_id = node_info["sourceID"]
@@ -776,17 +757,17 @@ def add_relation(request):
         target_type = node_info["targetType"]
         rel_type = node_info["relType"]
         flag = db_operation.query_or_create_relation(None, source_type, source_id, target_type, target_id, rel_type)
-        if flag["status"] > 0:
-            result["status"] = 1
-            result["msg"] = "successfully write into database"
+        if flag[RESULT_CODE] > 0:
+            result[RESULT_CODE] = 1
+            result[RESULT_MSG] = "successfully write into database"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         else:
-            result["status"] = flag["status"]
-            result["msg"] = "error when writing into database" + flag["msg"]
+            result[RESULT_CODE] = flag[RESULT_CODE]
+            result[RESULT_MSG] = "error when writing into database" + flag[RESULT_MSG]
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
     else:
-        result["status"] = -10
-        result["msg"] = "not supported request form"
+        result[RESULT_CODE] = -10
+        result[RESULT_MSG] = "not supported request form"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
 
@@ -796,20 +777,20 @@ def revise_publication(request):
     :param request:
     :return:
     """
-    result = {"msg": "", "status": 0}
+    result = ini_result()
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if is_ajax and request.method == 'POST':
         pub_info = request.body
         if pub_info is None or pub_info == "":
-            result["status"] = 0
-            result["msg"] = "no data is given"
+            result[RESULT_CODE] = 0
+            result[RESULT_MSG] = "no data is given"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         try:
             pub_info = bytes.decode(pub_info)
             pub_info = json.loads(pub_info)
-        except JSONDecodeError or TypeError:
-            result["status"] = -1
-            result["msg"] = "given data is not a json string"
+        except json.JSONDecodeError or TypeError:
+            result[RESULT_CODE] = -1
+            result[RESULT_MSG] = "given data is not a json string"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         # 特殊字段的处理：作者
         authors = pub_info.get("author", None)
@@ -853,8 +834,8 @@ def revise_publication(request):
         elif pub_info["node_type"] == "13":
             pub_info["node_type"] = "Unpublished"
         else:
-            result["status"] = -3
-            result["msg"] = "unsupported paper type"
+            result[RESULT_CODE] = -3
+            result[RESULT_MSG] = "unsupported paper type"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         # 特殊处理，pages
         p1 = pub_info.get("pages1", None)
@@ -864,16 +845,16 @@ def revise_publication(request):
         # 调方法写数据库
         flag = db_operation.revise_publications(pub_info)
         if flag == 1:
-            result["status"] = 1
-            result["msg"] = "successfully write into database"
+            result[RESULT_CODE] = 1
+            result[RESULT_MSG] = "successfully write into database"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         else:
-            result["status"] = flag * 3
-            result["msg"] = "error when writing into database"
+            result[RESULT_CODE] = flag * 3
+            result[RESULT_MSG] = "error when writing into database"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
     else:
-        result["status"] = -2
-        result["msg"] = "not supported request form"
+        result[RESULT_CODE] = -2
+        result[RESULT_MSG] = "not supported request form"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
 
 
@@ -881,52 +862,52 @@ def revise_person(request):
     """
     利用cypher修改person
     :param request:
-    :return:{"msg": "no data is given", "status": 0} 0:无参数,-1:参数格式错误,
+    :return:{RESULT_MSG: "no data is given", RESULT_CODE: 0} 0:无参数,-1:参数格式错误,
     """
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if is_ajax and request.method == 'POST':
         node_info = request.body
         if node_info is None or node_info == "":
-            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
+            return HttpResponse(json.dumps({RESULT_MSG: "no data is given", RESULT_CODE: 0}))
         try:
             node_info = bytes.decode(node_info)
             node_info = json.loads(node_info)
-        except JSONDecodeError or TypeError:
-            return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
+        except json.JSONDecodeError or TypeError:
+            return HttpResponse(json.dumps({RESULT_MSG: "given data is not a json string", RESULT_CODE: -1}))
         # 调方法写数据库
         flag = db_operation.revise_persons(node_info)
         if flag == 1:
-            return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
+            return HttpResponse(json.dumps({RESULT_MSG: "successfully write into database", RESULT_CODE: 1}))
         else:
-            return HttpResponse(json.dumps({"msg": "error when writing into database", "status": flag*3}))
+            return HttpResponse(json.dumps({RESULT_MSG: "error when writing into database", RESULT_CODE: flag*3}))
     else:
-        return HttpResponse(json.dumps({"msg": "not supported request form", "status": -2}))
+        return HttpResponse(json.dumps({RESULT_MSG: "not supported request form", RESULT_CODE: -2}))
 
 
 def revise_venue(request):
     """
     利用cypher修改person
     :param request:
-    :return:{"msg": "no data is given", "status": 0} 0:无参数,-1:参数格式错误,
+    :return:{RESULT_MSG: "no data is given", RESULT_CODE: 0} 0:无参数,-1:参数格式错误,
     """
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if is_ajax and request.method == 'POST':
         node_info = request.body
         if node_info is None or node_info == "":
-            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
+            return HttpResponse(json.dumps({RESULT_MSG: "no data is given", RESULT_CODE: 0}))
         try:
             node_info = bytes.decode(node_info)
             node_info = json.loads(node_info)
-        except JSONDecodeError or TypeError:
-            return HttpResponse(json.dumps({"msg": "given data is not a json string", "status": -1}))
+        except json.JSONDecodeError or TypeError:
+            return HttpResponse(json.dumps({RESULT_MSG: "given data is not a json string", RESULT_CODE: -1}))
         # 调方法写数据库
         flag = db_operation.revise_venues(node_info)
         if flag == 1:
-            return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
+            return HttpResponse(json.dumps({RESULT_MSG: "successfully write into database", RESULT_CODE: 1}))
         else:
-            return HttpResponse(json.dumps({"msg": "error when writing into database", "status": flag*3}))
+            return HttpResponse(json.dumps({RESULT_MSG: "error when writing into database", RESULT_CODE: flag*3}))
     else:
-        return HttpResponse(json.dumps({"msg": "not supported request form", "status": -2}))
+        return HttpResponse(json.dumps({RESULT_MSG: "not supported request form", RESULT_CODE: -2}))
 
 
 def search_publication(request):
@@ -939,24 +920,24 @@ def search_publication(request):
         the_paras = request.POST
         pub_info = the_paras.keys()
         if pub_info is None:
-            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
+            return HttpResponse(json.dumps({RESULT_MSG: "no data is given", RESULT_CODE: 0}))
         # 调方法写数据库
         title = the_paras.get("title", None)
         if title is None or title.strip() == "":
             return HttpResponse(
-                json.dumps({"code": -2, "msg": "标题一定要有才能搜索", "count": 0, "data": ""}))
+                json.dumps({RESULT_CODE: -2, RESULT_MSG: "标题一定要有才能搜索", "count": 0, RESULT_DATA: ""}))
         parameters = {"title": title}
         paper_type = the_paras.get("paperType", None)
         if paper_type is not None and paper_type.strip() != "":
             parameters["paperTypeEdit"] = paper_type
         flag = query_data.query_pub_by_multiple_field(parameters)  # -1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
         data = json.loads(flag)
-        if data["code"] < 1:
+        if data[RESULT_CODE] < 1:
             return HttpResponse(flag)
         else:  # 返回数据
             count = 1
             pubs = []
-            for pub in data["data"]:
+            for pub in data[RESULT_DATA]:
                 pub["ID"] = count
                 if pub["pages1"] == "" or pub["pages2"] == "":
                     pub["pages"] = ""
@@ -966,11 +947,11 @@ def search_publication(request):
                 pub.pop("pages2")
                 count += 1
                 pubs.append(pub)
-            data["data"] = pubs
-            data["code"] = 0
+            data[RESULT_DATA] = pubs
+            data[RESULT_CODE] = 0
             return HttpResponse(json.dumps(data))
     else:
-        return HttpResponse(json.dumps({"code": -1, "msg": "not support request method, should be post", "count": 0, "data": ""}))
+        return HttpResponse(json.dumps({RESULT_CODE: -1, RESULT_MSG: "not support request method, should be post", "count": 0, RESULT_DATA: ""}))
 
 
 def search_person(request):
@@ -983,29 +964,29 @@ def search_person(request):
         the_paras = request.POST
         pub_info = the_paras.keys()
         if pub_info is None:
-            return HttpResponse(json.dumps({"msg": "no data is given", "status": 0}))
+            return HttpResponse(json.dumps({RESULT_MSG: "no data is given", RESULT_CODE: 0}))
         # 调方法写数据库
         full_name = the_paras.get("full_name", None)
         if full_name is None or full_name.strip() == "":
             return HttpResponse(
-                json.dumps({"code": -2, "msg": "标题一定要有才能搜索", "count": 0, "data": ""}))
+                json.dumps({RESULT_CODE: -2, RESULT_MSG: "标题一定要有才能搜索", "count": 0, RESULT_DATA: ""}))
         parameters = {"full_name": full_name}
         flag = query_data.query_person_or_venue_by_multiple_field(parameters, "PERSON")
         data = json.loads(flag)
-        if data["code"] < 1:
+        if data[RESULT_CODE] < 1:
             return HttpResponse(flag)
         else:  # 返回数据
             count = 1
             persons = []
-            for person in data["data"]:
+            for person in data[RESULT_DATA]:
                 person["ID"] = count
                 count += 1
                 persons.append(person)
-            data["data"] = persons
-            data["code"] = 0
+            data[RESULT_DATA] = persons
+            data[RESULT_CODE] = 0
             return HttpResponse(json.dumps(data))
     else:
-        return HttpResponse(json.dumps({"code": -1, "msg": "not support request method, should be post", "count": 0, "data": ""}))
+        return HttpResponse(json.dumps({RESULT_CODE: -1, RESULT_MSG: "not support request method, should be post", "count": 0, RESULT_DATA: ""}))
 
 
 def search_venue(request):
@@ -1019,19 +1000,19 @@ def search_venue(request):
         if is_ajax:
             the_paras = request.body
             if the_paras is None:
-                return HttpResponse(json.dumps({"msg": "no data is given", "code": 0, "data": "", "count": 0}))
+                return HttpResponse(json.dumps({RESULT_MSG: "no data is given", RESULT_CODE: 0, RESULT_DATA: "", "count": 0}))
             try:
                 the_paras = bytes.decode(the_paras)
                 the_paras = json.loads(the_paras)
-            except JSONDecodeError or TypeError:
-                return HttpResponse(json.dumps({"msg": "given data is not a json string", "code": -1, "data": "", "count": 0}))
+            except json.JSONDecodeError or TypeError:
+                return HttpResponse(json.dumps({RESULT_MSG: "given data is not a json string", RESULT_CODE: -1, RESULT_DATA: "", "count": 0}))
             # page = None
             # limit = None
         else:
             the_paras = request.POST
             pub_info = the_paras.keys()
             if pub_info is None:
-                return HttpResponse(json.dumps({"msg": "no data is given", "code": 0, "data": "", "count": 0}))
+                return HttpResponse(json.dumps({RESULT_MSG: "no data is given", RESULT_CODE: 0, RESULT_DATA: "", "count": 0}))
             # page = the_paras.get("page", None)
             # limit = the_paras.get("limit", None)
 
@@ -1039,25 +1020,25 @@ def search_venue(request):
         title = the_paras.get("venue_name", None)
         if title is None or title.strip() == "":
             return HttpResponse(
-                json.dumps({"code": -2, "msg": "标题一定要有才能搜索", "count": 0, "data": ""}))
+                json.dumps({RESULT_CODE: -2, RESULT_MSG: "标题一定要有才能搜索", "count": 0, RESULT_DATA: ""}))
         parameters = {"venue_name": title}
         flag = query_data.query_person_or_venue_by_multiple_field(parameters, "VENUE")
         data = json.loads(flag)
-        if data["code"] < 1:
+        if data[RESULT_CODE] < 1:
             return HttpResponse(flag)
         else:  # 返回数据
             count = 1
             venues = []
-            for venue in data["data"]:
+            for venue in data[RESULT_DATA]:
                 venue["ID"] = count
                 count += 1
                 venues.append(venue)
-            data["data"] = venues
+            data[RESULT_DATA] = venues
             data["count"] = count
-            data["code"] = 1
+            data[RESULT_CODE] = 1
             return HttpResponse(json.dumps(data))
     else:
-        return HttpResponse(json.dumps({"code": -1, "msg": "not support request method, should be post", "count": 0, "data": ""}))
+        return HttpResponse(json.dumps({RESULT_CODE: -1, RESULT_MSG: "not support request method, should be post", "count": 0, RESULT_DATA: ""}))
 
 
 def verify_auth(request):
@@ -1066,24 +1047,31 @@ def verify_auth(request):
         :param request:
         :return:
         """
+    result = ini_result()
     user_list = {"user": "123456"}
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if is_ajax and request.method == 'GET':
         user = request.GET.get("username", None)
         password = request.GET.get("pwd", None)
         if user is None or password is None:
-            result = {"status": -1, "msg": "invalid request parameters"}
+            result[RESULT_CODE] = -1
+            result[RESULT_MSG] = "invalid request parameters"
         else:
             pwd_in_database = user_list.get(user, None)
             if pwd_in_database is None:
-                result = {"status": -1, "msg": "no registered user"}
+                result[RESULT_CODE] = -1
+                result[RESULT_MSG] = "no registered user"
             elif pwd_in_database != password:
-                result = {"status": -1, "msg": "unmatched password"}
+                result[RESULT_CODE] = -1
+                result[RESULT_MSG] = "unmatched password"
             else:
-                result = {"status": 1, "msg": "matched user and password", "user": user, "pwd": password}
+                result[RESULT_CODE] = 1
+                result[RESULT_MSG] = "matched user and password"
+                result[RESULT_DATA] = {"user": user, "pwd": password}
     else:
-        result = {"status": -1, "msg": "invalid request"}
-    return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+        result[RESULT_CODE] = -1
+        result[RESULT_MSG] = "invalid request"
+    return result
 
 
 def get_pib_info_for_edit(request):
@@ -1091,14 +1079,14 @@ def get_pib_info_for_edit(request):
     if is_ajax and request.method == 'GET':
         the_uuid = request.GET.get("id", None)
         if the_uuid is None:
-            return HttpResponse(json.dumps({"msg": "no valid publication id is provided.", "status": -1}))
+            return HttpResponse(json.dumps({RESULT_MSG: "no valid publication id is provided.", RESULT_CODE: -1}))
         else:
             data = query_data.query_one_pub_by_uuid(the_uuid)
-            if data["code"] != 1:
-                return HttpResponse(json.dumps({"msg": data["msg"], "status": -1}))
+            if data[RESULT_CODE] != 1:
+                return HttpResponse(json.dumps({RESULT_MSG: data[RESULT_MSG], RESULT_CODE: -1}))
             else:
-                return HttpResponse(json.dumps({"msg": data["msg"], "status": 1, "data": data["data"]}))
-    return HttpResponse(json.dumps({"msg": "not ajax request or the request method is not get", "status": -1}))
+                return HttpResponse(json.dumps({RESULT_MSG: data[RESULT_MSG], RESULT_CODE: 1, RESULT_DATA: data[RESULT_DATA]}))
+    return HttpResponse(json.dumps({RESULT_MSG: "not ajax request or the request method is not get", RESULT_CODE: -1}))
 
 
 def pub_interface(request):
@@ -1123,9 +1111,9 @@ def upload_bib_add_record(request):
         flag = db_operation.create_or_match_publications(file_path, mode=1)
         os.remove(file_path)
         if flag == 1:
-            return HttpResponse(json.dumps({"msg": "successfully write into database", "status": 1}))
+            return HttpResponse(json.dumps({RESULT_MSG: "successfully write into database", RESULT_CODE: 1}))
         else:
-            return HttpResponse(json.dumps({"msg": "error when writing into database", "status": flag * 3}))
+            return HttpResponse(json.dumps({RESULT_MSG: "error when writing into database", RESULT_CODE: flag * 3}))
 
 
 # 文件保存方法
@@ -1144,15 +1132,15 @@ def handle_uploaded_file(f):
 
 def split_name(request):
     person_name = request.body
-    result = {"first_name": '', "middle_name": "", "last_name": "", "status": -1,
-              "msg": "no given name"}
+    result = {"first_name": '', "middle_name": "", "last_name": "", RESULT_CODE: -1,
+              RESULT_MSG: "no given name"}
     try:
         person_name = bytes.decode(person_name)
         person_name = json.loads(person_name)
-    except JSONDecodeError or TypeError:
+    except json.JSONDecodeError or TypeError:
         print("error")
         HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
     if person_name is None or person_name == {}:
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-    result = utils.util_text_operation.analyze_person_name(person_name)
+    result = util_text_operation.analyze_person_name(person_name)
     return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')

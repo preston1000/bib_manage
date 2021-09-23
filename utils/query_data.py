@@ -179,7 +179,7 @@ def query_pub_by_multiple_field(database_info, pub_info, parameters=None):
     :return:-1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录，result={"data":, "code":}
     """
     # 根据提供的文献信息，查询数据库，并整理结果
-    result = {"code": -1, "data": {}, "msg":""}
+    result = {"code": -1, "data": {}, "msg": ""}
     tmp = query_by_multiple_field(database_info, pub_info, "PUBLICATION", parameters)
     result["code"] = tmp.get("code", -1)
     result["data"] = tmp.get("data", None)
