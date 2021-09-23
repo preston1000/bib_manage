@@ -18,6 +18,9 @@ from utils.mqtt_util import MqttUtil
 from utils.tmp_db import create_or_match_nodes_dict
 from utils import query_data, db_operation, util_text_operation
 
+from neo4j import GraphDatabase
+import neo4j
+
 os.environ["PATH"] += os.pathsep + 'D:\\Graphviz\\bin'
 
 basedir = Path(__file__).parent.parent.parent.parent  # 项目根目录
@@ -41,10 +44,10 @@ sys.path.append(address)
 neo4j 配置
 """
 uri = cf.get("neo4j", "uri")
-username = cf.get("neo4j", "username")
-pwd = cf.get("neo4j", "pwd")
+neo4j_username = cf.get("neo4j", "username")
+neo4j_pwd = cf.get("neo4j", "pwd")
 
-database_info = {"uri": uri, "username": username, "pwd": pwd}
+database_info = {"uri": uri, "username": neo4j_username, "pwd": neo4j_pwd}
 """
 MQTT service
 """
@@ -80,6 +83,12 @@ def wrap_result(result, ensure_ascii=False, content_type='application/json', cha
 def ini_result():
     result = {RESULT_DATA: None, RESULT_MSG: "", RESULT_CODE: -1}
     return result
+
+
+def initialize_neo4j_driver():
+    # 初始化Neo4j数据库连接,及查询结果
+    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(neo4j_username, neo4j_pwd))
+    return driver
 
 
 """
@@ -586,6 +595,14 @@ def about(request):
         return render(request, 'about_backup.html', {"position": json.dumps(pos)})
 
 
+def about2(request):
+    pos = request.GET.get("pos", None)
+    if pos is None:
+        return render(request, 'about.html', {"position": json.dumps('null')})
+    else:
+        return render(request, 'about.html', {"position": json.dumps(pos)})
+
+
 def table(request):
     # return HttpResponse('welcome to the front page')
     return render(request, 'table.html')
@@ -599,15 +616,18 @@ def get_sample_data(request):
     page = request.GET.get("page", None)
     limit = request.GET.get("limit", None)
     # limit = None
+    driver = initialize_neo4j_driver()
+
     if page is None or limit is None:
-        data = query_data.sample_data()
+        data = query_data.sample_data(driver)
     else:
-        data = query_data.sample_data((int(page)-1)*int(limit), int(limit))
+        data = query_data.sample_data(driver, (int(page)-1)*int(limit), int(limit))
     return HttpResponse(data)
 
 
 def get_vis_data():
-    json_str = query_data.query_vis_data()
+    driver = initialize_neo4j_driver()
+    json_str = query_data.query_vis_data(driver)
     return HttpResponse(json_str)
 
 
@@ -1080,7 +1100,8 @@ def get_pib_info_for_edit(request):
         if the_uuid is None:
             return HttpResponse(json.dumps({RESULT_MSG: "no valid publication id is provided.", RESULT_CODE: -1}))
         else:
-            data = query_data.query_one_pub_by_uuid(the_uuid)
+            driver = initialize_neo4j_driver()
+            data = query_data.query_one_pub_by_uuid(driver, the_uuid)
             if data[RESULT_CODE] != 1:
                 return HttpResponse(json.dumps({RESULT_MSG: data[RESULT_MSG], RESULT_CODE: -1}))
             else:

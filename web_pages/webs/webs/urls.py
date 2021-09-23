@@ -19,9 +19,10 @@ import pages.views as views
 
 
 urlpatterns = [
+    path('', views.index, name='home'),  # home page
     path('admin/', admin.site.urls),
-    path('', views.index, name='home'),
     path('about/', views.about, name='about'),
+    path('about2/', views.about2, name='about'),
     path('table/', views.table, name='table'),
     path('net/', views.net, name='net'),
     path('sample-data/', views.get_sample_data, name='sample-data'),

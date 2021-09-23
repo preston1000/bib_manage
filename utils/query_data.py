@@ -9,15 +9,12 @@ from utils.util_operation import process_neo4j_result
 cf = ConfigParser()
 cf.read("./neo4j.conf", encoding="utf-8")
 
-uri = cf.get("neo4j", "uri")
-username = cf.get("neo4j", "username")
-pwd = cf.get("neo4j", "pwd")
 
-
-def sample_data(skip=None, limit=None):
+def sample_data(driver, skip=None, limit=None):
     """
     mode=1 : 用来查询"人--文献"的关系，用以生成表格
     mode=2 : 用来查询"人--文献--venue"的关系，用以生成图形
+    :param driver:
     :param skip:
     :param limit:
     :param mode:
@@ -31,9 +28,6 @@ def sample_data(skip=None, limit=None):
     person_list.extend(members.split(" and "))
     person_list.extend(members_cn.split(" and "))
     person_list = [item.upper() for item in person_list]
-
-    # 初始化Neo4j数据库连接,及查询结果
-    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
 
     # 查询是否存在数据
     cypher_total = "match (n:Person)-[r:Write]->(m:Publication)  where n.name in " + str(person_list) + \
@@ -94,14 +88,12 @@ def sample_data(skip=None, limit=None):
     return json.dumps(msg)
 
 
-def query_one_pub_by_uuid(pub_id):
+def query_one_pub_by_uuid(driver, pub_id):
     """
+    :param driver:
     :param pub_id:pub uuid
     :return:
     """
-
-    # 初始化Neo4j数据库连接,及查询结果
-    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
 
     # 查询是否存在数据
     cypher = "match (m:Publication {uuid:'" + pub_id + "'}) <-[r:Write]- (n:Person) return m, n"
@@ -437,9 +429,10 @@ def generate_cypher_for_multi_field_condition(node_info, node_type, node_identif
     return cypher
 
 
-def query_vis_data():
+def query_vis_data(driver):
     """
     用来展示关系图
+    :param driver:
     :param skip:
     :param limit:
     :return:
@@ -452,9 +445,6 @@ def query_vis_data():
     person_list.extend(members.split(" and "))
     person_list.extend(members_cn.split(" and "))
     person_list = [item.upper() for item in person_list]
-
-    # 初始化Neo4j数据库连接,及查询结果
-    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(username, pwd))
 
     # 查询是否存在数据
     cypher_total = "match (n:Person)-[r:Write]->(m:Publication)  where n.name in " + str(person_list) + \
@@ -530,5 +520,6 @@ def query_vis_data():
 if __name__ == "__main__":
     # msg = sample_data("0", "10")
     # msg = query_vis_data()
-    msg = query_one_pub_by_uuid("c0aaecba7da111e881f3a45e60c2e1a5")
+    driver = GraphDatabase.driver('bolt://localhost:7687', auth=neo4j.basic_auth('neo4j', '123456'))
+    msg = query_one_pub_by_uuid(driver, "c0aaecba7da111e881f3a45e60c2e1a5")
     print(msg)
