@@ -4,7 +4,7 @@
 from utils.models import Venue, Person
 from utils.util_operation import get_value_by_key
 from utils.util_operation_2 import upperize_dict_keys
-from utils.util_text_operation import process_special_character
+from utils.nlp.text_utils import process_special_character
 
 
 def extract_venue(entry):

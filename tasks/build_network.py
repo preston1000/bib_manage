@@ -5,9 +5,10 @@ import neo4j
 from neo4j import GraphDatabase
 
 from utils.tmp_db import create_or_match_nodes, query_or_create_relation, revise_node_by_fields
-from utils.util_text_operation import string_util, process_person_names, process_pages
+from utils.nlp.text_utils import string_util, process_person_names, process_pages
 from utils.d_extraction import do_extract
-from utils.util_operation import ini_neo4j, wrap_info_to_model, process_neo4j_result, check_uniqueness_pubs
+from utils.util_operation import ini_neo4j, wrap_info_to_model, check_uniqueness_pubs
+from utils.db_util.utils import process_neo4j_result
 from utils.constants import GlobalVariables
 
 field_names = GlobalVariables.const_field_name

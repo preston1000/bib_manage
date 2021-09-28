@@ -6,17 +6,14 @@ from LAC import LAC
 
 from graphviz import Digraph
 
-basedir = Path(__file__).parent.parent.parent  # 项目根目录
-current_dir = Path(__file__).parent  # 当前文件夹
+from utils.initialization import lac_file, ddp_file
 """
 分词/依存关系配置
 """
-lac_dict_path = basedir.joinpath('model_files/LAC_dict/tokenize_dict_lac.txt')
-dd_parser_model_path = basedir.joinpath('model_files/ddparser_models')
 
 lac = LAC()
-lac.load_customization(lac_dict_path)
-ddp = DDParser(use_cuda=False, tree=True, prob=False, use_pos=False, model_files_path=dd_parser_model_path, buckets=False,
+lac.load_customization(lac_file)
+ddp = DDParser(use_cuda=False, tree=True, prob=False, use_pos=False, model_files_path=ddp_file, buckets=False,
                batch_size=None, encoding_model="ernie-lstm")
 
 

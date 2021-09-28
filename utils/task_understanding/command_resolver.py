@@ -17,7 +17,7 @@ import requests
 import json
 from json import JSONDecodeError
 
-from utils.nlp.utils import dd_parser_caller, get_modifier_as_children_att
+from utils.nlp.nlp_utils import dd_parser_caller, get_modifier_as_children_att
 from model_files.NLP.task_list import WORDS, POSSIBILITY, SYNONYMS_INVERSE
 from model_files.NLP.config import QUERY_URL, QUERY_EXHIBITION_BY_NAME, PARAMETER_DELIMITER, PARAMETER_KEY_VALUE_DELIMITER
 """

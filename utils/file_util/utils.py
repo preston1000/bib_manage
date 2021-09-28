@@ -1,5 +1,6 @@
 
 import xlrd
+import bibtexparser
 
 
 def read_from_excel(file, sheet_name, column_specified):
@@ -56,3 +57,48 @@ def read_from_excel(file, sheet_name, column_specified):
     result["code"] = 700
     result["msg"] = '读取Excel工作簿成功'
     result["data"] = content
+
+
+def parse_bib_file(file_name):
+    """
+    从bib文件中解析出文献信息
+    :param file_name:
+    :return:
+    """
+    result = {"data": "", "msg": "", "code": 0}
+    with open(file_name, encoding="utf-8") as bib_file:
+        try:
+            bib_database = bibtexparser.load(bib_file)
+        except:
+            result["code"] = -101
+            result["msg"] = "无法解析bib文件【" + file_name + "】"
+            return result
+        if bib_database is not None:
+            result["code"] = 100
+            result["msg"] = "成功解析bib文件【" + file_name + "】"
+            result["data"] = bib_database.entries
+            return result
+        else:
+            result["code"] = -102
+            result["msg"] = "未从bib文件中解析出结果！【" + file_name + "】"
+            return result
+
+
+def save_file_stream_on_disk(file, dir, filename):
+    """
+    把文件流写入本地临时文件
+    :param filename: file name
+    :param dir: directory
+    :param file: file stream
+    :return:
+    """
+    os.makedirs(dir, exist_ok=True)
+    file_path = os.path.join(dir, filename)
+    try:
+        with open(file_path, 'wb+') as destination:
+            for chunk in file.chunks():
+                destination.write(chunk)
+            destination.close()
+        return file_path
+    except:
+        return None

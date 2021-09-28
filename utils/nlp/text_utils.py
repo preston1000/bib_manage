@@ -47,7 +47,7 @@ def process_person_names(names):
 
 
 def check_special(entries, field):
-    txt = get_value_by_key(entries, field.upper())
+    txt = entries.get(field.upper(), None)
     txt = "" if txt is None else txt.upper()
     txt = process_special_character(txt)
     return txt
@@ -309,26 +309,6 @@ def null_int(value):
         return 0
     else:
         return value
-
-
-def split_name(name, authors):
-    if name is None or name == "" or name == "null":
-        return None
-    else:
-        index = authors.index(name)
-        name = [item.strip() for item in name.split(" ")]
-        result = {}
-        if len(name) < 1:
-            print("姓名解析错误:" + name)
-            return None
-        elif len(name) == 1:
-            result = {"firstName": "", "middleName": "", "lastName": name[0], "ranking": index}
-        elif len(name) == 2:
-            result = {"firstName": name[0], "middleName": "", "lastName": name[0], "ranking": index}
-        else:
-            result = {"firstName": name[0], "middleName": " ".join(name[1:len(name)-1]), "lastName": name[-1],
-                      "ranking": index}
-        return result
 
 
 def process_pages(data):

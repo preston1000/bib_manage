@@ -7,9 +7,10 @@ import os
 import bibtexparser
 import xlrd
 from utils.constants import GlobalVariables
+from utils.file_util.utils import parse_bib_file
 from utils.models import Publication
 from utils.util_operation_2 import upperize_dict_keys
-from utils.util_text_operation import check_special, check_ordinary, check_special2, check_number
+from utils.nlp.text_utils import check_special, check_ordinary, check_special2, check_number
 
 constant_pub_types = GlobalVariables.const_pub_type
 
@@ -68,31 +69,6 @@ def do_extract(file_path, ext=None, parameters=None):
             result["msg"] = "bib/excel文件解析成功，部分数据有效"
             result["data"] = pubs
     return result
-
-
-def parse_bib_file(file_name):
-    """
-    从bib文件中解析出文献信息
-    :param file_name:
-    :return:
-    """
-    result = {"data": "", "msg": "", "code": 0}
-    with open(file_name, encoding="utf-8") as bib_file:
-        try:
-            bib_database = bibtexparser.load(bib_file)
-        except:
-            result["code"] = -101
-            result["msg"] = "无法解析bib文件【" + file_name + "】"
-            return result
-        if bib_database is not None:
-            result["code"] = 100
-            result["msg"] = "成功解析bib文件【" + file_name + "】"
-            result["data"] = bib_database.entries
-            return result
-        else:
-            result["code"] = -102
-            result["msg"] = "未从bib文件中解析出结果！【" + file_name + "】"
-            return result
 
 
 def parse_excel_file(file_name, parameters=None):

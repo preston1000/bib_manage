@@ -15,8 +15,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-import pages.views as views
+import web_pages.webs.pages.views as views
 
+import utils.bib_util.utils
+import web_pages.webs.pages.views_deprel as dep_rel
+import web_pages.webs.pages.views_station as station
 
 urlpatterns = [
     path('', views.index, name='home'),  # home page
@@ -42,7 +45,7 @@ urlpatterns = [
     path('verify/', views.verify_auth, name='verify_auth'),
     path('pub-interface/', views.pub_interface, name='pub-interface'),
     path('upload-bib/', views.upload_bib_add_record, name='upload-bib'),
-    path('split-name/', views.split_name, name='split-name'),
+    path('split-name/', utils.bib_util.utils.split_name, name='split-name'),
     path('search-pub-popup/', views.search_pub_popup, name='search-pub-popup'),
     path('search-person-popup/', views.search_person_popup, name='search-person-popup'),
     path('search-venue-popup/', views.search_venue_popup, name='search-venue-popup'),
@@ -58,13 +61,13 @@ urlpatterns = [
     # path('manage/match-pub', views.manage_match_pub, name="manage-match-pub")
 
     # 意图理解相关网址
-    path('deprel/', views.deprel, name="deprel"),  # 依存分析网页界面
-    path('deprel/save-result/', views.save_deprel_result, name="deprel-result"),  # 保存评论结果
-    path('deprel/resolve-deprel/', views.resolve_deprel, name="resolve-deprel"),  # 解析句子依存关系的接口
-    path('tu/', views.command_resolve, name="resolve-command"),  # 解析任务型指令
+    path('deprel/', dep_rel.deprel, name="deprel"),  # 依存分析网页界面
+    path('deprel/save-result/', dep_rel.save_deprel_result, name="deprel-result"),  # 保存评论结果
+    path('deprel/resolve-deprel/', dep_rel.resolve_deprel, name="resolve-deprel"),  # 解析句子依存关系的接口
+    path('tu/', dep_rel.command_resolve, name="resolve-command"),  # 解析任务型指令
 
     # 火车相关
-    path('getCoordinates/', views.resolve_coordinates, name="resolve_coordinates"),  # 上传车站信息（excel文件）进行解析
-    path('parseExcelStations/', views.parse_excel_stations, name="parse_excel_stations"),  # 解析excel
+    path('getCoordinates/', station.resolve_coordinates, name="resolve_coordinates"),  # 上传车站信息（excel文件）进行解析
+    path('parseExcelStations/', station.parse_excel_stations, name="parse_excel_stations"),  # 解析excel
 
 ]

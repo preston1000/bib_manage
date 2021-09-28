@@ -5,8 +5,10 @@ import time
 import uuid
 from neo4j import GraphDatabase
 import neo4j
-from utils.d_extraction import parse_bib_file, extract_publication
-from utils.util_operation import ini_neo4j, process_neo4j_result
+from utils.d_extraction import extract_publication
+from utils.file_util.utils import parse_bib_file
+from utils.util_operation import ini_neo4j
+from utils.db_util.utils import process_neo4j_result
 from utils.constants import GlobalVariables
 
 

@@ -3,130 +3,29 @@ from django.http import HttpResponse
 
 import json
 import os
-import sys
 import datetime
-from configparser import ConfigParser
-from pathlib import Path
-import uuid
 
+import utils.db_util.operations
 from utils.bib_util.utils import process_search_condition
-from utils.nlp.utils import dd_parser_caller, generate_dep_rel_graph
-from utils.file_util.utils import read_from_excel
-from utils.task_understanding.command_resolver import resolve, ini_result
-from utils.mqtt_util import MqttUtil
+from utils.file_util.utils import save_file_stream_on_disk
+from utils.initialization import wrap_result, ini_result, initialize_neo4j_driver, RESULT_DATA, RESULT_MSG, RESULT_CODE, \
+    RESULT_COUNT
 
 from utils.tmp_db import create_or_match_nodes_dict
-from utils import query_data, db_operation, util_text_operation
+from utils import db_operation
+from utils.nlp import text_utils
 
-from neo4j import GraphDatabase
-import neo4j
-
-os.environ["PATH"] += os.pathsep + 'D:\\Graphviz\\bin'
-
-basedir = Path(__file__).parent.parent.parent.parent  # 项目根目录
-current_dir = Path(__file__).parent
-config_dir = Path(__file__).parent.parent
-"""
-日志配置
-"""
-log_dir = basedir.joinpath('logs/')
-
-config_file_neo4j = os.path.join(config_dir, "neo4j.conf")
-cf = ConfigParser()
-cf.read(config_file_neo4j, encoding="utf-8")
-
-"""
-？？？
-"""
-address = cf.get("moduleAddress", "address1")
-sys.path.append(address)
-"""
-neo4j 配置
-"""
-uri = cf.get("neo4j", "uri")
-neo4j_username = cf.get("neo4j", "username")
-neo4j_pwd = cf.get("neo4j", "pwd")
-
-database_info = {"uri": uri, "username": neo4j_username, "pwd": neo4j_pwd}
-"""
-MQTT service
-"""
-broker = cf.get("mqtt", "broker")  # 连接地址
-port = int(cf.get("mqtt", "port"))  # 端口地址
-topic = cf.get("mqtt", "topic")  # 主题topic
-client_id = cf.get("mqtt", "clientPublish")
-
-mqtt_client = MqttUtil(broker, port, client_id)
-
-"""
-load result field from config file 
-"""
-RESULT_DATA = cf.get("resultField", "data")
-RESULT_MSG = cf.get("resultField", "message")
-RESULT_CODE = cf.get("resultField", "code")
-RESULT_COUNT = cf.get("resultField", "count")
-"""
-station file format
-"""
-SHEET_NAME = cf.get("stationFileFormat", "sheetname")
-SHEET_TITLE = cf.get("stationFileFormat", "title").split(",")
-
-"""
-代码
-"""
-
-
-def wrap_result(result, ensure_ascii=False, content_type='application/json', charset='utf-8'):
-    return HttpResponse(json.dumps(result, ensure_ascii=ensure_ascii), content_type=content_type, charset=charset)
-
-
-def ini_result():
-    result = {RESULT_DATA: None, RESULT_MSG: "", RESULT_CODE: -1}
-    return result
-
-
-def initialize_neo4j_driver():
-    # 初始化Neo4j数据库连接,及查询结果
-    driver = GraphDatabase.driver(uri, auth=neo4j.basic_auth(neo4j_username, neo4j_pwd))
-    return driver
-
-
-"""
-火车相关
-"""
-
-
-def resolve_coordinates(request):
-    return render(request, 'coordinates.html')
-
-
-def parse_excel_stations(request):
-    """
-    从Excel文件中解析出车站信息，提取的结果是excel表中的各个数据
-    :param request:
-    :return:
-    """
-    result = ini_result()
-    try:
-        file = request.FILES.getlist('file')
-    except:
-        result[RESULT_MSG] = 'failed to retrieve file in the request'
-        result[RESULT_CODE] = -701
-        return wrap_result(result)
-    if file is None or len(file) == 0:
-        result[RESULT_MSG] = 'No file in the request'
-        result[RESULT_CODE] = -702
-        return wrap_result(result)
-
-    # 打开Excel文件# todo support multiple files
-    result = read_from_excel(file[0], SHEET_NAME, SHEET_TITLE)
-
-    return wrap_result(result)
-
+RESULT_SUCCESS = "success"
+RESULT_TASK = "task"
 
 """
 文献管理相关
 """
+
+
+def ini_result():
+    result = {RESULT_CODE: 0, RESULT_MSG: '', RESULT_SUCCESS: False, RESULT_TASK: None}
+    return result
 
 
 def search_home(request):
@@ -139,12 +38,13 @@ def search_result(request):
 
 def search_publication_new(request):
     """
-    这个实现的是在搜索结果界面的功能，包括高级搜索、查询和搜索数据的返回等，只查询，不创建
+    这个实现的是在搜索结果界面的功能，包括高级搜索、查询和搜索数据的返回等，只查询，不创建。AJAX + POST
     :param request:
     :return:
     """
     result = ini_result()
     result[RESULT_COUNT] = 0
+
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if request.method != 'POST':
         result[RESULT_MSG] = "not support request method, should be post"
@@ -156,7 +56,7 @@ def search_publication_new(request):
         the_paras = request.body
         if the_paras is None:
             result[RESULT_MSG] = "no query condition is given"
-            result[RESULT_CODE] = -601
+            result[RESULT_CODE] = -301
             return wrap_result(result)
 
         try:
@@ -180,18 +80,20 @@ def search_publication_new(request):
         page = the_paras.get("page", None)
         limit = the_paras.get("limit", None)
 
-    parameters = process_search_condition(pub_info)  # 封装数据为后台数据库能够接收的格式
+    query_conditions = process_search_condition(pub_info)  # 封装数据为后台数据库能够接收的格式
     # 分页条件
-    page_para = None
     if page is not None and limit is not None:
         try:
-            page_para = {"page": int(page), "limit": int(limit)}
+            page = int(page)
+            limit = int(limit)
         except ValueError:
-            page_para = None
+            page = None
+            limit = None
     # 查询
-    query_result = query_data.query_pub_by_multiple_field(database_info, parameters, page_para)
-    query_result = json.loads(query_result)
-    if query_result[RESULT_CODE] < 0:  # 返回的code有1，2，0，-1共四中
+    driver = initialize_neo4j_driver()
+    query_result = utils.db_util.operations.query_bib_node_by_multiple_field(driver, "PUBLICATION", query_conditions, page, limit)
+
+    if query_result["code"] != 905:  # 返回的code有1，2，0，-1共四中
         return wrap_result(result)
 
     # 处理返回的数据
@@ -235,7 +137,7 @@ def search_publication_count(request):
 
     pub_info = request.body
     if pub_info is None or pub_info == "":
-        result[RESULT_CODE] = -601
+        result[RESULT_CODE] = -301
         result[RESULT_MSG] = "no query condition is given"
         return wrap_result(result)
 
@@ -260,7 +162,8 @@ def search_publication_count(request):
         result["count"] = 0
         return wrap_result(result)
 
-    query_result = query_data.query_by_multiple_field_count(database_info, parameters, "PUBLICATION")  # -1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
+    driver = initialize_neo4j_driver()
+    query_result = utils.db_util.operations.query_by_multiple_field_count(driver, parameters, "PUBLICATION")  # -1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
 
     result[RESULT_CODE] = query_result[RESULT_CODE]
     result[RESULT_MSG] = query_result.get(RESULT_MSG, "")
@@ -281,210 +184,52 @@ def manage(request):
     return render(request, 'manage.html')
 
 
-"""
-意图理解相关
-"""
-
-
-def deprel(request):
-    return render(request, 'deprel.html')
-
-
-def save_deprel_result(request):
-    """
-    存储页面标注结果,将修改信息存储在txt文件中，格式为：id 提交评论时间 句子 解析文件路径(名) relation words head 是否有问题 comments（\t 隔开）
-    :param request:
-    :return:
-    """
-
+def upload_bib_add_record(request):
     result = ini_result()
-
-    data = request.body
-    is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
-    if not is_ajax or request.method != 'POST':
-
-        result['code'] = -103
-        result['msg'] = "not supported request form (should be post and with ajax)"
+    try:
+        files = request.FILES.getlist('file')
+    except:
+        result[RESULT_MSG] = 'failed to retrieve file in the request'
+        result[RESULT_CODE] = -701
         return wrap_result(result)
 
-    try:
-        data = bytes.decode(data)
-        data = json.loads(data)
+    if files is None or len(files) == 0:
+        result[RESULT_MSG] = 'No file in the request'
+        result[RESULT_CODE] = -702
+        return wrap_result(result)
 
-        record_uuid = str(uuid.uuid1())
-        record_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        sentence = data.get('sentence', '-')
+    driver = initialize_neo4j_driver()
+    dir = os.path.join(os.path.dirname(__file__), 'upload_file')  # 拼装目录名称+文件名称
 
-        result_file_name = data.get('image_path', '-')
+    file_not_processed = []
+    for file in files:
+        today = str(datetime.date.today())  # 获得今天日期
+        filename = today + '_' + file.name  # 获得上传来的文件名称,加入下划线分开日期和名称
 
-        words = data.get('words', '-')
-        relation = data.get('relation', '-')
-        head = data.get('head', '-')
+        file_path = save_file_stream_on_disk(file, dir, filename)  # 处理上传来的文件
 
-        is_correct = data.get('is_problematic', '-')
-        comments = data.get('comments', '-')
+        if file_path is None:
+            file_not_processed.append(file)
+            continue
 
-        tmp = [record_uuid, record_time, sentence, result_file_name, words, relation, head, is_correct, comments]
-        tmp = '\t'.join(tmp)
+        parse_result = db_operation.create_or_match_publications(driver, file_path, mode=1)
 
-        with open(log_dir.joinpath('dep_rel_service_log.log'), 'a+', encoding="utf-8") as f:
-            f.write(tmp + '\n')
+        os.remove(file_path)
 
-        result[RESULT_MSG] = "successfully saved"
-        result[RESULT_CODE] = 400
-        # result["field"] = data
-
-    except TypeError:
-        result['code'] = -402
-        result['msg'] = "no valid data is given"
+    if len(file_not_processed) > 0:
+        result[RESULT_CODE] = -201
+        result[RESULT_MSG] = "not all files are written into database"
+        result[RESULT_DATA] = file_not_processed
+    else:
+        result[RESULT_CODE] = 200
+        result[RESULT_MSG] = "success"
 
     return wrap_result(result)
 
 
-def resolve_deprel(request):
-    """
-    由“开始解析”按钮触发的对给定句子的解析，对外返回解析结果。
-
-    注：采用ajax + post方式，header指定{"X-Requested-With"："XMLHttpRequest", "Content-Type"："application/x-www-form-urlencoded"}
-
-    :param request: 包含待解析sentence
-    :return:
-    """
-    result = ini_result()
-    is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
-    if not is_ajax or request.method != 'POST':
-        result['code'] = -103
-        result['msg'] = "not supported request form (should be post and with ajax)"
-        return wrap_result(result)
-
-    data = request.body  #
-    if data is None or data == "":
-        result['code'] = -301
-        result['msg'] = "no data is given"
-        return wrap_result(result)
-
-    try:
-        data = bytes.decode(data)
-        data = json.loads(data)
-        sentence = data["sentence"]
-
-        # 调用ddparser处理结果-命名规则：sentence+timestamp
-        resolve_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        words, head, relation, pos_tag = dd_parser_caller(sentence)
-
-        # 生成依存关系图
-        graph_name = sentence + '_' + resolve_time  # 拼装:句子+时间
-
-        g = generate_dep_rel_graph(os.path.join(current_dir, 'static/images/cache'), graph_name,
-                                   words, relation, head)
-        if g is None:
-            print("failed to generate dependency graph")
-            result['code'] = -303
-            result['msg'] = "failed to generate dependency graph"
-            result[RESULT_DATA] = {'sentence': sentence, 'deprel': None, 'relation': str(relation), 'words': str(words), 'head': str(head)}
-        else:
-            print('successfully generate dependency graph')
-            result['code'] = 300
-            result['msg'] = "success"
-            result[RESULT_DATA] = {'sentence': sentence, 'deprel': graph_name+".png", 'relation': str(relation), 'words': str(words), 'head': str(head)}
-
-    except TypeError:
-        result['code'] = -302
-        result['msg'] = "no valid data is given"
-
-    return wrap_result(result)
-
-
-def command_resolve(request):
-    """
-    基本功能，按照模板匹配的方式处理指令，为进行grounding
-    :return:
-    """
-    request_method = request.method
-    result = ini_result()
-    if request_method != 'GET':
-        result[RESULT_CODE] = -101
-        result["message"] = "request method should be get"
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-
-    command = request.GET.get("command", None)
-    session_id = request.GET.get("sessionId", '')
-    robot_id = request.GET.get("robotId", '')
-
-    if not command or not session_id or not robot_id:
-        result[RESULT_CODE] = -802
-        result["message"] = "No command found"
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-
-    result = resolve(command)
-    if not result["success"]:
-        result[RESULT_CODE] = -803
-        result["message"] = "failed to resolve"
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-
-    task = result.get("task", None)
-    if task is None:
-        result[RESULT_CODE] = -804
-        result["message"] = "success without task information"
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-
-    task["sessionId"] = session_id
-    task["robotId"] = robot_id
-
-    # todo send to reasoning service
-    # ret = requests.post(PLANNING_URL, json=task).text
-
-    msg_to_front = {'input': command, 'output': task}
-    msg_to_front = json.dumps(msg_to_front, ensure_ascii=False)
-
-    mqtt_client.publish(topic, msg_to_front)
-
-    ret = '{RESULT_CODE: 200}'
-    try:
-        ret_content = json.loads(ret)
-        reason_code = ret_content.get(RESULT_CODE, 0)
-    except json.JSONDecodeError or TypeError:
-        result[RESULT_CODE] = 801
-        result["message"] = "success but failed to send to reasoning module"
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-
-    if reason_code != 200:
-        result[RESULT_CODE] = 802
-        result["message"] = "success but reasoning failed"
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-
-    result[RESULT_CODE] = 800
-    result["message"] = "success"
-
-    print_log(request, result)
-
-    return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-
-
-def print_log(request, response):
-    ip_address = request.META.get('REMOTE_ADDR', "")
-    api_method = request.method
-    api_path = request.META.get("PATH_INFO", "") + request.META.get("QUERY_STRING", "")
-    if len(api_path) == 0:
-        api_path = None
-
-    request_data = request.GET.get("command", "")
-
-    with open(log_dir.joinpath('tu_service_log.log'), 'a+', encoding="utf-8") as f:
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        f.write(current_time + " " + ip_address + " " + api_method + " " + api_path + '->' + request_data + '->' +
-                str(response) + '\n')
-
-    # # 记录慢查询日志，在日志处理器函数中会将其写入到文件中
-    # for query in get_debug_queries():
-    #     if query.duration >= app.config['FLASK_SLOW_DB_QUERY_TIME']:
-    #         app.logger.warning(
-    #             'Slow query: %s\n Parameters: %s\n Duration: %fs\n Context: %s'
-    #             % (query.statement, query.parameters, query.duration, query.context))
-    # pass
-
-# 以上是意图理解相关网页
-######################################################################################
+"""
+未修正
+"""
 
 
 def add_publication(request):
@@ -500,10 +245,12 @@ def add_publication(request):
         is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
         if is_ajax:
             pub_info = request.body
-            if pub_info is None:
+
+            if pub_info is None or pub_info == "":
+                result[RESULT_CODE] = -301
                 result[RESULT_MSG] = "no data is given"
-                result[RESULT_CODE] = -3
-                return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+                return wrap_result(result)
+
             try:
                 pub_info = bytes.decode(pub_info)
                 pub_info = json.loads(pub_info)
@@ -618,17 +365,38 @@ def get_sample_data(request):
     # limit = None
     driver = initialize_neo4j_driver()
 
+    person_list = []
+    members = cf.get("cpwlGroup", "members")
+    members_cn = cf.get("cpwlGroup", "members_cn")
+
+    person_list.extend(members.split(" and "))
+    person_list.extend(members_cn.split(" and "))
+    person_list = [item.upper() for item in person_list]
+
     if page is None or limit is None:
-        data = query_data.sample_data(driver)
+        data = utils.db_util.operations.query_person_pub_venue_by_person_name(driver, person_list)
     else:
-        data = query_data.sample_data(driver, (int(page)-1)*int(limit), int(limit))
+        data = utils.db_util.operations.query_person_pub_venue_by_person_name(driver, person_list, (int(page) - 1) * int(limit), int(limit))
     return HttpResponse(data)
 
 
 def get_vis_data():
     driver = initialize_neo4j_driver()
-    json_str = query_data.query_vis_data(driver)
-    return HttpResponse(json_str)
+
+    person_list = []
+    members = cf.get("cpwlGroup", "members")
+    members_cn = cf.get("cpwlGroup", "members_cn")
+
+    person_list.extend(members.split(" and "))
+    person_list.extend(members_cn.split(" and "))
+    person_list = [item.upper() for item in person_list]
+
+    query_result = utils.db_util.operations.query_person_pub_venue_by_person_name(driver, person_list)
+
+    if query_result["status"] == 1:
+        return wrap_result(query_result)
+    else:
+        return wrap_result("")
 
 
 def get_author_table_data(request):
@@ -683,32 +451,31 @@ def add_person(request):
     result = ini_result()
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if is_ajax and request.method == 'POST':
-        node_info = request.body  # 处理后是dict，直接传到后台写入数据库就可以了
-        if node_info is None or node_info == "":
-            result[RESULT_CODE] = 0
-            result[RESULT_MSG] = "no data is given"
-            return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-        try:
-            node_info = bytes.decode(node_info)
-            node_info = json.loads(node_info)
-        except json.JSONDecodeError or TypeError:
-            result[RESULT_CODE] = -1
-            result[RESULT_MSG] = "given data is not a json string"
-            return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-        # 调方法写数据库
-        flag = db_operation.create_or_match_persons(node_info, mode=2)
-        if flag[RESULT_CODE] == 1:
-            result[RESULT_CODE] = 1
-            result[RESULT_MSG] = "successfully write into database"
-            return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-        else:
-            result[RESULT_CODE] = flag
-            result[RESULT_MSG] = "error when writing into database" + flag[RESULT_MSG]
-            return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-    else:
-        result[RESULT_CODE] = -10
+        result[RESULT_CODE] = -103
         result[RESULT_MSG] = "not supported request form"
+        return wrap_result(result)
+
+    node_info = request.body  # 处理后是dict，直接传到后台写入数据库就可以了
+
+    if node_info is None or node_info == "":
+        result[RESULT_CODE] = -301
+        result[RESULT_MSG] = "no data is given"
+        return wrap_result(result)
+
+    try:
+        node_info = bytes.decode(node_info)
+        node_info = json.loads(node_info)
+    except json.JSONDecodeError or TypeError:
+        result[RESULT_CODE] = -1
+        result[RESULT_MSG] = "given data is not a json string"
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+    # 调方法写数据库
+    driver = initialize_neo4j_driver()
+    tmp_result = db_operation.create_or_match_persons(driver, node_info, mode=2)
+
+    result[RESULT_CODE] = tmp_result[RESULT_CODE]
+    result[RESULT_MSG] = tmp_result[RESULT_MSG]
+    return wrap_result(result)
 
 
 def add_venue(request):
@@ -721,10 +488,12 @@ def add_venue(request):
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if is_ajax and request.method == 'POST':
         node_info = request.body  # 处理后是dict，直接传到后台写入数据库就可以了
+
         if node_info is None or node_info == "":
-            result[RESULT_CODE] = 0
+            result[RESULT_CODE] = -301
             result[RESULT_MSG] = "no data is given"
-            return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+            return wrap_result(result)
+
         try:
             node_info = bytes.decode(node_info)
             node_info = json.loads(node_info)
@@ -733,15 +502,13 @@ def add_venue(request):
             result[RESULT_MSG] = "given data is not a json string"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         # 调方法写数据库
-        flag = db_operation.create_or_match_venues(node_info, mode=2)
-        if flag[RESULT_CODE] == 1:
-            result[RESULT_CODE] = 1
-            result[RESULT_MSG] = "successfully write into database"
-            return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-        else:
-            result[RESULT_CODE] = flag
-            result[RESULT_MSG] = "error when writing into database" + flag[RESULT_MSG]
-            return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+        driver = initialize_neo4j_driver()
+        tmp_result = db_operation.create_or_match_venues(driver, node_info, mode=2)
+
+        result[RESULT_CODE] = tmp_result[RESULT_CODE]
+        result[RESULT_MSG] = tmp_result[RESULT_MSG]
+
+        return result
     else:
         result[RESULT_CODE] = -10
         result[RESULT_MSG] = "not supported request form"
@@ -758,10 +525,12 @@ def add_relation(request):
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if is_ajax and request.method == 'POST':
         node_info = request.body  # 处理后是dict，直接传到后台写入数据库就可以了
+
         if node_info is None or node_info == "":
-            result[RESULT_CODE] = 0
+            result[RESULT_CODE] = -301
             result[RESULT_MSG] = "no data is given"
-            return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+            return wrap_result(result)
+
         try:
             node_info = bytes.decode(node_info)
             node_info = json.loads(node_info)
@@ -775,7 +544,9 @@ def add_relation(request):
         target_id = node_info["targetID"]
         target_type = node_info["targetType"]
         rel_type = node_info["relType"]
-        flag = db_operation.query_or_create_relation(None, source_type, source_id, target_type, target_id, rel_type)
+
+        driver = initialize_neo4j_driver()
+        flag = db_operation.query_or_create_relation(driver, source_type, source_id, target_type, target_id, rel_type)
         if flag[RESULT_CODE] > 0:
             result[RESULT_CODE] = 1
             result[RESULT_MSG] = "successfully write into database"
@@ -800,10 +571,12 @@ def revise_publication(request):
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if is_ajax and request.method == 'POST':
         pub_info = request.body
+
         if pub_info is None or pub_info == "":
-            result[RESULT_CODE] = 0
+            result[RESULT_CODE] = -301
             result[RESULT_MSG] = "no data is given"
-            return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+            return wrap_result(result)
+
         try:
             pub_info = bytes.decode(pub_info)
             pub_info = json.loads(pub_info)
@@ -862,7 +635,8 @@ def revise_publication(request):
         if p1 is not None and p2 is not None:
             pub_info["pages"] = str(p1) + "-" + str(p2)
         # 调方法写数据库
-        flag = db_operation.revise_publications(pub_info)
+        driver = initialize_neo4j_driver()
+        flag = db_operation.revise_publications(driver, pub_info)
         if flag == 1:
             result[RESULT_CODE] = 1
             result[RESULT_MSG] = "successfully write into database"
@@ -883,22 +657,28 @@ def revise_person(request):
     :param request:
     :return:{RESULT_MSG: "no data is given", RESULT_CODE: 0} 0:无参数,-1:参数格式错误,
     """
+    result = ini_result()
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if is_ajax and request.method == 'POST':
         node_info = request.body
+
         if node_info is None or node_info == "":
-            return HttpResponse(json.dumps({RESULT_MSG: "no data is given", RESULT_CODE: 0}))
+            result[RESULT_CODE] = -301
+            result[RESULT_MSG] = "no data is given"
+            return wrap_result(result)
+
         try:
             node_info = bytes.decode(node_info)
             node_info = json.loads(node_info)
         except json.JSONDecodeError or TypeError:
             return HttpResponse(json.dumps({RESULT_MSG: "given data is not a json string", RESULT_CODE: -1}))
         # 调方法写数据库
-        flag = db_operation.revise_persons(node_info)
+        driver = initialize_neo4j_driver()
+        flag = db_operation.revise_persons(driver, node_info)
         if flag == 1:
             return HttpResponse(json.dumps({RESULT_MSG: "successfully write into database", RESULT_CODE: 1}))
         else:
-            return HttpResponse(json.dumps({RESULT_MSG: "error when writing into database", RESULT_CODE: flag*3}))
+            return HttpResponse(json.dumps({RESULT_MSG: "error when writing into database", RESULT_CODE: flag * 3}))
     else:
         return HttpResponse(json.dumps({RESULT_MSG: "not supported request form", RESULT_CODE: -2}))
 
@@ -909,22 +689,28 @@ def revise_venue(request):
     :param request:
     :return:{RESULT_MSG: "no data is given", RESULT_CODE: 0} 0:无参数,-1:参数格式错误,
     """
+    result = ini_result()
     is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
     if is_ajax and request.method == 'POST':
         node_info = request.body
+
         if node_info is None or node_info == "":
-            return HttpResponse(json.dumps({RESULT_MSG: "no data is given", RESULT_CODE: 0}))
+            result[RESULT_CODE] = -301
+            result[RESULT_MSG] = "no data is given"
+            return wrap_result(result)
+
         try:
             node_info = bytes.decode(node_info)
             node_info = json.loads(node_info)
         except json.JSONDecodeError or TypeError:
             return HttpResponse(json.dumps({RESULT_MSG: "given data is not a json string", RESULT_CODE: -1}))
         # 调方法写数据库
-        flag = db_operation.revise_venues(node_info)
+        driver = initialize_neo4j_driver()
+        flag = db_operation.revise_venues(driver, node_info)
         if flag == 1:
             return HttpResponse(json.dumps({RESULT_MSG: "successfully write into database", RESULT_CODE: 1}))
         else:
-            return HttpResponse(json.dumps({RESULT_MSG: "error when writing into database", RESULT_CODE: flag*3}))
+            return HttpResponse(json.dumps({RESULT_MSG: "error when writing into database", RESULT_CODE: flag * 3}))
     else:
         return HttpResponse(json.dumps({RESULT_MSG: "not supported request form", RESULT_CODE: -2}))
 
@@ -949,26 +735,10 @@ def search_publication(request):
         paper_type = the_paras.get("paperType", None)
         if paper_type is not None and paper_type.strip() != "":
             parameters["paperTypeEdit"] = paper_type
-        flag = query_data.query_pub_by_multiple_field(parameters)  # -1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
-        data = json.loads(flag)
-        if data[RESULT_CODE] < 1:
-            return HttpResponse(flag)
-        else:  # 返回数据
-            count = 1
-            pubs = []
-            for pub in data[RESULT_DATA]:
-                pub["ID"] = count
-                if pub["pages1"] == "" or pub["pages2"] == "":
-                    pub["pages"] = ""
-                else:
-                    pub["pages"] = str(pub["pages1"]) + "-" + str(pub["pages2"])
-                pub.pop("pages1")
-                pub.pop("pages2")
-                count += 1
-                pubs.append(pub)
-            data[RESULT_DATA] = pubs
-            data[RESULT_CODE] = 0
-            return HttpResponse(json.dumps(data))
+        driver = initialize_neo4j_driver()
+        query_result = utils.db_util.operations.query_bib_node_by_multiple_field(driver, "PUBLICATION", parameters)  # -1:没有传入数据;0:未搜索到数据；2：搜索到多条记录；1：搜索到1条记录
+
+        return wrap_result(query_result)
     else:
         return HttpResponse(json.dumps({RESULT_CODE: -1, RESULT_MSG: "not support request method, should be post", "count": 0, RESULT_DATA: ""}))
 
@@ -990,7 +760,9 @@ def search_person(request):
             return HttpResponse(
                 json.dumps({RESULT_CODE: -2, RESULT_MSG: "标题一定要有才能搜索", "count": 0, RESULT_DATA: ""}))
         parameters = {"full_name": full_name}
-        flag = query_data.query_person_or_venue_by_multiple_field(parameters, "PERSON")
+
+        driver = initialize_neo4j_driver()
+        flag = utils.db_util.operations.query_bib_node_by_multiple_field(driver, "PERSON", parameters)
         data = json.loads(flag)
         if data[RESULT_CODE] < 1:
             return HttpResponse(flag)
@@ -1014,12 +786,18 @@ def search_venue(request):
     :param request:
     :return:
     """
+    result = ini_result()
+    result[RESULT_COUNT] = -1
     if request.method == 'POST':
         is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
         if is_ajax:
             the_paras = request.body
-            if the_paras is None:
-                return HttpResponse(json.dumps({RESULT_MSG: "no data is given", RESULT_CODE: 0, RESULT_DATA: "", "count": 0}))
+
+            if the_paras is None or the_paras == "":
+                result[RESULT_CODE] = -301
+                result[RESULT_MSG] = "no data is given"
+                return wrap_result(result)
+
             try:
                 the_paras = bytes.decode(the_paras)
                 the_paras = json.loads(the_paras)
@@ -1041,7 +819,9 @@ def search_venue(request):
             return HttpResponse(
                 json.dumps({RESULT_CODE: -2, RESULT_MSG: "标题一定要有才能搜索", "count": 0, RESULT_DATA: ""}))
         parameters = {"venue_name": title}
-        flag = query_data.query_person_or_venue_by_multiple_field(parameters, "VENUE")
+
+        driver = initialize_neo4j_driver()
+        flag = utils.db_util.operations.query_bib_node_by_multiple_field(driver, "VENUE", parameters)
         data = json.loads(flag)
         if data[RESULT_CODE] < 1:
             return HttpResponse(flag)
@@ -1101,11 +881,12 @@ def get_pib_info_for_edit(request):
             return HttpResponse(json.dumps({RESULT_MSG: "no valid publication id is provided.", RESULT_CODE: -1}))
         else:
             driver = initialize_neo4j_driver()
-            data = query_data.query_one_pub_by_uuid(driver, the_uuid)
+            data = utils.db_util.operations.query_one_pub_by_uuid(driver, the_uuid)
             if data[RESULT_CODE] != 1:
                 return HttpResponse(json.dumps({RESULT_MSG: data[RESULT_MSG], RESULT_CODE: -1}))
             else:
-                return HttpResponse(json.dumps({RESULT_MSG: data[RESULT_MSG], RESULT_CODE: 1, RESULT_DATA: data[RESULT_DATA]}))
+                return HttpResponse(json.dumps({RESULT_MSG: data[RESULT_MSG], RESULT_CODE: 1, RESULT_DATA: data[
+                    RESULT_DATA]}))
     return HttpResponse(json.dumps({RESULT_MSG: "not ajax request or the request method is not get", RESULT_CODE: -1}))
 
 
@@ -1125,35 +906,17 @@ def search_venue_popup(request):
     return render(request, "searchVenue.html")
 
 
-def upload_bib_add_record(request):
-    for file in request.FILES.getlist('file'):
-        file_path = handle_uploaded_file(file)  # 处理上传来的文件
-        flag = db_operation.create_or_match_publications(file_path, mode=1)
-        os.remove(file_path)
-        if flag == 1:
-            return HttpResponse(json.dumps({RESULT_MSG: "successfully write into database", RESULT_CODE: 1}))
-        else:
-            return HttpResponse(json.dumps({RESULT_MSG: "error when writing into database", RESULT_CODE: flag * 3}))
-
-
-# 文件保存方法
-def handle_uploaded_file(f):
-    today = str(datetime.date.today())  # 获得今天日期
-    file_name = today + '_' + f.name  # 获得上传来的文件名称,加入下划线分开日期和名称
-    file_path = os.path.join(os.path.dirname(__file__), 'upload_file')  # 拼装目录名称+文件名称
-    os.makedirs(file_path, exist_ok=True)
-    file_path = os.path.join(file_path, file_name)
-    with open(file_path, 'wb+') as destination:
-        for chunk in f.chunks():
-            destination.write(chunk)
-        destination.close()
-    return file_path
-
-
 def split_name(request):
-    person_name = request.body
     result = {"first_name": '', "middle_name": "", "last_name": "", RESULT_CODE: -1,
               RESULT_MSG: "no given name"}
+
+    person_name = request.body
+
+    if person_name is None or person_name == "":
+        result[RESULT_CODE] = -301
+        result[RESULT_MSG] = "no data is given"
+        return wrap_result(result)
+
     try:
         person_name = bytes.decode(person_name)
         person_name = json.loads(person_name)
@@ -1162,5 +925,5 @@ def split_name(request):
         HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
     if person_name is None or person_name == {}:
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
-    result = util_text_operation.analyze_person_name(person_name)
+    result = text_utils.analyze_person_name(person_name)
     return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')

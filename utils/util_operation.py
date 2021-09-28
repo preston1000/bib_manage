@@ -2,8 +2,6 @@ from configparser import ConfigParser
 from utils.models import Venue, Person, Publication
 from utils.constants import GlobalVariables
 
-pub_unique_fields = GlobalVariables.pub_unique_fields
-
 
 def get_value_by_key(entry, key):
     value = entry.get(key)
@@ -100,38 +98,6 @@ def wrap_info_to_model(info, parameters=None):
     return nodes
 
 
-def process_neo4j_result(data, identifier, flag):
-    """
-
-    :param data:
-    :param identifier:
-    :param flag, 1返回为数组时，用match，2：返回为dict时，用create
-    :return: dict格式
-    """
-    result = {"data": "", "msg": "", "code": 0}
-    if data is None:
-        result["code"] = -160
-        result["msg"] = "数据无效"
-        return result
-    processed = []
-    if flag == 1:
-        for item in data:
-            tmp = {}
-            for (key, value) in item[identifier].items():  # todo 对不对？
-                tmp[key] = value
-            processed.append(tmp)
-    else:  # create
-        for item in data:
-            tmp = {}
-            for (key, value) in item.items():  # todo 对不对？
-                tmp[key] = value
-            processed.append(tmp)
-    result["code"] = 160
-    result["msg"] = "done"
-    result["data"] = processed
-    return result
-
-
 def check_uniqueness_pubs(data):
     """
     检查Publication数据中的唯一标识是否重复
@@ -152,7 +118,7 @@ def check_uniqueness_pubs(data):
             msg += "\n 数据【" + str(item) + "】格式错误，非Publication类"
             continue
         flag = True
-        for field in pub_unique_fields:  # todo 后面还要在数据库中查询相应信息是否重复
+        for field in GlobalVariables.pub_unique_fields:  # todo 后面还要在数据库中查询相应信息是否重复
             value = item[field]
             current_list = found_fields[field]
             try:

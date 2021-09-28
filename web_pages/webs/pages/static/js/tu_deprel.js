@@ -44,7 +44,7 @@ layui.use(['form', 'layedit'], function(){
                 dataType : 'json',
                 success : function(data, status) {
                     var parse_result = data;
-                    if (data.code == "100") {
+                    if (data.code == "300") {
                         //显示结果
                         $('#image-block').attr("src", "../static/images/cache/" + data.data.deprel);
                         $('#image-block').attr("value", data.data.sentence); //sentence
