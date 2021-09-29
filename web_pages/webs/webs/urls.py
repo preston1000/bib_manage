@@ -24,7 +24,7 @@ import web_pages.webs.pages.views_station as station
 urlpatterns = [
     path('', views.index, name='home'),  # home page
     path('admin/', admin.site.urls),
-    path('about/', views.about, name='about'),
+    path('about/', views.about, name='about'),  # 关于项目
     path('about2/', views.about2, name='about'),
     path('table/', views.table, name='table'),
     path('net/', views.net, name='net'),

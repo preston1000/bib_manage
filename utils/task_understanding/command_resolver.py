@@ -19,7 +19,8 @@ from json import JSONDecodeError
 
 from utils.nlp.nlp_utils import dd_parser_caller, get_modifier_as_children_att
 from model_files.NLP.task_list import WORDS, POSSIBILITY, SYNONYMS_INVERSE
-from model_files.NLP.config import QUERY_URL, QUERY_EXHIBITION_BY_NAME, PARAMETER_DELIMITER, PARAMETER_KEY_VALUE_DELIMITER
+from utils.initialization import PARAMETER_DELIMITER, QUERY_URL, QUERY_EXHIBITION_BY_NAME
+
 """
 TU 参数配置
 """
@@ -410,7 +411,7 @@ def resolve_parameters(lists):
         return None
     result = {}
     for item in lists:
-        items = item.split(PARAMETER_KEY_VALUE_DELIMITER)
+        items = item.split(PARAMETER_DELIMITER)
         result[str.strip(items[0])] = str.strip(items[1])
     return result
 
@@ -425,7 +426,7 @@ def generate_parameters(parameters):
     if not parameters:
         return result
     for key, value in parameters.items():
-        result = result + str(key) + PARAMETER_KEY_VALUE_DELIMITER + str(value) + PARAMETER_DELIMITER
+        result = result + str(key) + PARAMETER_DELIMITER + str(value) + PARAMETER_DELIMITER
     if len(result) > 1:
         result = result[:-1]
     return result

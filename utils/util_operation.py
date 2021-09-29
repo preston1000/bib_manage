@@ -1,6 +1,6 @@
 from configparser import ConfigParser
-from utils.models import Venue, Person, Publication
-from utils.constants import GlobalVariables
+from model_files.bibModels import Venue, Person, Publication
+from utils.initialization import PUB_KEY_FIELD
 
 
 def get_value_by_key(entry, key):
@@ -43,22 +43,6 @@ def merge_person():
     :return:
     """
     return
-
-
-def ini_neo4j(config_path="/Volumes/Transcend/web/web_pages/webs/neo4j.conf"):
-    """
-    这里是读取neo4j的配置
-    :param config_path:
-    :return:
-    """
-    cf = ConfigParser()
-    cf.read(config_path, encoding="utf-8")
-    # todo: 判断读取失败时应该怎么写日志及返回值
-    uri = cf.get("neo4j", "uri")
-    username = cf.get("neo4j", "username")
-    pwd = cf.get("neo4j", "pwd")
-    database_info = {"uri": uri, "username": username, "pwd": pwd}
-    return database_info
 
 
 def wrap_info_to_model(info, parameters=None):
@@ -118,7 +102,7 @@ def check_uniqueness_pubs(data):
             msg += "\n 数据【" + str(item) + "】格式错误，非Publication类"
             continue
         flag = True
-        for field in GlobalVariables.pub_unique_fields:  # todo 后面还要在数据库中查询相应信息是否重复
+        for field in PUB_KEY_FIELD:  # todo 后面还要在数据库中查询相应信息是否重复
             value = item[field]
             current_list = found_fields[field]
             try:

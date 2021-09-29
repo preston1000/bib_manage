@@ -1,6 +1,7 @@
 import json
 import os
 import neo4j
+import socket
 from pathlib import Path
 from django.http import HttpResponse
 from neo4j import GraphDatabase
@@ -36,10 +37,13 @@ except:
     print("failed to read from configuration file")
     exit()
 
-
+"""
+neo4j
+"""
 uri = cf.get("neo4j", "uri")
 neo4j_username = cf.get("neo4j", "username")
 neo4j_pwd = cf.get("neo4j", "pwd")
+
 
 RESULT_DATA = cf.get("resultField", "data")
 RESULT_MSG = cf.get("resultField", "message")
@@ -68,8 +72,72 @@ os.environ["PATH"] += os.pathsep + graphviz_dir
 SHEET_NAME = cf.get("stationFileFormat", "sheetname")
 SHEET_TITLE = cf.get("stationFileFormat", "title").split(",")
 
+"""
+nlp tool
+"""
 lac_file = cf.get('nlp', "lacFile")
 ddp_file = cf.get('nlp', "ddpFile")
 
 lac_file = os.path.join(basedir, lac_file)
 ddp_file = os.path.join(basedir, ddp_file)
+
+"""
+dep rel
+"""
+
+PARAMETER_DELIMITER = cf.get("deprel", "delimiter")
+PLANNING_URL = cf.get("deprel", "reasoning")
+QUERY_URL = cf.get("deprel", "queryURL")
+QUERY_EXHIBITION_BY_NAME = cf.get("deprel", "queryExhibitionByName")
+
+hostname = socket.gethostname()
+INTENTION_URL = socket.gethostbyname(hostname)  # 当前主机地址
+# INTENTION_URL = "10.11.80.108"
+
+"""
+bibtex config
+"""
+PUBLICATION_TYPES = cf.get("bib", "publicationType").split(",")
+EDGE_TYPES = cf.get("bib", "edgeType").split(",")
+NODE_TYPES = cf.get("bib", "nodeType").split(",")
+FIELD_NAMES_PUB = cf.get("bib", "fields").split(",")
+FIELD_NAMES_VENUE = cf.get("bib", "fieldsVenue").split(",")
+FIELD_NAMES_PERSON = cf.get("bib", "fieldPerson").split(",")
+PUB_KEY_FIELD = cf.get("bib", "pubKeyField").split(",")
+
+ARTICLE = "ARTICLE"
+BOOK = "BOOK"
+BOOKLET = "BOOKLET"
+INPROCEEDINGS = "INPROCEEDINGS"
+CONFERENCE = "CONFERENCE"
+INCOLLECTION = "INCOLLECTION"
+INBOOK = "INBOOK"
+MISC = "MISC"
+MANUAL = "MANUAL"
+PHDTHESIS = "PHDTHESIS"
+MASTERSTHESIS = "MASTERSTHESIS"
+PROCEEDINGS = "PROCEEDINGS"
+TECHREPORT = "TECHREPORT"
+UNPUBLISHED = "unpublished"
+
+
+MANDATORY_FIELDS = {ARTICLE: ["TITLE", 'JOURNAL', "YEAR", "AUTHOR"],
+                    BOOK: ["TITLE", "PUBLISHER", "YEAR", ["AUTHOR", "EDITOR"]],
+                    BOOKLET: ["TITLE"],
+                    INPROCEEDINGS: ["AUTHOR", "TITLE", "BOOKTITLE", "YEAR"],
+                    CONFERENCE: ["AUTHOR", "TITLE", "BOOKTITLE", "YEAR"],
+                    INBOOK: [["AUTHOR", "EDITOR"], "TITLE", "YEAR", ["CHAPTER", "PAGES"]],
+                    INCOLLECTION: ["AUTHOR", "TITLE", "BOOKTITLE", "YEAR", "PUBLISHER"],
+                    MISC: [],
+                    MANUAL: ["TITLE"],
+                    PHDTHESIS: ["AUTHOR", "TITLE", "SCHOOL", "YEAR"],
+                    MASTERSTHESIS: ["AUTHOR", "TITLE", "SCHOOL", "YEAR"],
+                    PROCEEDINGS: ["TITLE", "YEAR"],
+                    TECHREPORT: ["AUTHOR", "TITLE", "INSTITUTION", "YEAR"],
+                    UNPUBLISHED: ["AUTHOR", "TITLE", "NOTE"]}
+
+FIELD_OF_PUBLICATION_FOR_VENUE = cf.get("bib", "pubFieldValue")
+FIELD_OF_PUBLICATION_FOR_VENUE = json.loads(FIELD_OF_PUBLICATION_FOR_VENUE)
+
+VENUE_TYPE_FOR_NODE_TYPE = cf.get("bib", "venueType")
+VENUE_TYPE_FOR_NODE_TYPE = json.loads(VENUE_TYPE_FOR_NODE_TYPE)

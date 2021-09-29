@@ -5,27 +5,23 @@ import json
 import os
 import datetime
 
+import utils.db_operation
 import utils.db_util.operations
+from utils.bib_util.extraction import extract_bib_info_from_file, extract_publication_from_bib_info
 from utils.bib_util.utils import process_search_condition
 from utils.file_util.utils import save_file_stream_on_disk
 from utils.initialization import wrap_result, ini_result, initialize_neo4j_driver, RESULT_DATA, RESULT_MSG, RESULT_CODE, \
     RESULT_COUNT
+from utils.db_util.operations import create_or_match_nodes as create_or_match_nodes, query_or_create_relation
 
-from utils.tmp_db import create_or_match_nodes_dict
+from model_files.bibModels import Publication, Venue, Person
+
 from utils import db_operation
 from utils.nlp import text_utils
-
-RESULT_SUCCESS = "success"
-RESULT_TASK = "task"
 
 """
 文献管理相关
 """
-
-
-def ini_result():
-    result = {RESULT_CODE: 0, RESULT_MSG: '', RESULT_SUCCESS: False, RESULT_TASK: None}
-    return result
 
 
 def search_home(request):
@@ -212,7 +208,23 @@ def upload_bib_add_record(request):
             file_not_processed.append(file)
             continue
 
-        parse_result = db_operation.create_or_match_publications(driver, file_path, mode=1)
+        publication_info = extract_bib_info_from_file(file_path)  # dict
+
+        pubs = []
+        for entry in publication_info:
+            # 解析文献
+            tmp_result_pub = extract_publication_from_bib_info(entry)
+            if tmp_result_pub[RESULT_CODE] == 1001:
+                pubs.append(tmp_result_pub[RESULT_DATA])
+
+        pubs = None if pubs == [] else pubs
+        db_pub_result = create_or_match_nodes(driver, pubs, return_type="class", to_create=True)
+        if db_pub_result[RESULT_CODE] != 1303:
+            result[RESULT_CODE] = 00
+            result[RESULT_MSG] = "Publication节点生成失败"
+        else:
+            result[RESULT_CODE] = 00
+            result[RESULT_MSG] = "Publication节点生成成功"
 
         os.remove(file_path)
 
@@ -313,7 +325,7 @@ def add_publication(request):
             result[RESULT_CODE] = -5
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         # 调方法写数据库
-        query_result = create_or_match_nodes_dict(pub_info, "PUBLICATION", database_info, return_type=return_type, to_create=to_create)
+        query_result = create_or_match_nodes(driver, pub_info, return_type=return_type, to_create=to_create)
 
         result[RESULT_MSG] = query_result.get(RESULT_MSG, "查询数据接口无返回值")
         result[RESULT_CODE] = query_result.get(RESULT_CODE, -6)
@@ -471,10 +483,16 @@ def add_person(request):
         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
     # 调方法写数据库
     driver = initialize_neo4j_driver()
-    tmp_result = db_operation.create_or_match_persons(driver, node_info, mode=2)
 
-    result[RESULT_CODE] = tmp_result[RESULT_CODE]
-    result[RESULT_MSG] = tmp_result[RESULT_MSG]
+    person = [Person("", node_info)]
+    tmp_result = create_or_match_nodes(driver, person)
+    if tmp_result[RESULT_CODE] != 1303:
+        result[RESULT_CODE] = 00
+        result[RESULT_MSG] = "Person节点生成失败"
+    else:
+        result[RESULT_CODE] = 1
+        result[RESULT_MSG] = "Person节点生成成功"
+
     return wrap_result(result)
 
 
@@ -503,16 +521,22 @@ def add_venue(request):
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         # 调方法写数据库
         driver = initialize_neo4j_driver()
-        tmp_result = db_operation.create_or_match_venues(driver, node_info, mode=2)
 
-        result[RESULT_CODE] = tmp_result[RESULT_CODE]
-        result[RESULT_MSG] = tmp_result[RESULT_MSG]
+        # 应先从node_info构建Venue，然后创建
+        venue = [Venue("", node_info)]
 
-        return result
+        db_ven_result = create_or_match_nodes(driver, venue, return_type="class", to_create=True)
+        if db_ven_result[RESULT_CODE] != 1303:
+            result[RESULT_CODE] = 00
+            result[RESULT_MSG] = "Venue节点生成失败"
+        else:
+            result[RESULT_CODE] = 1
+            result[RESULT_MSG] = "Venue节点生成成功"
+
     else:
         result[RESULT_CODE] = -10
         result[RESULT_MSG] = "not supported request form"
-        return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
+    return wrap_result(result)
 
 
 def add_relation(request):
@@ -546,14 +570,15 @@ def add_relation(request):
         rel_type = node_info["relType"]
 
         driver = initialize_neo4j_driver()
-        flag = db_operation.query_or_create_relation(driver, source_type, source_id, target_type, target_id, rel_type)
-        if flag[RESULT_CODE] > 0:
+        query_result = query_or_create_relation(driver, source_type, source_id, target_type, target_id, rel_type)
+
+        if query_result[RESULT_CODE] == 1306:
             result[RESULT_CODE] = 1
             result[RESULT_MSG] = "successfully write into database"
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
         else:
-            result[RESULT_CODE] = flag[RESULT_CODE]
-            result[RESULT_MSG] = "error when writing into database" + flag[RESULT_MSG]
+            result[RESULT_CODE] = 0
+            result[RESULT_MSG] = "error when writing into database: " + query_result[RESULT_MSG]
             return HttpResponse(json.dumps(result, ensure_ascii=False), content_type='application/json', charset='utf-8')
     else:
         result[RESULT_CODE] = -10

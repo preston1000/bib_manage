@@ -2,7 +2,7 @@
 此文件是定义Neo4j中节点类型的，包括publication、venue、person三类节点
 """
 
-from utils.util_operation_2 import upperize_dict_keys
+from utils.nlp.text_utils import capitalize_dict_keys
 
 
 class Publication:
@@ -50,7 +50,7 @@ class Publication:
                  note=None, publisher=None, edition=None, book_title=None, organization=None,
                  chapter=None, school=None, type=None, how_published=None, keywords=None, abstract=None, note_id=None,
                  institution=None, added_by=None, added_date=None, sci_index=None, ei_index=None, ssci_index=None,
-                 modified_date=None, id = None):
+                 modified_date=None, id=None):
         self.uuid = uuid
         self.id = id
         self.node_type = node_type
@@ -144,7 +144,7 @@ class Publication:
         cypher = "CREATE (node:PUBLICATION " + self.to_string() + ") return node"
         return cypher
 
-    def get_match_cypher(self):
+    def get_match_cypher(self):  # todo 可选fields
         cypher = "MATCH (node:PUBLICATION {id:'" + self.id + "', "
         try:
             if self.node_type is None:
@@ -400,7 +400,7 @@ class Pub:
     def create_node(self, info):
         if info is None or not isinstance(info, dict):
             return
-        info = upperize_dict_keys(info)
+        info = capitalize_dict_keys(info)
 
         entry_type = info.get("ENTRYTYPE", None)
         self.entry_type = entry_type.upper() if entry_type is not None else None

@@ -58,7 +58,7 @@ def generate_cypher_for_multi_field_condition(node_info, node_type, node_identif
 
 def process_neo4j_result(data, identifier, flag):
     """
-
+    checked
     :param data:
     :param identifier:
     :param flag, 1返回为数组时，用match，2：返回为dict时，用create
@@ -79,5 +79,8 @@ def process_neo4j_result(data, identifier, flag):
             for (key, value) in item.items():  # todo 对不对？
                 tmp[key] = value
             processed.append(tmp)
+
+    if not processed:
+        processed = None
 
     return processed
